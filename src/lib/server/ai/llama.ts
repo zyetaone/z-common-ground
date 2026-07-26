@@ -5,8 +5,8 @@
 import { briefFactsForLlm } from '$lib/game';
 import type { Aggregate } from '$lib/game/types';
 
-/** Fast, available on Workers AI free tier. */
-export const LLAMA_MODEL = '@cf/meta/llama-3.1-8b-instruct' as const;
+/** Active Workers AI Llama (3.1-8b-instruct was deprecated 2026-05-30). -fast = low latency. */
+export const LLAMA_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast' as const;
 
 export type AiBinding = {
 	run: (
