@@ -1,0 +1,25 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "common-ground-phygital",
+	"compatibility_date": "2026-07-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	// Workers AI — Llama 3 brief narrative (no key; uses account AI binding)
+	"ai": {
+		"binding": "AI"
+	},
+	// D1 — single strongly-consistent store for the one LIVE room.
+	// Replaces the per-colo Cache API (which split state across colos).
+	"d1_databases": [
+		{
+			"binding": "common_ground_db",
+			"database_name": "common-ground-db",
+			"database_id": "7c40c4ce-932b-450c-97f4-3daab7907375"
+		}
+	]
+	// Optional: wrangler secret put FAL_API_KEY  (finale workspace image)
+}

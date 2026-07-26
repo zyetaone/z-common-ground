@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+/* ── Common Ground design tokens (ported from the prototypes) ───────────── */
+@theme {
+	--color-bg: #070b14;
+	--color-bg2: #0d1526;
+	--color-panel: #0d1526;
+	--color-ink: #eef3fb;
+	--color-muted: #8ea2c0;
+	--color-line: #1e2c44;
+	--color-gold: #e7bd6b;
+	--color-teal: #37b6a2;
+	--color-red: #e0554b;
+
+	/* seven seat colours — index 0..6 = Real Estate, Workplace Exp, Operations, Marketing, Finance, Biz Leaders, HR */
+	--color-seat0: #e0a458;
+	--color-seat1: #3fb6a2;
+	--color-seat2: #7e8ce0;
+	--color-seat3: #e574b0;
+	--color-seat4: #5aa9e6;
+	--color-seat5: #c9a227;
+	--color-seat6: #e0665a;
+
+	--font-display: 'Space Grotesk', system-ui, sans-serif;
+	--font-sans: 'Inter', system-ui, sans-serif;
+	--font-mono: 'Space Mono', ui-monospace, monospace;
+	--font-serif: Georgia, 'Times New Roman', serif;
+}
+
+:root {
+	color-scheme: dark;
+}
+
+/* one visible focus ring for every interactive control — keyboard/AT only.
+   :where() keeps specificity 0 so components can still override. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+	outline: 2px solid var(--color-gold);
+	outline-offset: 2px;
+	border-radius: 4px;
+}
+
+html,
+body {
+	min-height: 100%;
+	background:
+		radial-gradient(1200px 700px at 30% -10%, #12203a 0%, var(--color-bg) 60%) fixed;
+	color: var(--color-ink);
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+	font-family: var(--font-display);
+}
+.font-mono {
+	font-family: var(--font-mono);
+}
+.font-serif {
+	font-family: var(--font-serif);
+}
+
+/* respect reduced motion — inclusivity default (neurodiverse methodology) */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
