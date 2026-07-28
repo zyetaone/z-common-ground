@@ -22,6 +22,11 @@
 		Math.floor(host.roomBountyTokens / Math.max(1, host.tableCount))
 	);
 
+	const imageCount = $derived(
+		(st?.finaleImageUrl ? 1 : 0) +
+		(st?.tables.filter((t) => t.imageUrl).length ?? 0)
+	);
+
 	async function saveAllSettings() {
 		await session.setTables(host.tableCount);
 		await session.setConfig({
@@ -33,6 +38,29 @@
 		if (!confirm('Delete / reset the whole session? Boards clear.')) return;
 		await session.ensure({ reset: true, tableCount: host.tableCount });
 		host.resync(session.room);
+	}
+
+	function downloadImage(url: string, name: string) {
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = name;
+		a.target = '_blank';
+		a.rel = 'noopener';
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+	}
+
+	function downloadAll() {
+		const urls: { url: string; name: string }[] = [];
+		if (st?.finaleImageUrl) urls.push({ url: st.finaleImageUrl, name: 'finale-room.png' });
+		for (const t of st?.tables ?? []) {
+			if (t.imageUrl) {
+				const fn = tablePersona(t.id);
+				urls.push({ url: t.imageUrl, name: `table-${t.id}-${fn.name.toLowerCase().replace(/\s+/g, '-')}.png` });
+			}
+		}
+		urls.forEach((u, i) => setTimeout(() => downloadImage(u.url, u.name), i * 500));
 	}
 </script>
 
@@ -252,6 +280,88 @@
 			</div>
 			<p class="text-xs text-muted">Tables seal board state on <b class="text-gold">R2 · R3 · R5</b> — fixed.</p>
 		</div>
+	</section>
+
+	<!-- Generated Images -->
+	<section class="mb-6 rounded-2xl border border-line bg-panel/40 p-5">
+		<div class="flex items-center justify-between mb-3">
+			<div>
+				<h2 class="text-[11px] uppercase tracking-[0.26em] text-muted">Generated Images</h2>
+				<p class="text-xs text-muted">
+					{#if imageCount > 0}
+						{imageCount} image{imageCount === 1 ? '' : 's'} generated
+					{:else}
+						No images yet — generate from the Presenter deck or table renders
+					{/if}
+				</p>
+			</div>
+			{#if imageCount > 0}
+				<button
+					type="button"
+					onclick={downloadAll}
+					class="rounded-xl bg-teal px-4 py-2 font-display text-xs font-bold text-[var(--color-on-teal)] shadow hover:bg-teal/90"
+				>
+					Save All ↓
+				</button>
+			{/if}
+		</div>
+
+		{#if imageCount > 0}
+			<div class="grid gap-3">
+				<!-- Room finale -->
+				{#if st?.finaleImageUrl}
+					<div class="flex items-center gap-3 rounded-xl border border-line bg-bg p-3">
+						<div class="h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-line">
+							<img
+								src={st.finaleImageUrl}
+								alt="Room finale render"
+								class="h-full w-full object-cover"
+								loading="lazy"
+							/>
+						</div>
+						<div class="flex-1 min-w-0">
+							<div class="font-display font-bold text-sm">Room Finale</div>
+							<div class="text-xs text-muted truncate">{st.finaleImageUrl}</div>
+						</div>
+						<button
+							type="button"
+							onclick={() => downloadImage(st.finaleImageUrl!, 'finale-room.png')}
+							class="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs hover:border-gold"
+						>
+							Save
+						</button>
+					</div>
+				{/if}
+
+				<!-- Per-table renders -->
+				{#each st?.tables ?? [] as t (t.id)}
+					{#if t.imageUrl}
+						{@const fn = tablePersona(t.id)}
+						<div class="flex items-center gap-3 rounded-xl border border-line bg-bg p-3">
+							<div class="h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-line">
+								<img
+									src={t.imageUrl}
+									alt="Table {t.id} render"
+									class="h-full w-full object-cover"
+									loading="lazy"
+								/>
+							</div>
+							<div class="flex-1 min-w-0">
+								<div class="font-display font-bold text-sm">Table {t.id} · {fn.name}</div>
+								<div class="text-xs text-muted truncate">{t.imageUrl}</div>
+							</div>
+							<button
+								type="button"
+								onclick={() => downloadImage(t.imageUrl!, `table-${t.id}-${fn.name.toLowerCase().replace(/\s+/g, '-')}.png`)}
+								class="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs hover:border-gold"
+							>
+								Save
+							</button>
+						</div>
+					{/if}
+				{/each}
+			</div>
+		{/if}
 	</section>
 
 	<!-- Reset Session -->
