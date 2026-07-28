@@ -6,12 +6,12 @@
 	let dataUrl = $state('');
 
 	onMount(async () => {
-		dataUrl = await QR.toDataURL(text, { width: size, margin: 1, color: { dark: '#070b14', light: '#F7F3EA' } });
+		dataUrl = await QR.toDataURL(text, { width: size, margin: 1, color: { dark: '#0A3D2B', light: '#F3ECD8' } });
 	});
 </script>
 
 {#if dataUrl}
 	<img src={dataUrl} alt="QR code" class="rounded-lg" />
 {:else}
-	<div class="rounded-lg" style="width:{size}px;height:{size}px;background:#F7F3EA"></div>
+	<div class="rounded-lg" style="width:{size}px;height:{size}px;background:#F3ECD8"></div>
 {/if}

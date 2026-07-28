@@ -3,7 +3,7 @@ import type { Aggregate, Matrix7x7, RoomState, RoundSnapshot, TableState, Vec7 }
 import { N_PRIORITIES, PRIORITIES } from './types';
 import { PERSONAS, tableSeatIndex } from './config';
 
-const zeros = (): Vec7 => Array(N_PRIORITIES).fill(0);
+export const zeros = (): Vec7 => Array(N_PRIORITIES).fill(0);
 export const sum = (v: Vec7) => v.reduce((a, b) => a + b, 0);
 
 export function emptyMatrix(): number[][] {

@@ -111,7 +111,7 @@
 		gap: 10px;
 		border-radius: 16px;
 		border: 1px solid color-mix(in srgb, var(--c) 35%, var(--color-line));
-		background: color-mix(in srgb, var(--c) 8%, rgba(13, 21, 38, 0.55));
+		background: color-mix(in srgb, var(--c) 8%, rgba(10, 61, 43, 0.55));
 		padding: 10px;
 	}
 	.open {

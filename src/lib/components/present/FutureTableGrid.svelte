@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import { boardTokenTotal, formatUsd, tablePersona, tableSeatIndex, sum } from '$lib/game';
+	import { boardTokenSum, formatUsd, tablePersona, tableSeatIndex, sum } from '$lib/game';
 	import { session } from '$lib/state';
 
 	/** Bottom grid — per-table AI gen + expand. */
@@ -17,7 +17,7 @@
 			const persona = tablePersona(t.id);
 			const seat = tableSeatIndex(t.id);
 			const bets = (t.board[seat] ?? []).map((n) => Number(n) || 0);
-			const tokens = sum(bets) || boardTokenTotal(t.board);
+			const tokens = sum(bets) || boardTokenSum(t.board);
 			return {
 				id: t.id,
 				name: persona.name,
@@ -133,7 +133,7 @@
 	.tables {
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.4);
+		background: rgba(10, 61, 43, 0.4);
 		padding: 16px 18px;
 	}
 	.tables-head {
@@ -158,7 +158,7 @@
 		font-family: var(--font-display);
 		font-weight: 800;
 		background: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 		cursor: pointer;
 		font-size: 13px;
 		white-space: nowrap;

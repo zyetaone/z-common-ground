@@ -34,7 +34,7 @@
 		border-radius: 16px;
 		border: 1px solid var(--color-line);
 		padding: 16px;
-		background: rgba(13, 21, 38, 0.45);
+		background: rgba(10, 61, 43, 0.45);
 	}
 	.sealbadge {
 		display: flex;
@@ -47,7 +47,7 @@
 		height: 36px;
 		border-radius: 50%;
 		background: var(--color-teal);
-		color: #04140f;
+		color: var(--color-on-teal);
 		display: grid;
 		place-items: center;
 		font-weight: 800;

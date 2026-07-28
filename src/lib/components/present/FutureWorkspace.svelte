@@ -126,14 +126,14 @@
 				<div class="flex flex-wrap gap-2 pt-2">
 					<button
 						type="button"
-						class="rounded-xl bg-gold px-4 py-2.5 font-display text-xs font-bold text-[#241a05]"
+						class="rounded-xl bg-gold px-4 py-2.5 font-display text-xs font-bold text-[var(--color-on-gold)]"
 						onclick={() => session.updateBrief(editableBrief)}
 					>
 						Save edits
 					</button>
 					<button
 						type="button"
-						class="rounded-xl bg-teal px-4 py-2.5 font-display text-xs font-bold text-[#04140f]"
+						class="rounded-xl bg-teal px-4 py-2.5 font-display text-xs font-bold text-[var(--color-on-teal)]"
 						onclick={copyBrief}
 					>
 						{copiedBrief ? '✓ Copied' : 'Copy'}

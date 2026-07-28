@@ -295,7 +295,7 @@
 	.card {
 		border-radius: 16px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.5);
+		background: rgba(10, 61, 43, 0.5);
 		padding: 14px;
 	}
 	.card.dim {
@@ -441,7 +441,7 @@
 		font-weight: 800;
 		font-size: 0.95rem;
 		background: var(--color-teal);
-		color: #04140f;
+		color: var(--color-on-teal);
 		cursor: pointer;
 	}
 	.gen:disabled {
@@ -488,7 +488,7 @@
 		overflow: auto;
 		border-radius: 20px;
 		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
-		background: var(--color-bg2, #0d1526);
+		background: var(--color-bg2);
 		padding: 18px;
 		display: flex;
 		flex-direction: column;
@@ -552,7 +552,7 @@
 		margin-top: 4px;
 		border-radius: 999px;
 		background: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 		padding: 4px 10px;
 		font-size: 10px;
 		font-weight: 800;

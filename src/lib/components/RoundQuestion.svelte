@@ -55,12 +55,12 @@
 	.rq {
 		border-radius: 14px;
 		border: 1px solid color-mix(in srgb, var(--color-gold) 35%, var(--color-line));
-		background: color-mix(in srgb, var(--color-gold) 8%, rgba(13, 21, 38, 0.5));
+		background: color-mix(in srgb, var(--color-gold) 8%, rgba(10, 61, 43, 0.5));
 		padding: 12px 14px;
 	}
 	.rq.capture {
 		border-color: color-mix(in srgb, var(--color-teal) 50%, var(--color-line));
-		background: color-mix(in srgb, var(--color-teal) 10%, rgba(13, 21, 38, 0.55));
+		background: color-mix(in srgb, var(--color-teal) 10%, rgba(10, 61, 43, 0.55));
 	}
 	.rq.hold {
 		border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-line));
@@ -81,7 +81,7 @@
 		font-weight: 800;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: #241a05;
+		color: var(--color-on-gold);
 		background: var(--color-gold);
 		border-radius: 999px;
 		padding: 4px 10px;

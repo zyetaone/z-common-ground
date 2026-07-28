@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
 	import PortraitMatrix from '$lib/components/analytics/PortraitMatrix.svelte';
-	import { formatUsd, boardTokenTotal, tablePersona } from '$lib/game';
+	import { formatUsd, boardTokenSum, tablePersona } from '$lib/game';
 
 	/** Screen 1 — Combined Board Heatmap Matrix dominates; compact live strip above. */
 	let { room }: { room: RoomState } = $props();
@@ -50,7 +50,7 @@
 
 		<div class="tables">
 			{#each room.tables as t (t.id)}
-				{@const n = boardTokenTotal(t.board)}
+				{@const n = boardTokenSum(t.board)}
 				{@const fn = tablePersona(t.id)}
 				<span
 					class="chip"
@@ -82,7 +82,7 @@
 	.strip {
 		border-radius: 16px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.45);
+		background: rgba(10, 61, 43, 0.45);
 		padding: 12px 14px;
 	}
 	.core {

@@ -5,10 +5,9 @@
 		CAPTURE_ROUNDS,
 		ROUND_COUNT,
 		SCENARIOS,
-		boardTokenTotal,
+		boardTokenSum,
 		formatUsd,
 		tablePersona,
-		tableWalletLabel,
 		tokenUnitLabel
 	} from '$lib/game';
 	import { host, SESSION, session } from '$lib/state';
@@ -145,7 +144,7 @@
 						<div>
 							<div class="font-display font-bold text-sm">Table {t.id} · {fn.name}</div>
 							<div class="text-xs text-muted">
-								{fn.lens} · {formatUsd(boardTokenTotal(t.board))} ·
+								{fn.lens} · {formatUsd(boardTokenSum(t.board))} ·
 								<b class={t.lockedThisRound ? 'text-teal' : 'text-gold'}>
 									{t.lockedThisRound ? 'submitted' : 'open'}
 								</b>
@@ -193,14 +192,14 @@
 			<div>
 				<h2 class="text-[11px] uppercase tracking-[0.26em] text-gold">Session Settings</h2>
 				<p class="text-xs text-muted">
-					Each table: {tableWalletLabel(100)} · chips {tokenUnitLabel()}. Spend stake to find room common ground.
+					Each table: {formatUsd(10)} · chips {tokenUnitLabel()}. Spend stake to find room common ground.
 				</p>
 			</div>
 			<button
 				type="button"
 				onclick={saveAllSettings}
 				disabled={session.busy}
-				class="rounded-xl bg-gold px-5 py-2 font-display text-sm font-bold text-[#241a05] shadow hover:bg-gold/90 disabled:opacity-40"
+				class="rounded-xl bg-gold px-5 py-2 font-display text-sm font-bold text-[var(--color-on-gold)] shadow hover:bg-gold/90 disabled:opacity-40"
 			>
 				Save All Settings
 			</button>
@@ -230,7 +229,7 @@
 			</label>
 		</div>
 		<p class="text-xs text-muted">
-			Per table target = {tableWalletLabel(perTableTok)}.
+			Per table target = {formatUsd(perTableTok)}.
 		</p>
 
 		<!-- Capture rounds (fixed) -->

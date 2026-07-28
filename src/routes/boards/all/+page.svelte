@@ -38,8 +38,8 @@
 		align-items: center;
 		gap: 12px;
 		padding: 12px 20px;
-		background: #0b0e13;
-		color: #dfe4ea;
+		background: #0A3D2B;
+		color: #F3ECD8;
 		font-family: Helvetica, Arial, sans-serif;
 		flex-wrap: wrap;
 	}
@@ -49,16 +49,16 @@
 	}
 	.btn {
 		font-size: 12px;
-		background: #1c222b;
-		color: #dfe4ea;
-		border: 1px solid #2a323d;
+		background: #0E543A;
+		color: #F3ECD8;
+		border: 1px solid #1A6B4A;
 		padding: 8px 12px;
 		border-radius: 8px;
 		text-decoration: none;
 	}
 	.print-btn {
 		background: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 		border-color: var(--color-gold);
 		font-weight: 700;
 	}
@@ -66,11 +66,11 @@
 		display: grid;
 		gap: 20px;
 		padding: 22px;
-		background: #12161d;
+		background: #0E543A;
 	}
 	.board-card {
-		background: #0b0e13;
-		border: 1px solid #2a323d;
+		background: #0A3D2B;
+		border: 1px solid #1A6B4A;
 		border-radius: 8px;
 		overflow: hidden;
 	}

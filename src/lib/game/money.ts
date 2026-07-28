@@ -1,18 +1,17 @@
 import { TOKEN_VALUE_USD } from './types';
-import { CHIP_DENOMS } from './config';
 
 /** Board cells hold value in $M; convert to raw USD. */
 function tokensToUsd(valueM: number): number {
 	return valueM * TOKEN_VALUE_USD;
 }
 
-/** Chip legend, e.g. “$10M · $5M · $2M”. */
+/** Single-chip legend: "$10M". */
 export function tokenUnitLabel(): string {
-	return CHIP_DENOMS.map((c) => `$${c.value}M`).join(' · ');
+	return '$10M';
 }
 
 export function tableWalletLabel(tableCapValueM: number): string {
-	return `${formatUsd(tableCapValueM)} wallet`;
+	return `${formatUsd(tableCapValueM)}`;
 }
 
 /** Compact $ from token counts via TOKEN_VALUE_USD. */
@@ -36,10 +35,4 @@ export function formatUsdFull(tokens: number): string {
 		currency: 'USD',
 		maximumFractionDigits: 0
 	}).format(tokensToUsd(tokens));
-}
-
-export function boardTokenTotal(board: number[][]): number {
-	let n = 0;
-	for (const row of board) for (const c of row) n += c;
-	return n;
 }

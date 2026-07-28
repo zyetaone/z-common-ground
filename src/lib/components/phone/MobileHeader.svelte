@@ -109,12 +109,12 @@
 		padding: 8px 12px;
 		border-radius: 14px;
 		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--color-line));
-		background: color-mix(in srgb, var(--color-gold) 12%, rgba(13, 21, 38, 0.85));
+		background: color-mix(in srgb, var(--color-gold) 12%, rgba(10, 61, 43, 0.85));
 		font-size: 12px;
 	}
 	.qcompact.finale {
 		border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
-		background: color-mix(in srgb, var(--color-teal) 12%, rgba(13, 21, 38, 0.88));
+		background: color-mix(in srgb, var(--color-teal) 12%, rgba(10, 61, 43, 0.88));
 	}
 	.badge-tag {
 		font-family: var(--font-mono);
@@ -122,7 +122,7 @@
 		font-weight: 900;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #241a05;
+		color: var(--color-on-gold);
 		background: var(--color-gold);
 		border-radius: 999px;
 		padding: 2px 8px;
@@ -131,7 +131,7 @@
 	}
 	.qcompact.finale .badge-tag {
 		background: var(--color-teal);
-		color: #04140f;
+		color: var(--color-on-teal);
 	}
 	.badge-question {
 		font-family: var(--font-display);

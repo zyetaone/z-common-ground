@@ -38,7 +38,7 @@
 
 	/** Mix priority color into dark panel; stronger = more stake. */
 	function cellBg(v: number, pri: number): string {
-		if (v <= 0) return 'rgba(13, 21, 38, 0.55)';
+		if (v <= 0) return 'rgba(10, 61, 43, 0.55)';
 		const t = Math.min(1, v / model.max);
 		// Floor ~18% so mid cells stay readable; cap ~94%
 		const mix = Math.round(18 + t * 76);
@@ -126,7 +126,7 @@
 		min-height: 0;
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.35);
+		background: rgba(10, 61, 43, 0.35);
 		padding: 14px 16px;
 	}
 	.head {
@@ -249,12 +249,12 @@
 		height: 100%;
 		border-radius: 8px;
 		border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
-		background: rgba(13, 21, 38, 0.55);
+		background: rgba(10, 61, 43, 0.55);
 		padding: 2px;
 	}
 	.tot.grand {
 		border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
-		background: color-mix(in srgb, var(--color-gold) 10%, rgba(13, 21, 38, 0.5));
+		background: color-mix(in srgb, var(--color-gold) 10%, rgba(10, 61, 43, 0.5));
 	}
 	.totn {
 		font-size: clamp(15px, 1.3vw, 20px);

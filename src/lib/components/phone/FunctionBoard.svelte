@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CHIP_DENOMS, PRIORITIES, formatUsd, formatUsdFull, tableWalletLabel } from '$lib/game';
+	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd, formatUsdFull } from '$lib/game';
 	import type { RoundMove, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
 
@@ -31,11 +31,9 @@
 	const removeOnly = $derived(move === 'remove');
 	const baseTotal = $derived((baseline ?? counts).reduce((a, b) => a + b, 0));
 	const removed = $derived(Math.max(0, baseTotal - total));
-
-	// Active chip denomination — tap the tray to pick which chip you're placing.
-	let activeIdx = $state(0);
-	const activeValue = $derived(CHIP_DENOMS[activeIdx].value);
-	const canAddActive = $derived(total + activeValue <= capTokens);
+	const remaining = $derived(Math.max(0, capTokens - total));
+	const chipColor = $derived(CHIP_DENOMS[0].hex);
+	const maxCount = $derived(Math.max(1, ...counts));
 
 	function tap(p: number, d: number) {
 		if (busy || !editable) return;
@@ -52,39 +50,21 @@
 </script>
 
 <div class="seat-board" class:uneditable={!editable} class:remove={removeOnly} style="--seat:{color}">
-	<div class="meta">
-		<span class="pill">
-			{#if removeOnly}
-				R3 REMOVE · holding {formatUsd(total)}
-			{:else}
-				{tableWalletLabel(capTokens)}
-			{/if}
-		</span>
-		<span class="total">{formatUsdFull(total)}</span>
+	<!-- Minimal spent / remaining -->
+	<div class="spend-line">
+		<span class="spent-label">Spent</span>
+		<span class="spent-val">{formatUsdFull(total)}</span>
+		<span class="of">of</span>
+		<span class="cap-val">{formatUsdFull(capTokens)}</span>
+		{#if remaining > 0 && !removeOnly}
+			<span class="dot-sep">·</span>
+			<span class="remaining">{formatUsd(remaining)} left</span>
+		{/if}
 	</div>
-
-	{#if editable}
-		<div class="tray" role="group" aria-label="Pick a chip to place">
-			{#each CHIP_DENOMS as c, i (c.color)}
-				<button
-					type="button"
-					class="chip-btn"
-					class:active={activeIdx === i}
-					aria-pressed={activeIdx === i}
-					aria-label="${c.value} million chip"
-					onclick={() => (activeIdx = i)}
-				>
-					<Chip hex={c.hex} value={c.value} size={32} />
-					<span>${c.value}M</span>
-				</button>
-			{/each}
-		</div>
-	{/if}
 
 	{#if removeOnly}
 		<p class="remove-hint">
-			Take off the <b>{activeValue === 10 ? 'red' : activeValue === 5 ? 'blue' : 'green'}</b> chips you're removing. What stays is
-			<b>protected</b>
+			Remove <b>${CHIP_VALUE}M</b> chips. What stays is <b>protected</b>
 			{#if removed > 0}
 				· cut {formatUsd(removed)}
 			{/if}
@@ -96,6 +76,7 @@
 			{@const v = counts[p] ?? 0}
 			{@const base = baseline ? (baseline[p] ?? v) : v}
 			{@const cut = removeOnly ? Math.max(0, base - v) : 0}
+			{@const chipCount = Math.floor(v / CHIP_VALUE)}
 			<div
 				class="row"
 				class:filled={v > 0}
@@ -106,16 +87,27 @@
 					<div class="name">{name}</div>
 					<div class="val">
 						{#if v > 0}
-							<span class="usd">{formatUsd(v)}</span>
+							<span class="usd">{formatUsdFull(v)}</span>
+							<!-- Visual chip tokens -->
+							{#if chipCount > 0}
+								<span class="chips">
+									{#each { length: Math.min(chipCount, 8) } as _, i}
+										<Chip hex={chipColor} size={16} />
+									{/each}
+									{#if chipCount > 8}
+										<span class="chip-over">+{chipCount - 8}</span>
+									{/if}
+								</span>
+							{/if}
 							{#if removeOnly && cut > 0}
-								<span class="cut-tag">−{formatUsd(cut)}</span>
+								<span class="cut-tag">-{formatUsd(cut)}</span>
 							{:else if removeOnly}
 								<span class="prot-tag">protected</span>
 							{/if}
 						{:else if removeOnly && base > 0}
 							<span class="empty">Removed all</span>
 						{:else}
-							<span class="empty">Empty</span>
+							<span class="empty">—</span>
 						{/if}
 					</div>
 				</div>
@@ -124,23 +116,23 @@
 						<button
 							type="button"
 							class="btn minus"
-							disabled={busy || v < activeValue}
-							aria-label="Remove ${activeValue}M chip from {name}"
+							disabled={busy || v < CHIP_VALUE}
+							aria-label="Remove ${CHIP_VALUE}M from {name}"
 							onpointerup={(e) => {
 								e.preventDefault();
-								if (!busy && v >= activeValue) tap(p, -activeValue);
+								if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
 							}}
 						>
-							−
+							-
 						</button>
 						<button
 							type="button"
 							class="btn plus"
-							disabled={busy || removeOnly || !canAddActive}
-							aria-label="Add ${activeValue}M chip to {name}"
+							disabled={busy || removeOnly || remaining < CHIP_VALUE}
+							aria-label="Add ${CHIP_VALUE}M to {name}"
 							onpointerup={(e) => {
 								e.preventDefault();
-								if (!busy && !removeOnly && canAddActive) tap(p, activeValue);
+								if (!busy && !removeOnly && remaining >= CHIP_VALUE) tap(p, CHIP_VALUE);
 							}}
 						>
 							+
@@ -169,7 +161,7 @@
 	.seat-board {
 		border-radius: 16px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.5);
+		background: rgba(10, 61, 43, 0.5);
 		padding: 12px;
 	}
 	.seat-board.remove {
@@ -178,52 +170,50 @@
 	.seat-board.uneditable {
 		opacity: 0.92;
 	}
-	.meta {
+	/* ── Spent / remaining line ── */
+	.spend-line {
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 8px;
+		align-items: baseline;
+		gap: 6px;
 		margin-bottom: 10px;
+		padding: 8px 12px;
+		border-radius: 10px;
+		background: rgba(0, 0, 0, 0.22);
+		border: 1px solid var(--color-line);
+		font-size: 12px;
 	}
-	.pill {
+	.spent-label {
 		font-family: var(--font-mono);
 		font-size: 10px;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 		color: var(--color-muted);
 	}
-	.total {
+	.spent-val {
 		font-family: var(--font-display);
 		font-weight: 800;
 		color: var(--color-gold);
 		font-size: 0.95rem;
 	}
-	.tray {
-		display: flex;
-		gap: 8px;
-		margin-bottom: 10px;
-	}
-	.chip-btn {
-		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 6px;
-		min-height: 44px;
-		border-radius: 12px;
-		border: 1px solid var(--color-line);
-		background: rgba(0, 0, 0, 0.2);
+	.of {
 		color: var(--color-muted);
+		font-size: 10px;
+	}
+	.cap-val {
 		font-family: var(--font-mono);
+		color: var(--color-muted);
+		font-size: 11px;
+	}
+	.dot-sep {
+		color: var(--color-line);
+	}
+	.remaining {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-teal);
 		font-weight: 700;
-		font-size: 12px;
-		cursor: pointer;
-		touch-action: manipulation;
 	}
-	.chip-btn.active {
-		border-color: var(--color-gold);
-		background: color-mix(in srgb, var(--color-gold) 12%, rgba(0, 0, 0, 0.2));
-		color: var(--color-ink);
-	}
+	/* ── Remove hint ── */
 	.remove-hint {
 		margin: 0 0 10px;
 		font-size: 12px;
@@ -233,6 +223,7 @@
 	.remove-hint b {
 		color: var(--color-teal);
 	}
+	/* ── Priority rows ── */
 	.list {
 		display: flex;
 		flex-direction: column;
@@ -243,10 +234,11 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px;
-		padding: 8px 10px;
+		padding: 10px 12px;
 		border-radius: 12px;
 		border: 1px solid var(--color-line);
 		background: rgba(0, 0, 0, 0.18);
+		transition: border-color 0.15s;
 	}
 	.row.filled {
 		border-color: color-mix(in srgb, var(--seat) 40%, transparent);
@@ -269,11 +261,11 @@
 	.val {
 		font-size: 11px;
 		color: var(--color-muted);
-		margin-top: 2px;
+		margin-top: 4px;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 4px;
+		gap: 6px;
 	}
 	.usd {
 		color: var(--color-gold);
@@ -281,8 +273,27 @@
 		font-family: var(--font-mono);
 		font-size: 13px;
 	}
+	.chips {
+		display: flex;
+		align-items: center;
+		gap: -4px;
+	}
+	.chips :global(svg) {
+		margin-left: -4px;
+	}
+	.chips :global(svg:first-child) {
+		margin-left: 0;
+	}
+	.chip-over {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		color: var(--color-muted);
+		margin-left: 2px;
+	}
 	.empty {
-		opacity: 0.65;
+		opacity: 0.4;
+		font-family: var(--font-mono);
+		font-size: 10px;
 	}
 	.cut-tag {
 		font-family: var(--font-mono);

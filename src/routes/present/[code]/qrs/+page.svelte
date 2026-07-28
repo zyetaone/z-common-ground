@@ -23,7 +23,7 @@
 			<button
 				type="button"
 				onclick={() => window.print()}
-				class="rounded-xl bg-gold px-5 py-2.5 font-display font-bold text-[#241a05]"
+				class="rounded-xl bg-gold px-5 py-2.5 font-display font-bold text-[var(--color-on-gold)]"
 			>
 				Print all
 			</button>

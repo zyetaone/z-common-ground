@@ -15,7 +15,7 @@
 	import ZyetaI from '$lib/components/ZyetaI.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { advanceLabel as advLabel, canAdvance as canAdv, canRetreat as canRet } from '$lib/client/present-labels';
-	import { ROUND_COUNT, SCENARIOS, boardTokenTotal, formatUsd, tablePersona } from '$lib/game';
+	import { ROUND_COUNT, SCENARIOS, boardTokenSum, formatUsd, tablePersona } from '$lib/game';
 	import { present, SESSION, session } from '$lib/state';
 
 	const SCREENS = [
@@ -191,23 +191,23 @@
 					<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
 						{#each st.tables as t (t.id)}
 							{@const fn = tablePersona(t.id)}
-							{@const n = boardTokenTotal(t.board)}
+							{@const n = boardTokenSum(t.board)}
 							<div
 								class="rounded-2xl border p-3.5 text-center space-y-2 transition-all duration-300 shadow-lg"
 								class:border-teal={t.lockedThisRound}
 								class:bg-teal={t.lockedThisRound}
-								class:text-[#04140f]={t.lockedThisRound}
+								class:text-[var(--color-on-teal)]={t.lockedThisRound}
 								class:border-line={!t.lockedThisRound}
 								class:bg-panel={!t.lockedThisRound}
 								class:text-muted={!t.lockedThisRound}
 							>
 								<div class="flex items-center justify-center gap-1.5">
-									<span class="h-2.5 w-2.5 rounded-full" style="background:{t.lockedThisRound ? '#04140f' : fn.color}"></span>
+									<span class="h-2.5 w-2.5 rounded-full" style="background:{t.lockedThisRound ? 'var(--color-on-teal)' : fn.color}"></span>
 									<span class="font-display font-bold text-xs">{fn.name}</span>
 								</div>
 
 								{#if t.lockedThisRound}
-									<div class="font-mono text-[10px] font-black uppercase tracking-wider text-[#04140f] bg-white/40 rounded-full py-1 px-1.5">
+									<div class="font-mono text-[10px] font-black uppercase tracking-wider text-[var(--color-on-teal)] bg-white/40 rounded-full py-1 px-1.5">
 										✓ SUBMITTED
 									</div>
 									<div class="font-mono text-[11px] font-bold">{formatUsd(n)}</div>
@@ -330,7 +330,7 @@
 		padding: 10px 12px;
 		border-radius: 14px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.55);
+		background: rgba(10, 61, 43, 0.55);
 	}
 	.rungs {
 		display: flex;
@@ -350,7 +350,7 @@
 	.rung.on {
 		background: var(--color-gold);
 		border-color: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 		font-weight: 900;
 		box-shadow: 0 2px 0 #b8892e;
 	}
@@ -381,7 +381,7 @@
 	.rail-btn.primary {
 		border: none;
 		background: var(--color-teal);
-		color: #04140f;
+		color: var(--color-on-teal);
 	}
 	.rail-btn.ghost {
 		color: var(--color-muted);
@@ -494,7 +494,7 @@
 		border: none;
 		border-radius: 16px;
 		background: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 		padding: 18px 22px;
 		font-family: var(--font-display);
 		font-weight: 800;
@@ -560,7 +560,7 @@
 		flex-direction: column;
 		border-radius: 20px;
 		border: 1px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
-		background: var(--color-bg2, #0d1526);
+		background: var(--color-bg2);
 		padding: 18px 20px;
 		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
 		animation: modal-in 0.25s ease both;
@@ -635,7 +635,7 @@
 	}
 	.modal-tab.on {
 		background: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 	}
 	.modal-body {
 		flex: 1;

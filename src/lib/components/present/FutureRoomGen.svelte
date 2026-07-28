@@ -68,7 +68,7 @@
 	.panel {
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: rgba(13, 21, 38, 0.4);
+		background: rgba(10, 61, 43, 0.4);
 		padding: 16px 18px;
 	}
 	.kicker-row {
@@ -175,7 +175,7 @@
 		font-family: var(--font-display);
 		font-weight: 800;
 		background: var(--color-teal);
-		color: #04140f;
+		color: var(--color-on-teal);
 		cursor: pointer;
 	}
 	.gen:disabled {

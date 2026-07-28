@@ -9,29 +9,25 @@
 		MobileSealed
 	} from '$lib/components/phone';
 	import {
+		CHIP_VALUE,
 		emptyMatrix,
-		formatUsd,
 		formatUsdFull,
 		isCaptureRound,
 		ROUND_COUNT,
 		SCENARIOS,
 		tablePersona,
-		tableSeatIndex
+		tableSeatIndex,
+		zeros
 	} from '$lib/game';
 	import type { Matrix7x7, Vec7 } from '$lib/game/types';
 	import { play, session } from '$lib/state';
 
 	type Tab = 'board' | 'render';
 
-	function zeros(): Vec7 {
-		return Array(7).fill(0) as Vec7;
-	}
-
 	const tableId = $derived(Number(page.params.table));
 	const persona = $derived(tablePersona(tableId));
 	const seat = $derived(tableSeatIndex(tableId));
 	const table = $derived(session.tables.find((t) => t.id === tableId));
-	/** Fingerprint — reseed when session.poll updates room (no second timer). */
 	const roomSyncKey = $derived(
 		[
 			session.updatedAt,
@@ -48,9 +44,7 @@
 	const scenario = $derived(SCENARIOS[Math.min(round, SCENARIOS.length - 1)] ?? SCENARIOS[0]);
 	const serverRow = $derived((table?.board?.[seat] ?? zeros()) as Vec7);
 	const submitted = $derived(!!table?.lockedThisRound);
-	/** Capture seal only on R2 · R3 · R5 */
 	const canCapture = $derived(phase === 'round' && isCaptureRound(roundLabel));
-	/** Unlocked live rounds can edit; R1/R4 save without seal */
 	const canEditPhase = $derived(phase === 'round' && !submitted);
 	const editable = $derived(canEditPhase && !!table);
 	const showQuestion = $derived(phase === 'lobby' || phase === 'round');
@@ -68,13 +62,13 @@
 	const counts = $derived(editable && seeded ? draft : serverRow);
 	const totalTokens = $derived(counts.reduce((a, b) => a + b, 0));
 	const standingCap = $derived(baseline.reduce((a, b) => a + b, 0));
-	/** R3 bounty shrinks to holdings; else table wallet */
 	const tableCap = $derived(
 		removeOnly ? Math.max(standingCap, totalTokens) : (session.room?.tableBountyTokens ?? 100)
 	);
-	const roomBounty = $derived(session.room?.roomBountyTokens ?? 700);
 	const overCap = $derived(totalTokens > tableCap);
-	const remaining = $derived(Math.max(0, tableCap - totalTokens));
+
+	/** Whether input is disabled (phase is not 'round' or table is locked) */
+	const inputDisabled = $derived(phase !== 'round' || submitted);
 
 	function reseedFromServer() {
 		const t = session.tables.find((x) => x.id === tableId);
@@ -85,7 +79,7 @@
 		const s = tableSeatIndex(tableId);
 		const row = ((t.board[s] ?? zeros()) as Vec7).slice() as Vec7;
 		draft = row;
-		baseline = row.slice() as Vec7; // R3 protect baseline = standing at open
+		baseline = row.slice() as Vec7;
 		seeded = true;
 	}
 
@@ -100,10 +94,6 @@
 		if (id >= 1 && id <= 7) play.pickTable(id);
 	});
 
-	/**
-	 * Server → draft sync. Driven only by session.poll (layout boot).
-	 * No second timer — reacts when roomSyncKey changes.
-	 */
 	$effect(() => {
 		const key = roomSyncKey;
 		const room = session.room;
@@ -135,7 +125,7 @@
 		}
 	});
 
-	/** d = a chip value (±10 · ±5 · ±2). Chips are atomic — reject if one won't fit. */
+	/** Single $10M chip delta. */
 	function delta(priority: number, d: number) {
 		if (!editable || submitting || !d) return;
 		if (removeOnly && d > 0) return;
@@ -149,11 +139,10 @@
 		const cur = next[priority] ?? 0;
 		let nextVal = cur + d;
 		if (removeOnly) {
-			// can't remove a chip that isn't there
 			if (nextVal < 0) return;
 		} else if (d > 0) {
 			const others = next.reduce((a, b, i) => a + (i === priority ? 0 : b), 0);
-			if (others + nextVal > tableCap) return; // whole chip over budget — reject
+			if (others + nextVal > tableCap) return;
 		}
 		if (nextVal === cur || nextVal < 0) return;
 		next[priority] = nextVal;
@@ -172,7 +161,6 @@
 		draft = next;
 	}
 
-	/** Capture seal — only R2 · R3 · R5 */
 	async function onSubmit(e: Event) {
 		e.preventDefault();
 		if (!editable || submitting || totalTokens <= 0 || overCap || !canCapture) return;
@@ -185,13 +173,11 @@
 		}
 	}
 
-	/** Save cumulative board without sealing (R1 / R4 / lobby) */
 	async function onSave() {
 		if (!editable || submitting || overCap) return;
 		submitting = true;
 		try {
 			await session.submitTable(tableId, boardFromRow(draft), { seal: false });
-			// keep draft in sync with server; do not lock
 			seeded = true;
 		} finally {
 			submitting = false;
@@ -216,11 +202,16 @@
 		{isFinale}
 	/>
 
-
 	{#if !session.room}
-		<p class="center muted">Connecting…</p>
+		<div class="wait-msg">
+			<p class="wait-dot"></p>
+			<p class="wait-text">Connecting to session…</p>
+		</div>
 	{:else if !table || tableId < 1 || tableId > 7}
-		<p class="center muted">Scan the QR for your function table (1–7).</p>
+		<div class="wait-msg">
+			<p class="wait-icon">📱</p>
+			<p class="wait-text">Scan the QR for your function table (1–7).</p>
+		</div>
 	{:else if tab === 'render'}
 		<MobileRender room={session.room} {tableId} {counts} />
 		{#if isFinale}
@@ -243,26 +234,15 @@
 			color={persona.color}
 		/>
 	{:else if phase === 'lobby'}
-		<div class="center muted space-y-2">
-			<p class="font-display text-lg font-bold text-gold">Lobby</p>
-			<p class="text-sm">Waiting for presenter to start Round 1…</p>
+		<div class="wait-msg">
+			<span class="wait-dot"></span>
+			<div>
+				<p class="wait-heading">Lobby</p>
+				<p class="wait-sub">Kindly wait — presenter will start Round 1 shortly.</p>
+			</div>
 		</div>
 	{:else if phase === 'round'}
 		<form class="board-form" onsubmit={onSubmit}>
-			<p class="budget" class:over={overCap}>
-				{#if editable}
-					{#if removeOnly}
-						R3 REMOVE · holding {formatUsdFull(totalTokens)}
-					{:else if overCap}
-						{formatUsd(totalTokens)} of {formatUsd(tableCap)} · over budget
-					{:else}
-						{formatUsd(totalTokens)} of {formatUsd(tableCap)} placed · {formatUsd(remaining)} left
-					{/if}
-				{:else}
-					View only · sealed
-				{/if}
-			</p>
-
 			<FunctionBoard
 				{counts}
 				color={persona.color}
@@ -298,11 +278,16 @@
 						{submitting ? 'Saving…' : `Save & continue · ${formatUsdFull(totalTokens)}`}
 					</button>
 					{#if totalTokens <= 0}
-						<p class="hint-cap">Place tokens on the board first.</p>
+						<p class="hint-cap">Place ${CHIP_VALUE}M tokens on the board first.</p>
 					{/if}
 				{/if}
 			{/if}
 		</form>
+	{:else}
+		<div class="wait-msg">
+			<span class="wait-dot"></span>
+			<p class="wait-text">Kindly wait for the next round.</p>
+		</div>
 	{/if}
 </main>
 
@@ -314,6 +299,49 @@
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
+	}
+	/* ── Waiting state ── */
+	.wait-msg {
+		margin: 28px 12px;
+		padding: 20px 16px;
+		border-radius: 16px;
+		border: 1px solid var(--color-line);
+		background: rgba(10, 61, 43, 0.45);
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
+	.wait-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: var(--color-gold);
+		animation: pulse 1.4s ease infinite;
+		flex-shrink: 0;
+	}
+	.wait-icon {
+		font-size: 24px;
+		flex-shrink: 0;
+	}
+	.wait-heading {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 1.1rem;
+		margin: 0;
+	}
+	.wait-sub {
+		margin: 4px 0 0;
+		font-size: 13px;
+		color: var(--color-muted);
+		line-height: 1.4;
+	}
+	.wait-text {
+		font-size: 13px;
+		color: var(--color-muted);
+		margin: 0;
+	}
+	@keyframes pulse {
+		50% { opacity: 0.35; }
 	}
 	.finale-nav {
 		display: flex;
@@ -333,29 +361,11 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
-	.center {
-		text-align: center;
-		padding: 40px 12px;
-	}
-	.muted {
-		color: var(--color-muted);
-	}
 	.board-form {
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
 		padding: 4px 12px 0;
-	}
-	.budget {
-		margin: 0;
-		text-align: center;
-		font-family: var(--font-mono);
-		font-size: 12px;
-		color: var(--color-gold);
-		font-weight: 700;
-	}
-	.budget.over {
-		color: var(--color-red);
 	}
 	.submit {
 		border: none;
@@ -365,7 +375,7 @@
 		font-weight: 800;
 		font-size: 1.05rem;
 		background: var(--color-teal);
-		color: #04140f;
+		color: var(--color-on-teal);
 		cursor: pointer;
 		position: sticky;
 		bottom: calc(8px + env(safe-area-inset-bottom));

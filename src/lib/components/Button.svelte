@@ -31,9 +31,9 @@
 		lg: 'px-6 py-4 text-base'
 	};
 	const variants = {
-		primary: 'bg-gold text-[#241a05] hover:bg-gold/90',
+		primary: 'bg-gold text-[var(--color-on-gold)] hover:bg-gold/90',
 		secondary: 'border border-gold/50 text-gold hover:bg-gold/10',
-		teal: 'bg-teal text-[#04140f] hover:bg-teal/90',
+		teal: 'bg-teal text-[var(--color-on-teal)] hover:bg-teal/90',
 		outline: 'border border-line text-ink hover:border-gold',
 		ghost: 'text-muted hover:text-gold',
 		danger: 'border border-red/50 bg-red/10 text-red hover:bg-red/20'

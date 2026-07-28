@@ -90,7 +90,7 @@
 		border: none;
 		border-radius: 14px;
 		background: var(--color-gold);
-		color: #241a05;
+		color: var(--color-on-gold);
 		padding: 16px 20px;
 		font-family: var(--font-display);
 		font-weight: 800;

@@ -114,13 +114,13 @@ export const DEFAULT_TABLE_COUNT = 7;
 export const DEFAULT_ROOM_BOUNTY_TOKENS = 700;
 export const DEFAULT_TABLE_BOUNTY_TOKENS = 100;
 
-/** Physical chip denominations (Option D). value = $M each chip is worth. */
+/** Physical chip denomination — single $10M token. */
 export const CHIP_DENOMS = [
-	{ color: 'red', value: 10, hex: '#e0554b' },
-	{ color: 'blue', value: 5, hex: '#5aa9e6' },
-	{ color: 'green', value: 2, hex: '#37b6a2' }
+	{ color: 'red', value: 10, hex: '#e0554b' }
 ] as const;
 export type ChipDenom = (typeof CHIP_DENOMS)[number];
+/** The one and only chip — $10M. */
+export const CHIP_VALUE = 10;
 export const EVOLUTION_ROUNDS = [2, 3, 5] as const;
 export const CAPTURE_ROUNDS = [2, 3, 5] as const;
 export const SPACE = [
