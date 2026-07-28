@@ -2,17 +2,17 @@
 
 /* ── Common Ground — classic green felt · serif · minimal ──────────── */
 @theme {
-	--color-bg: #0A3D2B;
-	--color-bg2: #0E543A;
-	--color-panel: #0E543A;
-	--color-ink: #FDF8ED;
-	--color-muted: #BED6C4;
-	--color-line: #1A6B4A;
-	--color-gold: #D9B44A;
-	--color-teal: #37b6a2;
-	--color-red: #D94A3F;
-	--color-on-gold: #0A2D1F;
-	--color-on-teal: #02231A;
+	--color-bg: #FDF8ED;
+	--color-bg2: #F5EDD6;
+	--color-panel: #F5EDD6;
+	--color-ink: #1A2E22;
+	--color-muted: #6B8A75;
+	--color-line: #D8CCB0;
+	--color-gold: #B8932E;
+	--color-teal: #1F8B78;
+	--color-red: #C9403A;
+	--color-on-gold: #FFFFFF;
+	--color-on-teal: #FFFFFF;
 
 	/* seven seat colours */
 	--color-seat0: #e0a458;

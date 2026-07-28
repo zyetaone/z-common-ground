@@ -36,16 +36,15 @@
 		return `${PERSONAS[s.seat].name} leaned into ${PRIORITIES[s.priority]}`;
 	});
 
-	/** Mix priority color into dark panel; stronger = more stake. */
+	/** Mix priority color into panel; stronger = more stake. */
 	function cellBg(v: number, pri: number): string {
-		if (v <= 0) return 'rgba(10, 61, 43, 0.55)';
+		if (v <= 0) return 'var(--color-panel)';
 		const t = Math.min(1, v / model.max);
-		// Floor ~18% so mid cells stay readable; cap ~94%
 		const mix = Math.round(18 + t * 76);
-		return `color-mix(in srgb, ${PRI_COLORS[pri]} ${mix}%, #0a0f1a)`;
+		return `color-mix(in srgb, ${PRI_COLORS[pri]} ${mix}%, var(--color-panel))`;
 	}
 
-	/** Light text on dark cells; dark text on high-intensity fills */
+	/** Dark text on high-intensity fills */
 	function isDark(v: number): boolean {
 		return v / model.max > 0.48;
 	}
@@ -220,25 +219,21 @@
 		font-size: clamp(18px, 1.6vw, 26px);
 		line-height: 1.1;
 		font-family: var(--font-display);
-		color: rgba(253, 248, 237, 0.95);
-		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+		color: var(--color-ink);
 	}
 	.num.dark {
-		color: #0a0f1a;
-		text-shadow: none;
+		color: #FFFFFF;
 	}
 	.num.zero {
-		opacity: 0.22;
+		opacity: 0.3;
 		font-weight: 600;
 		font-size: 12px;
-		text-shadow: none;
 	}
 	.usd {
 		font-size: 9px;
 		line-height: 1;
 		font-family: var(--font-mono);
-		color: rgba(253, 248, 237, 0.78);
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+		color: var(--color-muted);
 	}
 	.tot {
 		display: flex;

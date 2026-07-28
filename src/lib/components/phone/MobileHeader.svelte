@@ -112,12 +112,12 @@
 		padding: 8px 12px;
 		border-radius: 14px;
 		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--color-line));
-		background: color-mix(in srgb, var(--color-gold) 12%, rgba(10, 61, 43, 0.85));
+		background: color-mix(in srgb, var(--color-gold) 12%, var(--color-panel));
 		font-size: 12px;
 	}
 	.qcompact.finale {
 		border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
-		background: color-mix(in srgb, var(--color-teal) 12%, rgba(10, 61, 43, 0.88));
+		background: color-mix(in srgb, var(--color-teal) 12%, var(--color-panel));
 	}
 	.badge-tag {
 		font-family: var(--font-mono);
