@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { scale } from 'svelte/transition';
 	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd, formatUsdFull } from '$lib/game';
 	import type { RoundMove, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
+
+	const ZEROS: Vec7 = [0, 0, 0, 0, 0, 0, 0];
 
 	let {
 		counts,
@@ -33,7 +36,40 @@
 	const removed = $derived(Math.max(0, baseTotal - total));
 	const remaining = $derived(Math.max(0, capTokens - total));
 	const chipColor = $derived(CHIP_DENOMS[0].hex);
-	const maxCount = $derived(Math.max(1, ...counts));
+
+	// ── Chip pile animation ──
+	/** Unique-keyed chip slots per priority for Svelte enter/exit transitions. */
+	const chipSlots = $derived(
+		PRIORITIES.map((_, p) => {
+			const n = Math.min(Math.floor((counts[p] ?? 0) / CHIP_VALUE), 8);
+			return Array.from({ length: n }, (_, i) => i);
+		})
+	);
+
+	// ── Row flash on change ──
+	let flashRow = $state<Record<number, boolean>>({});
+	let prevCounts = $state<Vec7>([...ZEROS] as Vec7);
+	let flashReady = false;
+
+	$effect(() => {
+		if (!flashReady) {
+			// First render — sync baseline, no flash
+			prevCounts = [...counts] as Vec7;
+			flashReady = true;
+			return;
+		}
+		const next: Record<number, boolean> = {};
+		for (let p = 0; p < PRIORITIES.length; p++) {
+			if (counts[p] !== (prevCounts[p] ?? 0)) {
+				next[p] = true;
+			}
+		}
+		if (Object.keys(next).length > 0) {
+			flashRow = next;
+			setTimeout(() => (flashRow = {}), 400);
+		}
+		prevCounts = [...counts] as Vec7;
+	});
 
 	function tap(p: number, d: number) {
 		if (busy || !editable) return;
@@ -82,20 +118,27 @@
 				class:filled={v > 0}
 				class:cut={cut > 0}
 				class:protected={removeOnly && v > 0 && cut === 0}
+				class:flash={flashRow[p]}
 			>
 				<div class="info">
 					<div class="name">{name}</div>
 					<div class="val">
 						{#if v > 0}
 							<span class="usd">{formatUsdFull(v)}</span>
-							<!-- Visual chip tokens -->
+							<!-- Visual chip tokens — animated pile -->
 							{#if chipCount > 0}
 								<span class="chips">
-									{#each { length: Math.min(chipCount, 8) } as _, i}
-										<Chip hex={chipColor} size={16} />
+									{#each chipSlots[p] as slot (slot)}
+										<span
+											class="chip-slot"
+											in:scale={{ duration: 180, start: 0.35 }}
+											out:scale={{ duration: 120, start: 0.35 }}
+										>
+											<Chip hex={chipColor} size={16} />
+										</span>
 									{/each}
 									{#if chipCount > 8}
-										<span class="chip-over">+{chipCount - 8}</span>
+										<span class="chip-over" in:scale={{ duration: 150, start: 0.5 }}>+{chipCount - 8}</span>
 									{/if}
 								</span>
 							{/if}
@@ -238,7 +281,7 @@
 		border-radius: 12px;
 		border: 1px solid var(--color-line);
 		background: rgba(0, 0, 0, 0.18);
-		transition: border-color 0.15s;
+		transition: border-color 0.15s, box-shadow 0.15s;
 	}
 	.row.filled {
 		border-color: color-mix(in srgb, var(--seat) 40%, transparent);
@@ -248,6 +291,22 @@
 	}
 	.row.cut {
 		border-color: color-mix(in srgb, var(--color-red) 35%, transparent);
+	}
+	/* ── Chip-flash animation ── */
+	.row.flash {
+		animation: chip-flash 0.4s ease-out;
+	}
+	@keyframes chip-flash {
+		0% {
+			border-color: var(--color-gold);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
+			background: color-mix(in srgb, var(--color-gold) 8%, transparent);
+		}
+		100% {
+			border-color: inherit;
+			box-shadow: none;
+			background: rgba(0, 0, 0, 0.18);
+		}
 	}
 	.info {
 		min-width: 0;
@@ -273,15 +332,16 @@
 		font-family: var(--font-mono);
 		font-size: 13px;
 	}
+	/* ── Chip pile ── */
 	.chips {
 		display: flex;
 		align-items: center;
-		gap: -4px;
 	}
-	.chips :global(svg) {
-		margin-left: -4px;
+	.chip-slot {
+		margin-left: -5px;
+		display: inline-flex;
 	}
-	.chips :global(svg:first-child) {
+	.chip-slot:first-child {
 		margin-left: 0;
 	}
 	.chip-over {
@@ -309,6 +369,7 @@
 		text-transform: uppercase;
 		color: var(--color-teal);
 	}
+	/* ── Buttons ── */
 	.acts {
 		display: flex;
 		align-items: center;
@@ -327,9 +388,13 @@
 		cursor: pointer;
 		padding: 0;
 		touch-action: manipulation;
+		transition: transform 0.1s ease;
 	}
 	.btn:disabled {
 		opacity: 0.3;
+	}
+	.btn:not(:disabled):active {
+		transform: scale(0.88);
 	}
 	.btn.minus:not(:disabled) {
 		border-color: color-mix(in srgb, var(--color-red) 40%, transparent);

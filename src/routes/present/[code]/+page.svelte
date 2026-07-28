@@ -470,6 +470,12 @@
 	.sub-card.locked {
 		border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
 		background: color-mix(in srgb, var(--color-teal) 8%, var(--color-panel));
+		animation: lock-pop 0.35s ease-out;
+	}
+	@keyframes lock-pop {
+		0% { transform: scale(0.94); opacity: 0.65; }
+		40% { transform: scale(1.04); }
+		100% { transform: scale(1); opacity: 1; }
 	}
 	.sub-card-top {
 		display: flex;
