@@ -129,7 +129,19 @@
 	</header>
 
 	<!-- ── Scenario + action bar ── -->
-	{#if phase === 'round' && scenario && !open}
+	{#if phase === 'lobby'}
+		<div class="sc-bar">
+			<div class="sc-left">
+				<span class="sc-emoji">🏁</span>
+				<span class="sc-q">Session ready — tables scan QR to join</span>
+			</div>
+			<div class="sc-act">
+				<button type="button" class="sc-btn primary" disabled={session.busy || !canAdvance} onclick={advanceRound}>
+					{session.busy ? '…' : advanceLabel}
+				</button>
+			</div>
+		</div>
+	{:else if phase === 'round' && scenario && !open}
 		<div class="sc-bar">
 			<div class="sc-left">
 				<span class="sc-emoji">{scenario.emoji}</span>
