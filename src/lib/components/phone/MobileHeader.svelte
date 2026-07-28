@@ -49,6 +49,9 @@
 				{/if}
 			</span>
 		</div>
+		{#if scenario?.hint && phase === 'round'}
+			<p class="budget-hint">{scenario.hint}</p>
+		{/if}
 	{:else if isFinale}
 		<div class="qcompact finale">
 			<span class="badge-tag">Final</span>
@@ -145,5 +148,12 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		flex: 1;
+	}
+	.budget-hint {
+		margin: 4px 0 0;
+		font-size: 11px;
+		color: var(--color-gold);
+		line-height: 1.4;
+		font-weight: 600;
 	}
 </style>

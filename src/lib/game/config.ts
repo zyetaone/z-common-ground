@@ -165,10 +165,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R1 · The Year-One Test',
 		emoji: '🎯',
 		question: 'Which element do you build the year-one business case around?',
-		hint: 'ADD tokens onto the empty board. Physical chips stay for later rounds.',
+		hint: 'Each table has $100M across 5 rounds. Start by allocating ~$30M — where would you invest first?',
 		mode: 'wait',
 		move: 'add',
-		instruction: 'R1 · ADD · first stake · wait for presenter → R2'
+		instruction: 'R1 · ADD ~$30M · first stake'
 	},
 	{
 		round: 1,
@@ -176,10 +176,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R2 · The Hollow Culture',
 		emoji: '➕',
 		question: 'Hybrid hollowed culture. What rebuilds cohesion?',
-		hint: 'ADD on top of R1. Board is cumulative — do not clear.',
+		hint: 'Add the remaining ~$70M. Cumulative — boards carry forward from R1.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R2 · ADD · cumulative · CAPTURE total on advance'
+		instruction: 'R2 · ADD ~$70M · cumulative · CAPTURE'
 	},
 	{
 		round: 2,
@@ -187,10 +187,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R3 · The Rival HQ',
 		emoji: '➖',
 		question: "A competitor's HQ is poaching talent. What do you take off the table?",
-		hint: 'REMOVE only — table bounty shrinks to what you hold. What stays is PROTECTED.',
+		hint: 'Budget cut to ~$70M — remove ~$30M from your board. What stays is PROTECTED.',
 		mode: 'capture',
 		move: 'remove',
-		instruction: 'R3 · REMOVE only · protect what remains · CAPTURE on advance'
+		instruction: 'R3 · REMOVE ~$30M · protect ~$70M'
 	},
 	{
 		round: 3,
@@ -198,10 +198,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R4 · The Ghost Office',
 		emoji: '➕',
 		question: 'Half-empty Mon/Fri. What justifies the footprint?',
-		hint: 'ADD again onto the standing board. Hold for final capture in R5.',
+		hint: 'Budget partially restored — add ~$20M onto your board. Hold for final capture in R5.',
 		mode: 'hold',
 		move: 'add',
-		instruction: 'R4 · ADD · cumulative · HOLD for R5'
+		instruction: 'R4 · ADD ~$20M · HOLD for R5'
 	},
 	{
 		round: 4,
@@ -209,9 +209,9 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R5 · The Five-Year Bet',
 		emoji: '➕',
 		question: 'AI is embedded. What must the workplace double down on?',
-		hint: 'FINAL CAPTURE — board totals locked after this round.',
+		hint: 'Go all-in. Final round — board totals locked after this round.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R5 · ADD · FINAL CAPTURE · then reveal'
+		instruction: 'R5 · ADD · FINAL CAPTURE'
 	}
 ];
