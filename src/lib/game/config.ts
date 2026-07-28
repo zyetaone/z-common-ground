@@ -176,10 +176,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R2 · The Hollow Culture',
 		emoji: '➕',
 		question: 'Hybrid hollowed culture. What rebuilds cohesion?',
-		hint: 'Add the remaining ~$70M. Cumulative — boards carry forward from R1.',
+		hint: 'Add ~$30M more onto your R1 board. Cumulative — boards carry forward.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R2 · ADD ~$70M · cumulative · CAPTURE'
+		instruction: 'R2 · ADD ~$30M · cumulative · CAPTURE'
 	},
 	{
 		round: 2,
@@ -187,10 +187,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R3 · The Rival HQ',
 		emoji: '➖',
 		question: "A competitor's HQ is poaching talent. What do you take off the table?",
-		hint: 'Budget cut to ~$70M — remove ~$30M from your board. What stays is PROTECTED.',
+		hint: 'Budget cut — remove ~$30M from your board. What stays is PROTECTED.',
 		mode: 'capture',
 		move: 'remove',
-		instruction: 'R3 · REMOVE ~$30M · protect ~$70M'
+		instruction: 'R3 · REMOVE ~$30M · protect what remains'
 	},
 	{
 		round: 3,
@@ -198,10 +198,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R4 · The Ghost Office',
 		emoji: '➕',
 		question: 'Half-empty Mon/Fri. What justifies the footprint?',
-		hint: 'Budget partially restored — add ~$20M onto your board. Hold for final capture in R5.',
+		hint: 'Budget partially restored — add ~$15M onto your board. Hold for final capture in R5.',
 		mode: 'hold',
 		move: 'add',
-		instruction: 'R4 · ADD ~$20M · HOLD for R5'
+		instruction: 'R4 · ADD ~$15M · HOLD for R5'
 	},
 	{
 		round: 4,
@@ -209,9 +209,9 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R5 · The Five-Year Bet',
 		emoji: '➕',
 		question: 'AI is embedded. What must the workplace double down on?',
-		hint: 'Go all-in. Final round — board totals locked after this round.',
+		hint: 'Restructure — you have remaining budget. Reallocate based on everything you learned.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R5 · ADD · FINAL CAPTURE'
+		instruction: 'R5 · RESTRUCTURE · FINAL CAPTURE'
 	}
 ];
