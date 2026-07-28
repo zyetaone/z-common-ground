@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import { PERSONAS, PRIORITIES, roomInsights } from '$lib/game';
+	import { PERSONAS, PRIORITIES, formatUsd, roomInsights } from '$lib/game';
 
 	/** Screen 2 — the alignment story: ring + lead/fault/blind + table↔room + journey (SSOT: roomInsights). */
 	let { room }: { room: RoomState } = $props();
@@ -29,7 +29,7 @@
 			<div class="chips">
 				<div class="chip lead"><span class="t">Lead</span><strong>{i.lead}</strong></div>
 				<div class="chip fault"><span class="t">Fault</span><strong>{i.fault}</strong></div>
-				<div class="chip blind"><span class="t">Blind</span><strong>{i.blind}</strong></div>
+				<div class="chip blind"><span class="t">Blind</span><strong>{i.blind}</strong><small>{i.blindTokens > 0 ? formatUsd(i.blindTokens) : ''}</small></div>
 			</div>
 		{/if}
 
@@ -192,6 +192,14 @@
 		font-family: var(--font-display);
 		font-size: 13px;
 		font-weight: 800;
+	}
+	.chip small {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--color-muted);
+		margin-top: 1px;
 	}
 	.journey {
 		display: flex;

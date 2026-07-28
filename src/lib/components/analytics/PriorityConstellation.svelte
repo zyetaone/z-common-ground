@@ -14,51 +14,147 @@
 			seatCoins.reduce((acc, row) => acc + (row[i] ?? 0), 0)
 		);
 		const maxTotal = Math.max(1, ...totals);
-		const rows = PRIORITIES.map((label, i) => ({
-			i,
-			label: short(label),
-			total: totals[i],
-			segs: PERSONAS.map((persona, s) => ({
+		const rows = PRIORITIES.map((label, i) => {
+			const segs = PERSONAS.map((persona, s) => ({
 				s,
 				color: persona.color,
 				name: persona.name,
-				w: (seatCoins[s][i] / maxTotal) * 100
-			})).filter((seg) => seg.w > 0)
-		}));
+				w: (seatCoins[s][i] / maxTotal) * 100,
+				tokens: seatCoins[s][i]
+			})).filter((seg) => seg.tokens > 0);
+			return { i, label: short(label), total: totals[i], segs, contributors: segs.length };
+		});
 		const grand = sum(totals);
-		return { rows, grand, hasData: grand > 0 };
+
+		// Most concentrated: fewest contributors, highest dominance
+		const ranked = rows.filter(r => r.total > 0).sort((a, b) => b.total - a.total);
+		const dominated = rows
+			.filter(r => r.total > 0)
+			.sort((a, b) => a.contributors - b.contributors || b.total - a.total)[0];
+		const broadest = rows
+			.filter(r => r.total > 0)
+			.sort((a, b) => b.contributors - a.contributors || a.total - b.total)[0];
+
+		return { rows, grand, hasData: grand > 0, top: ranked[0], dominated, broadest };
 	});
 </script>
 
-<div class="rounded-2xl border border-line bg-panel/30 p-5 space-y-4">
-	<div>
-		<div class="font-mono text-[11px] uppercase tracking-[0.26em] text-gold">Priority Constellation</div>
-		<div class="text-xs text-muted">Every token in the room, stacked by the function that placed it.</div>
+<div class="pc">
+	<div class="head">
+		<div class="kicker">Priority Constellation</div>
+		<div class="sub">Every token in the room, stacked by the function that placed it.</div>
 	</div>
 
 	{#if !model.hasData}
-		<div class="flex h-[240px] items-center justify-center text-sm text-muted">No tokens placed yet.</div>
+		<div class="empty">No tokens placed yet.</div>
 	{:else}
-		<div class="flex flex-col gap-3">
+		<div class="bars">
 			{#each model.rows as row (row.i)}
-				<div class="grid items-center gap-3" style="grid-template-columns: 110px 1fr 40px;">
-					<div class="truncate text-xs font-semibold text-ink">{row.label}</div>
-					<div class="flex h-5 overflow-hidden rounded-full bg-white/5 border border-line/40">
+				<div class="row">
+					<div class="label">{row.label}</div>
+					<div class="track">
 						{#each row.segs as seg (seg.s)}
-							<div class="h-full transition-all duration-500" style="width:{seg.w}%;background:{seg.color}" title="{seg.name}: {Math.round(seg.w)}%"></div>
+							<div class="seg" style="width:{seg.w}%;background:{seg.color}" title="{seg.name}: {seg.tokens} tokens"></div>
 						{/each}
 					</div>
-					<div class="text-right font-mono text-xs font-bold text-gold">{Math.round(row.total)}</div>
+					<div class="val">{Math.round(row.total)}</div>
 				</div>
 			{/each}
 		</div>
 
-		<div class="mt-4 flex flex-wrap gap-x-3.5 gap-y-1.5 pt-2 border-t border-line/40">
-			{#each PERSONAS as persona (persona.seat)}
-				<span class="flex items-center gap-1.5 text-[11px] text-muted font-medium">
-					<i class="inline-block h-2.5 w-2.5 rounded-full" style="background:{persona.color}"></i>{persona.name}
-				</span>
-			{/each}
-		</div>
+		{#if model.top && model.broadest && model.dominated}
+			<div class="summary">
+				<p>
+					<b style="color:var(--color-gold)">{model.top.label}</b> leads at {Math.round((model.top.total / model.grand) * 100)}% of the room. &nbsp;
+					<b>{model.broadest.label}</b> has the broadest backing ({model.broadest.contributors} functions). &nbsp;
+					<b>{model.dominated.label}</b> is most concentrated — only {model.dominated.contributors} voice{model.dominated.contributors > 1 ? 's' : ''}.
+				</p>
+			</div>
+		{/if}
 	{/if}
 </div>
+
+<style>
+	.pc {
+		border-radius: 18px;
+		border: 1px solid var(--color-line);
+		background: rgba(10, 61, 43, 0.35);
+		padding: 16px 18px;
+		height: 100%;
+		overflow: auto;
+	}
+	.head { margin-bottom: 16px; }
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-gold);
+	}
+	.sub {
+		font-size: 12px;
+		color: var(--color-muted);
+		margin-top: 4px;
+	}
+	.empty {
+		display: grid;
+		place-items: center;
+		height: 240px;
+		color: var(--color-muted);
+		font-size: 14px;
+		border: 1px dashed var(--color-line);
+		border-radius: 12px;
+	}
+	.bars {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.row {
+		display: grid;
+		grid-template-columns: 110px 1fr 44px;
+		align-items: center;
+		gap: 10px;
+	}
+	.label {
+		font-size: 13px;
+		font-weight: 700;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.track {
+		display: flex;
+		height: 26px;
+		border-radius: 8px;
+		overflow: hidden;
+		background: rgba(255,255,255,0.04);
+		border: 1px solid rgba(255,255,255,0.06);
+	}
+	.seg {
+		height: 100%;
+		min-width: 2px;
+		transition: width 0.5s ease;
+	}
+	.val {
+		font-family: var(--font-mono);
+		font-size: 14px;
+		font-weight: 800;
+		color: var(--color-gold);
+		text-align: right;
+	}
+	.summary {
+		margin-top: 16px;
+		padding: 12px 16px;
+		border-radius: 12px;
+		border: 1px solid rgba(255,255,255,0.08);
+		background: rgba(0,0,0,0.18);
+	}
+	.summary p {
+		margin: 0;
+		font-size: 13px;
+		color: var(--color-muted);
+		line-height: 1.6;
+	}
+	.summary b { color: var(--color-ink); }
+</style>
