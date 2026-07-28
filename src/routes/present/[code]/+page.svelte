@@ -11,8 +11,6 @@
 		PriorityConstellation,
 		ReachIntensityQuadrant
 	} from '$lib/components/analytics';
-	import RoundQuestion from '$lib/components/RoundQuestion.svelte';
-	import ZyetaI from '$lib/components/ZyetaI.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { advanceLabel as advLabel, canAdvance as canAdv, canRetreat as canRet } from '$lib/client/present-labels';
 	import { ROUND_COUNT, SCENARIOS, boardTokenSum, formatUsd, tablePersona } from '$lib/game';
@@ -100,77 +98,70 @@
 </svelte:head>
 
 <main class="stage">
-	<header class="top">
-		<div class="brand-row">
+	<!-- ── Single consolidated header bar ── -->
+	<header class="topbar">
+		<div class="tb-left">
 			<h1 class="brand">COMMON <span class="gold">GROUND</span></h1>
-			<span class="live-tag">LIVE</span>
-		</div>
-		<div class="meta">
-			{#if phase === 'round'}
-				<span class="pill">R{roundLabel}/{roundCount}</span>
-				<span class="pill">{lockedCount}/{totalTables}</span>
-			{:else}
-				<span class="pill dim">{phase}</span>
-			{/if}
-			<span class:live={session.connected} class:off={!session.connected}>
+			<span class="conn" class:on={session.connected} aria-label={session.connected ? 'Connected' : 'Reconnecting'}>
 				{session.connected ? '●' : '○'}
 			</span>
-			<ZyetaI compact />
-			<a href="/host/{SESSION}" class="admin-link">Admin</a>
 		</div>
-	</header>
 
-	<div class="round-rail" aria-label="Round control">
-		<div class="rungs">
+		<div class="tb-rungs">
 			{#each Array(roundCount) as _, i (i)}
 				{@const r = i + 1}
-				{@const current = phase === 'round' && roundLabel === r}
-				{@const done =
-					phase === 'lobby' ? false : phase === 'round' ? r < roundLabel : true}
+				{@const cur = phase === 'round' && roundLabel === r}
+				{@const past = phase === 'lobby' ? false : phase === 'round' ? r < roundLabel : true}
 				{@const evo = [2, 3, 5].includes(r)}
-				<span class="rung" class:on={current} class:done={done && !current} class:evo={evo}>
-					R{r}
-				</span>
+				<span class="rung" class:on={cur} class:past={past && !cur} class:evo={evo}>R{r}</span>
 			{/each}
 			{#if phase === 'reveal' || phase === 'finale'}
 				<span class="rung on">{phase}</span>
 			{/if}
 		</div>
 
-		<div class="rail-actions">
-			<button
-				type="button"
-				class="rail-btn ghost subtle"
-				disabled={!st}
-				onclick={() => (showExtra = true)}
-			>
-				Extra analysis
-			</button>
-			{#if canRetreat}
-				<button
-					type="button"
-					class="rail-btn ghost"
-					disabled={session.busy}
-					onclick={retreatRound}
-					title="Correct a mistake — re-open previous step"
-				>
-					← Step Back
-				</button>
+		<div class="tb-right">
+			{#if phase === 'round' && lockedCount > 0}
+				<span class="count-chip">{lockedCount}/{totalTables}</span>
 			{/if}
-			<button
-				type="button"
-				class="rail-btn primary"
-				disabled={session.busy || !canAdvance}
-				onclick={advanceRound}
-			>
-				{session.busy ? '…' : advanceLabel}
-			</button>
+			<a href="/host/{SESSION}" class="host-link" target="_blank">Host</a>
 		</div>
-	</div>
+	</header>
 
+	<!-- ── Scenario + action bar ── -->
 	{#if phase === 'round' && scenario && !open}
-		<div class="q-banner">
-			<RoundQuestion {scenario} roundIndex={round} {roundCount} compact />
+		<div class="sc-bar">
+			<div class="sc-left">
+				<span class="sc-emoji">{scenario.emoji}</span>
+				<div class="sc-text">
+					<span class="sc-inst">{scenario.instruction}</span>
+					<span class="sc-q">{scenario.question}</span>
+				</div>
+			</div>
+			<div class="sc-act">
+				{#if canRetreat}
+					<button type="button" class="sc-btn ghost" disabled={session.busy} onclick={retreatRound}>← Back</button>
+				{/if}
+				<button type="button" class="sc-btn primary" disabled={session.busy || !canAdvance} onclick={advanceRound}>
+					{session.busy ? '…' : advanceLabel}
+				</button>
+			</div>
+		</div>
+	{:else if !open && (phase === 'reveal' || phase === 'finale')}
+		<div class="sc-bar finale">
+			<div class="sc-left">
+				<span class="sc-emoji">{phase === 'reveal' ? '📊' : '🏆'}</span>
+				<div class="sc-text">
+					<span class="sc-inst">{phase === 'reveal' ? 'The Reveal' : 'Finale'}</span>
+					<span class="sc-q">All rounds complete. Open the analysis deck.</span>
+				</div>
+			</div>
+			<div class="sc-act">
+				<button type="button" class="sc-btn ghost" disabled={session.busy} onclick={() => (showExtra = true)}>Analysis</button>
+				<button type="button" class="sc-btn primary" disabled={session.busy} onclick={() => present.enterAnalysis()}>
+					Open deck →
+				</button>
+			</div>
 		</div>
 	{/if}
 
@@ -182,58 +173,42 @@
 				<div class="code">LIVE</div>
 				<p class="muted">Tables scan QR · start when ready</p>
 			{:else if phase === 'round'}
-				<div class="space-y-4 w-full max-w-4xl mx-auto my-4 text-left">
-					<div class="flex items-center justify-between font-mono text-xs text-muted border-b border-line pb-2">
-						<span class="text-gold font-bold uppercase tracking-widest">Live Table Submissions (R{roundLabel})</span>
-						<span class="text-teal font-bold">{lockedCount}/{totalTables} Tables Submitted</span>
+				<div class="submissions">
+					<div class="sub-head">
+						<span class="sub-title">Live Table Submissions</span>
+						<span class="sub-count">{lockedCount}/{totalTables} Submitted</span>
 					</div>
 
-					<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+					<div class="sub-grid">
 						{#each st.tables as t (t.id)}
 							{@const fn = tablePersona(t.id)}
 							{@const n = boardTokenSum(t.board)}
 							<div
-								class="rounded-2xl border p-3.5 text-center space-y-2 transition-all duration-300 shadow-lg"
-								class:border-teal={t.lockedThisRound}
-								class:bg-teal={t.lockedThisRound}
-								class:text-[var(--color-on-teal)]={t.lockedThisRound}
-								class:border-line={!t.lockedThisRound}
-								class:bg-panel={!t.lockedThisRound}
-								class:text-muted={!t.lockedThisRound}
+								class="sub-card"
+								class:locked={t.lockedThisRound}
 							>
-								<div class="flex items-center justify-center gap-1.5">
-									<span class="h-2.5 w-2.5 rounded-full" style="background:{t.lockedThisRound ? 'var(--color-on-teal)' : fn.color}"></span>
-									<span class="font-display font-bold text-xs">{fn.name}</span>
+								<div class="sub-card-top">
+									<span class="sub-dot" style="background:{t.lockedThisRound ? 'var(--color-teal)' : fn.color}"></span>
+									<span class="sub-name">{fn.name}</span>
 								</div>
 
 								{#if t.lockedThisRound}
-									<div class="font-mono text-[10px] font-black uppercase tracking-wider text-[var(--color-on-teal)] bg-white/40 rounded-full py-1 px-1.5">
-										✓ SUBMITTED
-									</div>
-									<div class="font-mono text-[11px] font-bold">{formatUsd(n)}</div>
+									<div class="sub-badge">✓ Submitted</div>
+									<div class="sub-amount">{formatUsd(n)}</div>
 								{:else}
-									<div class="font-mono text-[11px] text-gold font-semibold">
+									<div class="sub-amount gold">
 										{#if n > 0}
 											{formatUsd(n)}
 										{:else}
-											<span class="inline-flex items-center gap-1"><Icon name="hourglass" size={12} /> Waiting…</span>
+											<span class="sub-wait"><Icon name="hourglass" size={12} /> Waiting…</span>
 										{/if}
 									</div>
-									<div class="text-[10px] text-muted font-mono">{n > 0 ? 'Editing…' : 'Open'}</div>
+									<div class="sub-status">{n > 0 ? 'Editing…' : 'Open'}</div>
 								{/if}
 							</div>
 						{/each}
 					</div>
 				</div>
-				<div class="round-big">Reveal</div>
-				<button type="button" class="next-big" disabled={session.busy} onclick={() => present.enterAnalysis()}>
-					Open deck →
-				</button>
-			{:else}
-				<div class="round-big">Finale</div>
-				<button type="button" class="next-big" disabled={session.busy} onclick={() => present.enterAnalysis()}>
-					Open deck →
-				</button>
 			{/if}
 		</div>
 	{:else}
@@ -316,33 +291,52 @@
 		min-height: 100dvh;
 		display: flex;
 		flex-direction: column;
-		padding: 16px 20px 12px;
+		padding: 12px 16px 10px;
 		background: var(--color-bg);
 		color: var(--color-ink);
 	}
-	.round-rail {
+
+	/* ── Top bar: brand · rungs · host ── */
+	.topbar {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
-		gap: 12px;
-		margin: 10px 0 8px;
-		padding: 10px 12px;
-		border-radius: 14px;
+		gap: 10px;
+		padding: 8px 12px;
+		border-radius: 12px;
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 	}
-	.rungs {
+	.tb-left {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: 6px;
+		gap: 8px;
+	}
+	.brand {
+		font-family: var(--font-display);
+		font-size: 1.2rem;
+		font-weight: 800;
+		margin: 0;
+		letter-spacing: -0.02em;
+		white-space: nowrap;
+	}
+	.gold { color: var(--color-gold); }
+	.conn {
+		font-size: 10px;
+		color: var(--color-muted);
+	}
+	.conn.on { color: var(--color-teal); }
+	.tb-rungs {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		flex: 1;
+		justify-content: center;
 	}
 	.rung {
 		font-family: var(--font-mono);
-		font-size: 12px;
+		font-size: 11px;
 		font-weight: 700;
-		padding: 6px 12px;
+		padding: 4px 8px;
 		border-radius: 999px;
 		border: 1px solid var(--color-line);
 		color: var(--color-muted);
@@ -352,120 +346,203 @@
 		border-color: var(--color-gold);
 		color: var(--color-on-gold);
 		font-weight: 900;
-		box-shadow: 0 2px 0 #b8892e;
 	}
-	.rung.done {
-		opacity: 0.4;
-	}
+	.rung.past { opacity: 0.35; }
 	.rung.evo:not(.on) {
 		border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
 		color: var(--color-gold);
 	}
-	.rail-actions {
+	.tb-right {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
 		gap: 8px;
 	}
-	.rail-btn {
+	.count-chip {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 800;
+		color: var(--color-teal);
+		background: color-mix(in srgb, var(--color-teal) 15%, transparent);
+		border-radius: 999px;
+		padding: 3px 8px;
+	}
+	.host-link {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+		text-decoration: none;
+		opacity: 0.6;
+	}
+	.host-link:hover { opacity: 1; }
+
+	/* ── Scenario bar ── */
+	.sc-bar {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-top: 8px;
+		padding: 10px 12px;
 		border-radius: 12px;
-		padding: 10px 14px;
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+	}
+	.sc-bar.finale {
+		border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-line));
+	}
+	.sc-left {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex: 1;
+		min-width: 0;
+	}
+	.sc-emoji { font-size: 18px; flex-shrink: 0; }
+	.sc-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		min-width: 0;
+	}
+	.sc-inst {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-gold);
+		font-weight: 700;
+	}
+	.sc-q {
+		font-family: var(--font-display);
+		font-size: 14px;
+		font-weight: 700;
+		line-height: 1.3;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.sc-act {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		flex-shrink: 0;
+	}
+	.sc-btn {
+		border-radius: 10px;
+		padding: 8px 12px;
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 13px;
+		font-size: 12px;
 		cursor: pointer;
 		border: 1px solid var(--color-line);
 		background: transparent;
 		color: var(--color-ink);
+		white-space: nowrap;
 	}
-	.rail-btn.primary {
+	.sc-btn.primary {
 		border: none;
 		background: var(--color-teal);
 		color: var(--color-on-teal);
 	}
-	.rail-btn.ghost {
-		color: var(--color-muted);
+	.sc-btn.ghost { color: var(--color-muted); }
+	.sc-btn:disabled { opacity: 0.4; cursor: default; }
+
+	/* ── Submissions ── */
+	.submissions {
+		width: 100%;
+		max-width: 56rem;
+		margin: 0 auto;
 	}
-	.rail-btn:disabled {
-		opacity: 0.4;
-		cursor: default;
-	}
-	.q-banner {
-		margin-bottom: 8px;
-		max-width: 720px;
-	}
-	.top {
+	.sub-head {
 		display: flex;
-		flex-wrap: wrap;
 		justify-content: space-between;
-		align-items: center;
-		gap: 12px;
-		padding-bottom: 10px;
+		align-items: baseline;
+		padding: 0 2px 8px;
 		border-bottom: 1px solid var(--color-line);
+		margin-bottom: 12px;
 	}
-	.brand-row {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-	}
-	.brand {
-		font-family: var(--font-display);
-		font-size: 1.35rem;
-		font-weight: 800;
-		margin: 0;
-		letter-spacing: -0.02em;
-	}
-	.live-tag {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.2em;
-		padding: 4px 8px;
-		border-radius: 6px;
-		border: 1px solid var(--color-line);
-		color: var(--color-teal);
-	}
-	.gold {
-		color: var(--color-gold);
-	}
-	.admin-link {
-		opacity: 0.55;
-	}
-	.admin-link:hover {
-		opacity: 1;
-	}
-	.meta {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 12px;
+	.sub-title {
 		font-family: var(--font-mono);
 		font-size: 11px;
-		letter-spacing: 0.1em;
+		font-weight: 800;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-muted);
-	}
-	.meta a {
 		color: var(--color-gold);
-		text-decoration: underline;
 	}
-	.pill {
-		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
-		background: color-mix(in srgb, var(--color-gold) 12%, transparent);
-		color: var(--color-gold);
-		padding: 4px 10px;
-	}
-	.pill.dim {
-		border-color: var(--color-line);
-		background: transparent;
-		color: var(--color-muted);
-	}
-	.live {
+	.sub-count {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 800;
 		color: var(--color-teal);
 	}
-	.off {
-		color: var(--color-red);
+	.sub-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 8px;
 	}
+	.sub-card {
+		border-radius: 12px;
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+		padding: 12px;
+		text-align: center;
+		transition: border-color 0.2s;
+	}
+	.sub-card.locked {
+		border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
+		background: color-mix(in srgb, var(--color-teal) 8%, var(--color-panel));
+	}
+	.sub-card-top {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		margin-bottom: 8px;
+	}
+	.sub-dot {
+		width: 8px; height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.sub-name {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 13px;
+	}
+	.sub-badge {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-teal);
+		background: color-mix(in srgb, var(--color-teal) 15%, transparent);
+		border-radius: 999px;
+		padding: 3px 10px;
+		display: inline-block;
+		margin-bottom: 6px;
+	}
+	.sub-amount {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 800;
+	}
+	.sub-amount.gold { color: var(--color-gold); }
+	.sub-status {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		color: var(--color-muted);
+		margin-top: 2px;
+	}
+	.sub-wait {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		color: var(--color-muted);
+		font-weight: 600;
+		font-size: 11px;
+	}
+
+	/* ── Lobby / reveal / finale ── */
 	.center {
 		flex: 1;
 		display: flex;
@@ -477,34 +554,12 @@
 	}
 	.lobby .code {
 		font-family: var(--font-display);
-		font-size: 4rem;
+		font-size: 3.5rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;
 	}
-	.round-big {
-		font-family: var(--font-display);
-		font-size: 3.5rem;
-		font-weight: 800;
-	}
-	.muted {
-		color: var(--color-muted);
-	}
-	.next-big {
-		width: min(360px, 100%);
-		border: none;
-		border-radius: 16px;
-		background: var(--color-gold);
-		color: var(--color-on-gold);
-		padding: 18px 22px;
-		font-family: var(--font-display);
-		font-weight: 800;
-		font-size: 1.15rem;
-		cursor: pointer;
-		box-shadow: 0 4px 0 #b8892e;
-	}
-	.next-big:disabled {
-		opacity: 0.4;
-	}
+	.muted { color: var(--color-muted); }
+	/* ── Analysis deck ── */
 	.hero-title {
 		text-align: left;
 		padding: 10px 0 4px;
@@ -529,11 +584,7 @@
 		flex-direction: column;
 	}
 
-	.rail-btn.subtle {
-		font-weight: 600;
-		font-size: 12px;
-		opacity: 0.75;
-	}
+	/* ── Modal ── */
 	.modal-root {
 		position: fixed;
 		inset: 0;
@@ -560,20 +611,9 @@
 		flex-direction: column;
 		border-radius: 20px;
 		border: 1px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
-		background: var(--color-bg2);
+		background: var(--color-bg);
 		padding: 18px 20px;
-		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-		animation: modal-in 0.25s ease both;
-	}
-	@keyframes modal-in {
-		from {
-			opacity: 0;
-			transform: translateY(10px) scale(0.98);
-		}
-		to {
-			opacity: 1;
-			transform: none;
-		}
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
 	}
 	.modal-head {
 		display: flex;
@@ -603,22 +643,19 @@
 		background: transparent;
 		color: var(--color-muted);
 		border-radius: 999px;
-		padding: 8px 14px;
-		font-size: 12px;
+		padding: 6px 12px;
+		font-size: 11px;
 		font-weight: 700;
 		cursor: pointer;
 	}
-	.modal-x:hover {
-		border-color: var(--color-gold);
-		color: var(--color-gold);
-	}
+	.modal-x:hover { border-color: var(--color-gold); color: var(--color-gold); }
 	.modal-tabs {
 		display: grid;
-		grid-template-columns: repeat(4, 1fr);
-		gap: 6px;
+		grid-template-columns: 1fr 1fr;
+		gap: 4px;
 		padding: 4px;
-		border-radius: 12px;
-		background: rgba(0, 0, 0, 0.35);
+		border-radius: 10px;
+		background: color-mix(in srgb, var(--color-muted) 15%, transparent);
 		border: 1px solid var(--color-line);
 		margin-bottom: 12px;
 	}
@@ -626,8 +663,8 @@
 		border: none;
 		background: transparent;
 		color: var(--color-muted);
-		border-radius: 9px;
-		padding: 10px 6px;
+		border-radius: 8px;
+		padding: 8px;
 		font-family: var(--font-mono);
 		font-size: 11px;
 		font-weight: 800;
