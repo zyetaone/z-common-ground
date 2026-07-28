@@ -133,10 +133,7 @@
 		<div class="sc-bar">
 			<div class="sc-left">
 				<span class="sc-emoji">{scenario.emoji}</span>
-				<div class="sc-text">
-					<span class="sc-inst">{scenario.instruction}</span>
-					<span class="sc-q">{scenario.question}</span>
-				</div>
+				<span class="sc-q">{scenario.question}</span>
 			</div>
 			<div class="sc-act">
 				{#if canRetreat}
@@ -151,10 +148,7 @@
 		<div class="sc-bar finale">
 			<div class="sc-left">
 				<span class="sc-emoji">{phase === 'reveal' ? '📊' : '🏆'}</span>
-				<div class="sc-text">
-					<span class="sc-inst">{phase === 'reveal' ? 'The Reveal' : 'Finale'}</span>
-					<span class="sc-q">All rounds complete. Open the analysis deck.</span>
-				</div>
+				<span class="sc-q">All rounds complete</span>
 			</div>
 			<div class="sc-act">
 				<button type="button" class="sc-btn ghost" disabled={session.busy} onclick={() => (showExtra = true)}>Analysis</button>
@@ -397,20 +391,6 @@
 		min-width: 0;
 	}
 	.sc-emoji { font-size: 18px; flex-shrink: 0; }
-	.sc-text {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		min-width: 0;
-	}
-	.sc-inst {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--color-gold);
-		font-weight: 700;
-	}
 	.sc-q {
 		font-family: var(--font-display);
 		font-size: 14px;
