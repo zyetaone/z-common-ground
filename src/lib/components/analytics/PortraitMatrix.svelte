@@ -220,7 +220,7 @@
 		font-size: clamp(18px, 1.6vw, 26px);
 		line-height: 1.1;
 		font-family: var(--font-display);
-		color: rgba(242, 246, 255, 0.95);
+		color: rgba(253, 248, 237, 0.95);
 		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
 	}
 	.num.dark {
@@ -237,7 +237,7 @@
 		font-size: 9px;
 		line-height: 1;
 		font-family: var(--font-mono);
-		color: rgba(242, 246, 255, 0.78);
+		color: rgba(253, 248, 237, 0.78);
 		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 	}
 	.tot {
