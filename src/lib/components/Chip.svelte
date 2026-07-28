@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Poker-chip token matching the physical chips (🔴 10 · 🔵 5 · 🟢 2).
+	// Poker-chip token — single $10M denom.
 	let {
 		hex = '#e0554b',
 		value,

@@ -56,10 +56,10 @@
 					class="chip"
 					class:on={t.lockedThisRound}
 					class:over={n > tableCap}
-					title="{fn.name} · {n}/{tableCap}"
+					title="{fn.name} · ${n}M / ${tableCap}M"
 					style="--fn:{fn.color}"
 				>
-					T{t.id} <b>{n}</b>
+					T{t.id} <b>${n}M</b>
 				</span>
 			{/each}
 		</div>

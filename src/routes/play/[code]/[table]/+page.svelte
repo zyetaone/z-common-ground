@@ -272,7 +272,7 @@
 					<button
 						type="button"
 						class="submit save"
-						disabled={submitting || overCap}
+						disabled={submitting || totalTokens <= 0 || overCap}
 						onclick={onSave}
 					>
 						{submitting ? 'Saving…' : `Save & continue · ${formatUsdFull(totalTokens)}`}
