@@ -330,7 +330,7 @@
 		padding: 10px 12px;
 		border-radius: 14px;
 		border: 1px solid var(--color-line);
-		background: rgba(10, 61, 43, 0.55);
+		background: var(--color-panel);
 	}
 	.rungs {
 		display: flex;

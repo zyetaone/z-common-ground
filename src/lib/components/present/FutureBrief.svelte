@@ -78,7 +78,7 @@
 	.panel {
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: rgba(10, 61, 43, 0.4);
+		background: var(--color-panel);
 		padding: 16px 18px;
 	}
 	.kicker {

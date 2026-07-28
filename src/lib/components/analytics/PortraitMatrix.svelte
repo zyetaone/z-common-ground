@@ -125,7 +125,7 @@
 		min-height: 0;
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: rgba(10, 61, 43, 0.35);
+		background: var(--color-panel);
 		padding: 14px 16px;
 	}
 	.head {
@@ -244,12 +244,12 @@
 		height: 100%;
 		border-radius: 8px;
 		border: 1px solid color-mix(in srgb, var(--color-line) 80%, transparent);
-		background: rgba(10, 61, 43, 0.55);
+		background: var(--color-panel);
 		padding: 2px;
 	}
 	.tot.grand {
 		border-color: color-mix(in srgb, var(--color-gold) 40%, transparent);
-		background: color-mix(in srgb, var(--color-gold) 10%, rgba(10, 61, 43, 0.5));
+		background: color-mix(in srgb, var(--color-gold) 10%, var(--color-panel));
 	}
 	.totn {
 		font-size: clamp(15px, 1.3vw, 20px);

@@ -92,8 +92,7 @@
 	.overall {
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: radial-gradient(ellipse at 20% 0%, rgba(231, 189, 107, 0.08), transparent 50%),
-			rgba(10, 61, 43, 0.45);
+		background: var(--color-panel);
 		padding: 16px 18px;
 	}
 	.podium {
@@ -139,7 +138,7 @@
 	.card {
 		border-radius: 14px;
 		border: 1px solid color-mix(in srgb, var(--fn) 30%, var(--color-line));
-		background: color-mix(in srgb, var(--fn) 6%, rgba(10, 61, 43, 0.4));
+		background: color-mix(in srgb, var(--fn) 6%, var(--color-panel));
 		padding: 12px 14px;
 	}
 	header {

@@ -306,7 +306,7 @@
 		padding: 20px 16px;
 		border-radius: 16px;
 		border: 1px solid var(--color-line);
-		background: rgba(10, 61, 43, 0.45);
+		background: var(--color-panel);
 		display: flex;
 		align-items: center;
 		gap: 14px;

@@ -134,7 +134,7 @@
 	.riq {
 		border-radius: 18px;
 		border: 1px solid var(--color-line);
-		background: rgba(10, 61, 43, 0.35);
+		background: var(--color-panel);
 		padding: 14px 16px;
 	}
 	.head { margin-bottom: 10px; }

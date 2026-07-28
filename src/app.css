@@ -3,11 +3,11 @@
 /* ── Common Ground — classic green felt · serif · minimal ──────────── */
 @theme {
 	--color-bg: #FDF8ED;
-	--color-bg2: #F5EDD6;
-	--color-panel: #F5EDD6;
+	--color-bg2: #FDF8ED;
+	--color-panel: #FDF8ED;
 	--color-ink: #1A2E22;
-	--color-muted: #6B8A75;
-	--color-line: #D8CCB0;
+	--color-muted: #7A8A7E;
+	--color-line: #DDD4BD;
 	--color-gold: #B8932E;
 	--color-teal: #1F8B78;
 	--color-red: #C9403A;
@@ -30,7 +30,7 @@
 }
 
 :root {
-	color-scheme: dark;
+	color-scheme: light;
 }
 
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
@@ -42,8 +42,7 @@
 html,
 body {
 	min-height: 100%;
-	background:
-		radial-gradient(1000px 600px at 50% -5%, #156845 0%, var(--color-bg) 65%) fixed;
+	background: var(--color-bg) fixed;
 	color: var(--color-ink);
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;

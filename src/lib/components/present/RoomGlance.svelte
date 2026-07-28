@@ -82,7 +82,7 @@
 	.strip {
 		border-radius: 16px;
 		border: 1px solid var(--color-line);
-		background: rgba(10, 61, 43, 0.45);
+		background: var(--color-panel);
 		padding: 12px 14px;
 	}
 	.core {
