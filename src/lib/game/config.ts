@@ -176,10 +176,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R2 · The Hollow Culture',
 		emoji: '➕',
 		question: 'Hybrid hollowed culture. What rebuilds cohesion?',
-		hint: 'Add ~$30M more onto your R1 board. Cumulative — boards carry forward.',
+		hint: 'Add ~$70M more onto your R1 board. Cumulative — boards carry forward.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R2 · ADD ~$30M · cumulative · CAPTURE'
+		instruction: 'R2 · ADD ~$70M · cumulative · CAPTURE'
 	},
 	{
 		round: 2,
@@ -198,10 +198,10 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R4 · The Ghost Office',
 		emoji: '➕',
 		question: 'Half-empty Mon/Fri. What justifies the footprint?',
-		hint: 'Budget partially restored — add ~$15M onto your board. Hold for final capture in R5.',
+		hint: 'Budget partially restored — add ~$20M onto your board. Hold for final capture in R5.',
 		mode: 'hold',
 		move: 'add',
-		instruction: 'R4 · ADD ~$15M · HOLD for R5'
+		instruction: 'R4 · ADD ~$20M · HOLD for R5'
 	},
 	{
 		round: 4,
@@ -209,9 +209,9 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R5 · The Five-Year Bet',
 		emoji: '➕',
 		question: 'AI is embedded. What must the workplace double down on?',
-		hint: 'Restructure — you have remaining budget. Reallocate based on everything you learned.',
+		hint: 'Restructure your ~$90M — reallocate based on everything you learned across all rounds.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R5 · RESTRUCTURE · FINAL CAPTURE'
+		instruction: 'R5 · RESTRUCTURE ~$90M · FINAL CAPTURE'
 	}
 ];
