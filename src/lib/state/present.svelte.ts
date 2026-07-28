@@ -1,6 +1,6 @@
 /**
- * Presenter analysis deck — 3 screens: Insights · Trade-offs · Future
- * Extra analysis lives in a modal (not in this counter).
+ * Presenter analysis deck — 5 screens.
+ * Extra analysis in modal (not in this counter).
  */
 const TOTAL = 5;
 

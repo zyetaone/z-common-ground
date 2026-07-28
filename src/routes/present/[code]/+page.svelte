@@ -219,7 +219,7 @@
 											<span class="inline-flex items-center gap-1"><Icon name="hourglass" size={12} /> Waiting…</span>
 										{/if}
 									</div>
-									<div class="text-[10px] text-muted font-mono">{n > 0 ? formatUsd(n) : 'Open'}</div>
+									<div class="text-[10px] text-muted font-mono">Open</div>
 								{/if}
 							</div>
 						{/each}
