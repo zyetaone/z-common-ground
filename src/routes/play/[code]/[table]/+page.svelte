@@ -117,6 +117,8 @@
 			tab = 'board';
 		}
 
+		// Compare first, then sync — avoids write-back re-triggering the effect
+		// when key hasn't changed.
 		if (key !== lastSyncKey) {
 			lastSyncKey = key;
 			if (!locked && (ph === 'lobby' || ph === 'round')) {

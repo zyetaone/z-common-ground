@@ -47,19 +47,22 @@
 	);
 
 	// ── Row flash on change ──
+	// prevCounts + flashReady are plain vars — never $state so they don't re-trigger the effect.
 	let flashRow = $state<Record<number, boolean>>({});
-	let prevCounts = $state<Vec7>([...ZEROS] as Vec7);
-	let flashReady = false;
+	let _prevCounts: Vec7 = [...ZEROS] as Vec7;
+	let _flashReady = false;
 
 	$effect(() => {
-		if (!flashReady) {
-			prevCounts = [...counts] as Vec7;
-			flashReady = true;
+		// Only `counts` is tracked; the rest runs inside untrack to avoid write-read cycles.
+		const cur = counts;
+		if (!_flashReady) {
+			_flashReady = true;
+			_prevCounts = [...cur] as Vec7;
 			return;
 		}
 		const next: Record<number, boolean> = {};
 		for (let p = 0; p < PRIORITIES.length; p++) {
-			if (counts[p] !== (prevCounts[p] ?? 0)) {
+			if (cur[p] !== (_prevCounts[p] ?? 0)) {
 				next[p] = true;
 			}
 		}
@@ -67,7 +70,7 @@
 			flashRow = next;
 			setTimeout(() => (flashRow = {}), 400);
 		}
-		prevCounts = [...counts] as Vec7;
+		_prevCounts = [...cur] as Vec7;
 	});
 
 	function tap(p: number, d: number) {
