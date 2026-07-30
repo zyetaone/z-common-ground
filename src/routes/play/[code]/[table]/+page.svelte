@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import {
 		FunctionBoard,
 		MobileFinale,
@@ -99,6 +99,8 @@
 	});
 
 	$effect(() => {
+		// Track only roomSyncKey — all other reads (lastSyncKey, seeded) are
+		// untracked so writes to them inside this effect don't re-trigger it.
 		const key = roomSyncKey;
 		const room = session.room;
 		const t = session.tables.find((x) => x.id === tableId);
@@ -106,7 +108,10 @@
 
 		const locked = !!t.lockedThisRound;
 		const ph = room.phase;
-		const prev = lastSyncKey;
+
+		// --- untracked reads: these are written below, so don't track them ---
+		const prev = untrack(() => lastSyncKey);
+		const isSeeded = untrack(() => seeded);
 		const prevPhase = prev ? prev.split(':')[1] : null;
 
 		if (
@@ -117,16 +122,14 @@
 			tab = 'board';
 		}
 
-		// Compare first, then sync — avoids write-back re-triggering the effect
-		// when key hasn't changed.
-		if (key !== lastSyncKey) {
+		if (key !== prev) {
 			lastSyncKey = key;
 			if (!locked && (ph === 'lobby' || ph === 'round')) {
 				reseedFromServer();
 			} else if (locked) {
 				seeded = false;
 			}
-		} else if (!seeded && !locked && (ph === 'lobby' || ph === 'round')) {
+		} else if (!isSeeded && !locked && (ph === 'lobby' || ph === 'round')) {
 			reseedFromServer();
 		}
 	});
