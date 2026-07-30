@@ -20,6 +20,10 @@ export type Phase = 'lobby' | 'round' | 'reveal' | 'finale';
 export interface TableState {
 	id: number;
 	board: Matrix7x7;
+	/** Has this table joined? (lobby presence — player taps "Join"). */
+	joined: boolean;
+		/** Player tapped "Freeze" — physical tokens are placed, ready to match digital. */
+		physicallyDone: boolean;
 	/** Whole-table lock (host). */
 	lockedThisRound: boolean;
 	/** Per-seat submit this round (index = seat 0..6). */
@@ -86,6 +90,10 @@ export interface RoomState {
 	/** How enhancedBrief was produced. */
 	briefSource?: 'numbers' | 'llama';
 	updatedAt: number;
+	/** Host-editable runtime overrides for scenarios (R1–R5). Falls back to config.ts defaults. */
+	scenarios?: Scenario[];
+	/** Host-editable runtime overrides for personas. Falls back to config.ts defaults. */
+	personas?: Persona[];
 }
 
 export interface Persona {
@@ -128,6 +136,12 @@ export interface Scenario {
 	move: RoundMove;
 	/** Short instruction shown on mobile + presenter. */
 	instruction: string;
+	/** Mechanical constraints — what the game enforces (cap, direction, freeze requirement). */
+	modelRules?: string;
+	/** Step-by-step physical+digital flow for this round (numbered). */
+	actions?: string;
+	/** Facilitator narrative — "why this round matters" — read aloud by presenter. */
+	experience?: string;
 }
 
 /**

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SCENARIOS } from '$lib/game';
 	import type { Persona, Scenario } from '$lib/game/types';
 
 	let {
@@ -43,14 +42,39 @@
 			</span>
 			<span class="badge-question">
 				{#if phase === 'lobby'}
-					{SCENARIOS[0].question}
+					Session ready — presenter will begin shortly.
 				{:else if scenario}
 					{scenario.question}
 				{/if}
 			</span>
 		</div>
-		{#if scenario?.hint && phase === 'round'}
+		{#if scenario?.hint && phase === 'round' && scenario?.mode === 'capture'}
 			<p class="budget-hint">{scenario.hint}</p>
+		{/if}
+		{#if scenario && (scenario.modelRules || scenario.actions || scenario.experience)}
+			<details class="round-details">
+				<summary class="details-summary">Round details</summary>
+				<div class="details-body">
+					{#if scenario.modelRules}
+						<div class="detail-block">
+							<h4 class="detail-label">Rules</h4>
+							<p class="detail-text">{scenario.modelRules}</p>
+						</div>
+					{/if}
+					{#if scenario.actions}
+						<div class="detail-block">
+							<h4 class="detail-label">Steps</h4>
+							<p class="detail-text actions">{scenario.actions}</p>
+						</div>
+					{/if}
+					{#if scenario.experience}
+						<div class="detail-block">
+							<h4 class="detail-label">Why this matters</h4>
+							<p class="detail-text">{scenario.experience}</p>
+						</div>
+					{/if}
+				</div>
+			</details>
 		{/if}
 	{:else if isFinale}
 		<div class="qcompact finale">
@@ -155,5 +179,43 @@
 		color: var(--color-gold);
 		line-height: 1.4;
 		font-weight: 600;
+	}
+	.round-details {
+		margin-top: 6px;
+		border: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
+		border-radius: 12px;
+		overflow: hidden;
+	}
+	.details-summary {
+		padding: 6px 10px;
+		font-size: 11px;
+		font-weight: 700;
+		color: var(--color-muted);
+		cursor: pointer;
+		user-select: none;
+	}
+	.details-body {
+		padding: 0 10px 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.detail-label {
+		font-size: 10px;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-teal);
+		margin: 0 0 2px;
+	}
+	.detail-text {
+		font-size: 11px;
+		line-height: 1.5;
+		color: var(--color-ink);
+		margin: 0;
+		white-space: pre-line;
+	}
+	.detail-text.actions {
+		padding-left: 4px;
 	}
 </style>

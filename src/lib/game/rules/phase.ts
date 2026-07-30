@@ -9,6 +9,7 @@ import type { Phase, RoomState } from '../types';
 export function reopenBoards(room: RoomState): void {
 	for (const t of room.tables) {
 		t.lockedThisRound = false;
+		t.physicallyDone = false;
 		t.submittedSeats = Array(N_SEATS).fill(false);
 	}
 	room.analysisForced = false;

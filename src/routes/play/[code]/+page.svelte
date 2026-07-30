@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import QrCode from '$lib/components/QrCode.svelte';
 	import { PERSONAS, tablePersona } from '$lib/game';
-	import { play, SESSION } from '$lib/state';
+	import { play, SESSION, session } from '$lib/state';
 
 	let origin = $state('');
 
@@ -45,7 +45,7 @@
 	<div class="cards">
 		{#each PERSONAS as p, i (p.seat)}
 			{@const id = i + 1}
-			{@const persona = tablePersona(id)}
+			{@const persona = tablePersona(id, session.room)}
 			{@const url = origin ? `${origin}/play/${SESSION}/${id}` : `/play/${SESSION}/${id}`}
 			<article class="card" style="--c:{persona.color}">
 				<button type="button" class="open" onclick={() => openTable(id)}>

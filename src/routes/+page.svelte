@@ -6,7 +6,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { PERSONAS, tablePersona } from '$lib/game';
-	import { SESSION } from '$lib/state';
+	import { SESSION, session } from '$lib/state';
 
 	let origin = $state('');
 	let activeQr = $state<{ id: number; name: string; url: string; color: string } | null>(null);
@@ -47,7 +47,7 @@
 	<div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 		{#each PERSONAS as p, i (p.seat)}
 			{@const id = i + 1}
-			{@const persona = tablePersona(id)}
+			{@const persona = tablePersona(id, session.room)}
 			{@const url = origin ? `${origin}/play/${SESSION}/${id}` : `/play/${SESSION}/${id}`}
 			<div
 				class="flex flex-col items-center gap-3 rounded-2xl border border-line bg-panel/40 p-5 transition hover:border-gold/50"

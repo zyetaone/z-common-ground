@@ -218,6 +218,39 @@ export const session = {
 		}
 	},
 
+	async setPersona(seat: number, patch: Record<string, unknown>) {
+		busy = true;
+		try {
+			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/persona`, { seat, patch });
+			if (res.room) applyRoom(res.room);
+			else await poll();
+		} finally {
+			busy = false;
+		}
+	},
+
+	async setScenario(round: number, patch: Record<string, unknown>) {
+		busy = true;
+		try {
+			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/scenario`, { round, patch });
+			if (res.room) applyRoom(res.room);
+			else await poll();
+		} finally {
+			busy = false;
+		}
+	},
+
+	async setTableCount(count: number) {
+		busy = true;
+		try {
+			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/table-count`, { count });
+			if (res.room) applyRoom(res.room);
+			else await poll();
+		} finally {
+			busy = false;
+		}
+	},
+
 	async boardDelta(tableId: number, seat: number, priority: number, delta: 1 | -1) {
 		error = '';
 		try {
@@ -285,7 +318,38 @@ export const session = {
 		if (res.room) applyRoom(res.room);
 		else await poll();
 	},
-	async lockTable(tableId: number) {
+
+	/** Player taps "Join Session" in lobby — shows presence to presenter. */
+	async joinTable(tableId: number) {
+		error = '';
+		try {
+			const res = await post<{ ok: boolean; room?: RoomState }>(
+				`/api/room/${SESSION}/join`,
+				{ tableId }
+			);
+			if (res.room) applyRoom(res.room);
+			else await poll();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Join failed';
+		}
+	},
+
+	
+		/** Player taps "Freeze" — physical tokens on the board are final. */
+		async tablePhysicallyDone(tableId: number) {
+			error = '';
+			try {
+				const res = await post<{ ok: boolean; room?: RoomState }>(
+					`/api/room/${SESSION}/physical-done`,
+					{ tableId }
+				);
+				if (res.room) applyRoom(res.room);
+				else await poll();
+			} catch (e) {
+				error = e instanceof Error ? e.message : 'Freeze failed';
+			}
+		},
+		async lockTable(tableId: number) {
 		const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/lock`, {
 			tableId,
 			seal: true

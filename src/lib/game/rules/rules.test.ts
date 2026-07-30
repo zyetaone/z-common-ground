@@ -29,6 +29,8 @@ function emptyTable(id: number): TableState {
 	return {
 		id,
 		board: emptyMatrix(),
+		joined: false,
+		physicallyDone: false,
 		lockedThisRound: false,
 		submittedSeats: Array(N_SEATS).fill(false),
 		matrix: Array(N_PRIORITIES).fill(0),

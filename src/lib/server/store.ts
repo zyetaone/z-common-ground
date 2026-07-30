@@ -21,7 +21,7 @@ import {
 	tableBountyTokens,
 	upsertHistory
 } from '$lib/game';
-import type { RoomState, TableState } from '$lib/game/types';
+import type { Persona, RoomState, Scenario, TableState } from '$lib/game/types';
 import { loadRoom, saveRoom } from './room-store';
 
 /** One hosted session only — no multi-room codes. */
@@ -31,6 +31,8 @@ function emptyTable(id: number): TableState {
 	const t: TableState = {
 		id,
 		board: emptyMatrix(),
+		joined: false,
+		physicallyDone: false,
 		lockedThisRound: false,
 		submittedSeats: Array(N_SEATS).fill(false),
 		matrix: Array(N_PRIORITIES).fill(0),
@@ -261,10 +263,62 @@ class Store {
 		return room;
 	}
 
+	/** Player taps "Join" in lobby — mark table presence. */
+	tableJoin(_code: string, tableId: number): RoomState {
+		const room = this.ensure();
+		const table = room.tables.find((t) => t.id === tableId);
+		if (table) {
+			table.joined = true;
+			recompute(room);
+		}
+		return room;
+	}
+
+	/** Player taps "Freeze" — physical tokens are placed, ready to match digital. */
+	tablePhysicallyDone(_code: string, tableId: number): RoomState {
+		const room = this.ensure();
+		const table = room.tables.find((t) => t.id === tableId);
+		if (table) {
+			table.physicallyDone = true;
+			recompute(room);
+		}
+		return room;
+	}
+
 	setFinaleImage(_code: string, url: string): RoomState {
 		const room = this.ensure();
 		room.finaleImageUrl = url;
 		room.updatedAt = Date.now();
+		return room;
+	}
+
+	/** Host updates a single persona (by seat index 0..6). */
+	setPersona(_code: string, seat: number, patch: Partial<Persona>): RoomState {
+		const room = this.ensure();
+		if (!room.personas) room.personas = [];
+		if (seat < 0 || seat >= N_SEATS) return room;
+		room.personas[seat] = { ...(room.personas[seat] ?? {}), ...patch, seat };
+		room.updatedAt = Date.now();
+		return room;
+	}
+
+	/** Host updates a single scenario (by round index 0..4). */
+	setScenario(_code: string, round: number, patch: Partial<Scenario>): RoomState {
+		const room = this.ensure();
+		if (!room.scenarios) room.scenarios = [];
+		if (round < 0 || round >= ROUND_COUNT) return room;
+		room.scenarios[round] = { ...(room.scenarios[round] ?? {}), ...patch, round, roundLabel: round + 1 };
+		room.updatedAt = Date.now();
+		return room;
+	}
+
+	/** Host changes table count (1..N_SEATS). Resizes tables array. */
+	setTableCount(_code: string, count: number): RoomState {
+		const room = this.ensure();
+		const n = Math.max(1, Math.min(N_SEATS, Math.round(count)));
+		while (room.tables.length < n) room.tables.push(emptyTable(room.tables.length + 1));
+		while (room.tables.length > n) room.tables.pop();
+		recompute(room);
 		return room;
 	}
 

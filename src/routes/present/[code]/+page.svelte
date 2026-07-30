@@ -13,7 +13,7 @@
 	} from '$lib/components/analytics';
 	import Icon from '$lib/components/Icon.svelte';
 	import { advanceLabel as advLabel, canAdvance as canAdv, canRetreat as canRet } from '$lib/client/present-labels';
-	import { ROUND_COUNT, SCENARIOS, boardTokenSum, formatUsd, tablePersona } from '$lib/game';
+	import { ROUND_COUNT, SCENARIOS, boardTokenSum, formatUsd, tablePersona, roomScenarios } from '$lib/game';
 	import { present, SESSION, session } from '$lib/state';
 
 	const SCREENS = [
@@ -33,13 +33,16 @@
 	const round = $derived(st?.round ?? 0);
 	const roundLabel = $derived(round + 1);
 	const roundCount = $derived(st?.roundCount ?? ROUND_COUNT);
-	const scenario = $derived(SCENARIOS[Math.min(round, SCENARIOS.length - 1)] ?? SCENARIOS[0]);
+	const rs = $derived(roomScenarios(st));
+	const scenario = $derived(rs[Math.min(round, rs.length - 1)] ?? rs[0]);
 	const open = $derived(session.analysisOpen);
 
 	let showExtra = $state(false);
 	let extraTab = $state<ExtraTab>('quadrant');
 
+	const joinedCount = $derived(st?.tables.filter((t) => t.joined).length ?? 0);
 	const lockedCount = $derived(st?.tables.filter((t) => t.lockedThisRound).length ?? 0);
+	const frozenCount = $derived(st?.tables.filter((t) => t.physicallyDone).length ?? 0);
 	const totalTables = $derived(st?.tables.length ?? 7);
 	const canAdvance = $derived(canAdv(phase));
 	const canRetreat = $derived(canRet(phase));
@@ -145,7 +148,12 @@
 		<div class="sc-bar">
 			<div class="sc-left">
 				<span class="sc-emoji">{scenario.emoji}</span>
-				<span class="sc-q">{scenario.question}</span>
+				<div class="sc-text">
+					<span class="sc-q">{scenario.question}</span>
+					{#if scenario.experience}
+						<span class="sc-experience">{scenario.experience}</span>
+					{/if}
+				</div>
 			</div>
 			<div class="sc-act">
 				{#if canRetreat}
@@ -174,20 +182,41 @@
 	{#if !st}
 		<div class="center muted">Connecting…</div>
 	{:else if !open}
-		<div class="center lobby">
+		<div class="lobby-wrap">
 			{#if phase === 'lobby'}
-				<div class="code">LIVE</div>
-				<p class="muted">Tables scan QR · start when ready</p>
+				<div class="submissions">
+					<div class="sub-head">
+						<span class="sub-title">Table Directory</span>
+						<span class="sub-count">{joinedCount}/{totalTables} joined</span>
+					</div>
+					<div class="sub-grid">
+						{#each st.tables as t (t.id)}
+							{@const fn = tablePersona(t.id, st)}
+							<div class="sub-card" class:joined-card={t.joined}>
+								<div class="sub-card-top">
+									<span class="sub-dot" style="background:{fn.color}"></span>
+									<span class="sub-name">{fn.name}</span>
+								</div>
+								{#if t.joined}
+									<div class="sub-badge">✓ Joined</div>
+								{:else}
+									<div class="sub-badge idle">Table {t.id}</div>
+								{/if}
+								<div class="sub-lens">{fn.lens}</div>
+							</div>
+						{/each}
+					</div>
+				</div>
 			{:else if phase === 'round'}
 				<div class="submissions">
 					<div class="sub-head">
 						<span class="sub-title">Live Table Submissions</span>
-						<span class="sub-count">{lockedCount}/{totalTables} Submitted</span>
+						<span class="sub-count">{frozenCount}/{totalTables} Frozen  ·  {lockedCount}/{totalTables} Submitted</span>
 					</div>
 
 					<div class="sub-grid">
 						{#each st.tables as t (t.id)}
-							{@const fn = tablePersona(t.id)}
+							{@const fn = tablePersona(t.id, st)}
 							{@const n = boardTokenSum(t.board)}
 							<div
 								class="sub-card"
@@ -201,7 +230,8 @@
 								{#if t.lockedThisRound}
 									<div class="sub-badge">✓ Submitted</div>
 									<div class="sub-amount">{formatUsd(n)}</div>
-								{:else}
+								{:else if t.physicallyDone}
+									<div class="sub-badge">🧊 Frozen</div>
 									<div class="sub-amount gold">
 										{#if n > 0}
 											{formatUsd(n)}
@@ -403,6 +433,13 @@
 		min-width: 0;
 	}
 	.sc-emoji { font-size: 18px; flex-shrink: 0; }
+	.sc-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1;
+		min-width: 0;
+	}
 	.sc-q {
 		font-family: var(--font-display);
 		font-size: 14px;
@@ -411,6 +448,18 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	.sc-experience {
+		font-size: 11px;
+		color: var(--color-gold);
+		line-height: 1.35;
+		font-weight: 500;
+		font-style: italic;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 	.sc-act {
 		display: flex;
@@ -437,6 +486,14 @@
 	}
 	.sc-btn.ghost { color: var(--color-muted); }
 	.sc-btn:disabled { opacity: 0.4; cursor: default; }
+
+	/* ── Lobby / round cards area ── */
+	.lobby-wrap {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+	}
 
 	/* ── Submissions ── */
 	.submissions {
@@ -468,7 +525,8 @@
 	}
 	.sub-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		grid-template-columns: repeat(4, 148px);
+		justify-content: center;
 		gap: 8px;
 	}
 	.sub-card {
@@ -483,6 +541,10 @@
 		border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
 		background: color-mix(in srgb, var(--color-teal) 8%, var(--color-panel));
 		animation: lock-pop 0.35s ease-out;
+	}
+	.sub-card.joined-card {
+		border-color: color-mix(in srgb, var(--color-teal) 55%, transparent);
+		background: color-mix(in srgb, var(--color-teal) 14%, var(--color-panel));
 	}
 	@keyframes lock-pop {
 		0% { transform: scale(0.94); opacity: 0.65; }
@@ -519,6 +581,10 @@
 		display: inline-block;
 		margin-bottom: 6px;
 	}
+	.sub-badge.idle {
+		color: var(--color-muted);
+		background: color-mix(in srgb, var(--color-muted) 12%, transparent);
+	}
 	.sub-amount {
 		font-family: var(--font-mono);
 		font-size: 12px;
@@ -539,24 +605,24 @@
 		font-weight: 600;
 		font-size: 11px;
 	}
+	.sub-lens {
+		font-family: var(--font-mono);
+		font-size: 8px;
+		color: var(--color-muted);
+		line-height: 1.35;
+		opacity: 0.7;
+	}
 
-	/* ── Lobby / reveal / finale ── */
+	/* ── Connecting ── */
 	.center {
 		flex: 1;
 		display: flex;
-		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		text-align: center;
-		gap: 12px;
-	}
-	.lobby .code {
-		font-family: var(--font-display);
-		font-size: 3.5rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
 	}
 	.muted { color: var(--color-muted); }
+
 	/* ── Analysis deck ── */
 	.hero-title {
 		text-align: left;

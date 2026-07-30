@@ -15,6 +15,7 @@
 		isCaptureRound,
 		ROUND_COUNT,
 		SCENARIOS,
+		roomScenarios,
 		tablePersona,
 		tableSeatIndex,
 		zeros
@@ -25,7 +26,7 @@
 	type Tab = 'board' | 'render';
 
 	const tableId = $derived(Number(page.params.table));
-	const persona = $derived(tablePersona(tableId));
+	const persona = $derived(tablePersona(tableId, session.room));
 	const seat = $derived(tableSeatIndex(tableId));
 	const table = $derived(session.tables.find((t) => t.id === tableId));
 	const roomSyncKey = $derived(
@@ -34,14 +35,16 @@
 			session.phase,
 			session.round,
 			tableId,
-			table?.lockedThisRound ? 1 : 0
+			table?.lockedThisRound ? 1 : 0,
+		table?.physicallyDone ? 1 : 0
 		].join(':')
 	);
 	const phase = $derived(session.phase);
 	const round = $derived(session.room?.round ?? 0);
 	const roundLabel = $derived(Math.min(ROUND_COUNT, Math.max(1, round + 1)));
 	const roundCount = $derived(session.room?.roundCount ?? ROUND_COUNT);
-	const scenario = $derived(SCENARIOS[Math.min(round, SCENARIOS.length - 1)] ?? SCENARIOS[0]);
+	const rs = $derived(roomScenarios(session.room));
+	const scenario = $derived(rs[Math.min(round, rs.length - 1)] ?? rs[0]);
 	const serverRow = $derived((table?.board?.[seat] ?? zeros()) as Vec7);
 	const submitted = $derived(!!table?.lockedThisRound);
 	const canCapture = $derived(phase === 'round' && isCaptureRound(roundLabel));
@@ -59,6 +62,7 @@
 	let tab = $state<Tab>('board');
 
 	const isFinale = $derived(phase === 'reveal' || phase === 'finale');
+	const physicallyDone = $derived(!!table?.physicallyDone);
 	const counts = $derived(editable && seeded ? draft : serverRow);
 	const totalTokens = $derived(counts.reduce((a, b) => a + b, 0));
 	const standingCap = $derived(baseline.reduce((a, b) => a + b, 0));
@@ -183,6 +187,15 @@
 			submitting = false;
 		}
 	}
+
+	async function onFreeze() {
+		if (session.busy) return;
+		try {
+			await session.tablePhysicallyDone(tableId);
+		} catch {
+			// Revert on failure — poll will resync
+		}
+	}
 </script>
 
 <svelte:head>
@@ -234,14 +247,72 @@
 			color={persona.color}
 		/>
 	{:else if phase === 'lobby'}
-		<div class="wait-msg">
-			<span class="wait-dot"></span>
-			<div>
-				<p class="wait-heading">Lobby</p>
-				<p class="wait-sub">Kindly wait — presenter will start Round 1 shortly.</p>
+		{#if !table?.joined}
+			<div class="wait-msg">
+				<span class="wait-dot"></span>
+				<div>
+					<p class="wait-heading">Lobby</p>
+					<p class="wait-sub">Tap to join — let the presenter know your table is ready.</p>
+				</div>
 			</div>
-		</div>
-	{:else if phase === 'round'}
+			<button
+				type="button"
+				class="join-btn"
+				disabled={session.busy}
+				onclick={async () => {
+					await session.joinTable(tableId);
+				}}
+			>
+				Enter Lobby
+			</button>
+		{:else}
+			<div class="wait-msg joined">
+				<span class="wait-icon">✅</span>
+				<div>
+					<p class="wait-heading">Joined</p>
+					<p class="wait-sub">Waiting for presenter to start Round 1…</p>
+				</div>
+			</div>
+		{/if}
+	{:else if phase === 'round' && !canCapture}
+		{#if !physicallyDone}
+			<div class="wait-msg">
+				<span class="wait-icon">🎯</span>
+				<div>
+					<p class="wait-heading">R{roundLabel} · Add tokens to physical board</p>
+					<p class="wait-sub">
+						{#if roundLabel === 1}
+							Allocate ~$30M tokens across priorities.
+						{:else}
+							Add ~$20M more. Cumulative position carries forward.
+						{/if}
+					</p>
+				</div>
+			</div>
+			<button type="button" class="join-btn" disabled={session.busy} onclick={onFreeze}>
+				{session.busy ? 'Freezing…' : 'Freeze'}
+			</button>
+		{:else}
+			<div class="wait-msg joined">
+				<span class="wait-icon">✅</span>
+				<div>
+					<p class="wait-heading">Board frozen</p>
+					<p class="wait-sub">Waiting for presenter to start next round…</p>
+				</div>
+			</div>
+		{/if}
+		{:else if phase === 'round' && !physicallyDone}
+			<div class="wait-msg">
+				<span class="wait-icon">🎯</span>
+				<div>
+					<p class="wait-heading">R{roundLabel} · Add tokens to physical board</p>
+					<p class="wait-sub">Place tokens on the physical board first, then freeze.</p>
+				</div>
+			</div>
+			<button type="button" class="join-btn" disabled={session.busy} onclick={onFreeze}>
+				{session.busy ? 'Freezing…' : 'Freeze'}
+			</button>
+		{:else if phase === 'round'}
 		<form class="board-form" onsubmit={onSubmit}>
 			<FunctionBoard
 				{counts}
@@ -266,7 +337,9 @@
 							? 'Locking in…'
 							: removeOnly
 								? `Capture R3 · protected ${formatUsdFull(totalTokens)}`
-								: `Lock in — final for R${roundLabel} · ${formatUsdFull(totalTokens)}`}
+								: totalTokens <= 0
+									? 'Add $10M+ tokens to unlock'
+									: `Lock in — final for R${roundLabel} · ${formatUsdFull(totalTokens)}`}
 					</button>
 				{:else}
 					<button
@@ -339,6 +412,28 @@
 		font-size: 13px;
 		color: var(--color-muted);
 		margin: 0;
+	}
+	.join-btn {
+		display: block;
+		width: calc(100% - 24px);
+		margin: 8px 12px 0;
+		padding: 16px;
+		border: none;
+		border-radius: 14px;
+		background: var(--color-teal);
+		color: var(--color-on-teal);
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: 1.1rem;
+		cursor: pointer;
+		touch-action: manipulation;
+	}
+	.join-btn:disabled {
+		opacity: 0.4;
+	}
+	.wait-msg.joined {
+		border-color: color-mix(in srgb, var(--color-teal) 45%, var(--color-line));
+		background: color-mix(in srgb, var(--color-teal) 6%, var(--color-panel));
 	}
 	@keyframes pulse {
 		50% { opacity: 0.35; }

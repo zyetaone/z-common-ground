@@ -101,8 +101,9 @@ export function tableSeatIndex(tableId: number): number {
 	return n - 1;
 }
 
-export function tablePersona(tableId: number) {
-	return PERSONAS[tableSeatIndex(tableId)] ?? PERSONAS[0];
+export function tablePersona(tableId: number, room?: { personas?: Persona[] } | null) {
+	const p = roomPersonas(room);
+	return p[tableSeatIndex(tableId)] ?? p[0];
 }
 
 /** 5-round narrative progression. */
@@ -157,6 +158,30 @@ export function isCaptureRound(roundLabel1Based: number): boolean {
 	return (CAPTURE_ROUNDS as readonly number[]).includes(roundLabel1Based);
 }
 
+/**
+ * Merge runtime persona overrides with static defaults.
+ * If room.personas[i] exists, use it; otherwise fall back to PERSONAS[i].
+ */
+export function roomPersonas(room?: { personas?: Persona[] } | null): Persona[] {
+	if (!room?.personas?.length) return PERSONAS;
+	return PERSONAS.map((p, i) => {
+		const over = room.personas![i];
+		return over ? { ...p, ...over, seat: i } : p;
+	});
+}
+
+/**
+ * Merge runtime scenario overrides with static defaults.
+ * If room.scenarios[i] exists, use it; otherwise fall back to SCENARIOS[i].
+ */
+export function roomScenarios(room?: { scenarios?: Scenario[] } | null): Scenario[] {
+	if (!room?.scenarios?.length) return SCENARIOS;
+	return SCENARIOS.map((s, i) => {
+		const over = room.scenarios![i];
+		return over ? { ...s, ...over, round: i, roundLabel: i + 1 } : s;
+	});
+}
+
 /** Host/presenter + mobile — cumulative board; each round adds or removes. */
 export const SCENARIOS: Scenario[] = [
 	{
@@ -168,7 +193,10 @@ export const SCENARIOS: Scenario[] = [
 		hint: 'Each table has $100M across 5 rounds. Start by allocating ~$30M — where would you invest first?',
 		mode: 'wait',
 		move: 'add',
-		instruction: 'R1 · ADD ~$30M · first stake'
+		instruction: 'R1 · ADD ~$30M · first stake',
+		modelRules: 'Boards are cumulative across all 5 rounds. Per-table cap = floor(roomBudget / tables). R1 has no freeze or capture — just place. All 7 priorities are open.',
+		actions: '1. Read your function mission and lens.\n2. Discuss with your table: where does the first ~$30M go?\n3. Place physical tokens on the board.\n4. Mirror on the digital board.\n5. Presenter advances when all tables are ready.',
+		experience: 'Your opening move. Each function brings a lens — Real Estate wants the floorplate, HR wants the people. This is not "what would your function buy alone" — it is "what opens the conversation." Your first $30M sets the tone for every round that follows.'
 	},
 	{
 		round: 1,
@@ -176,10 +204,13 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R2 · The Hollow Culture',
 		emoji: '➕',
 		question: 'Hybrid hollowed culture. What rebuilds cohesion?',
-		hint: 'Add ~$70M more onto your R1 board. Cumulative — boards carry forward.',
+		hint: 'Place all tokens on your physical board, then position the digital board to match. Cumulative — boards carry forward (~$100M total).',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R2 · ADD ~$70M · cumulative · CAPTURE'
+		instruction: 'R2 · ADD ~$70M · cumulative · CAPTURE',
+		modelRules: 'Add only. Per-table cap applies. Cumulative with R1. This is a capture round — your position is frozen and sealed for analysis. Must match physical board to digital before submitting.',
+		actions: '1. Place remaining physical tokens to reach ~$100M total.\n2. Tap Freeze when your physical board is set.\n3. Match the digital board to exactly mirror your physical tokens.\n4. Submit to seal your board.\n5. Wait for the presenter to advance.',
+		experience: 'Hybrid work has hollowed the culture. People are in different places — literally and relationally. What rebuilds the connective tissue? This is the first round where the room sees its Common Ground Index — how much do these 7 functions actually agree? The score after R2 tells you whether the room is aligned or fractured, and the conversation that follows is often the most revealing of the session.'
 	},
 	{
 		round: 2,
@@ -187,10 +218,13 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R3 · The Rival HQ',
 		emoji: '➖',
 		question: "A competitor's HQ is poaching talent. What do you take off the table?",
-		hint: 'Budget cut — remove ~$30M from your board. What stays is PROTECTED.',
+		hint: 'After removing tokens physically, update the digital board to match. What stays is PROTECTED.',
 		mode: 'capture',
 		move: 'remove',
-		instruction: 'R3 · REMOVE ~$30M · protect what remains'
+		instruction: 'R3 · REMOVE ~$30M · protect what remains',
+		modelRules: 'Remove only. Cannot add tokens — cap is your standing total from R2. Must freeze before editing. Cumulative — what stays is protected for the rest of the game. Capture round.',
+		actions: '1. Remove ~$30M worth of physical tokens from your board.\n2. Tap Freeze when your physical board is set.\n3. Match the digital board to your physical removals.\n4. Submit to seal.\n5. What stays is PROTECTED — think carefully.',
+		experience: 'A competitor opened across the street and talent is walking. This is the hardest round — forcing every function to reveal what they would cut. The priorities that survive R3 are the ones your table is willing to protect under pressure. Watch closely: this round surfaces the room\'s fault line. Where functions disagree about what to cut, you have found the real divide. The presenter will call it out.'
 	},
 	{
 		round: 3,
@@ -198,10 +232,13 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R4 · The Ghost Office',
 		emoji: '➕',
 		question: 'Half-empty Mon/Fri. What justifies the footprint?',
-		hint: 'Budget partially restored — add ~$20M onto your board. Hold for final capture in R5.',
+		hint: 'Add tokens to your physical board, then mirror on digital. Hold for final capture in R5.',
 		mode: 'hold',
 		move: 'add',
-		instruction: 'R4 · ADD ~$20M · HOLD for R5'
+		instruction: 'R4 · ADD ~$20M · HOLD for R5',
+		modelRules: 'Add only. Per-table cap applies. Hold round — save without sealing. Cumulative with R3. No freeze required. Your position carries into R5 for the final capture.',
+		actions: '1. Add ~$20M in physical tokens.\n2. Mirror on the digital board.\n3. Save your board — no seal, position holds.\n4. You get one more chance to adjust in R5.',
+		experience: 'Monday and Friday are ghost towns. The footprint is half-used but the lease is long. What actually justifies the space? This is the pragmatism round — functions who over-indexed on real estate in early rounds may shift. The room gets one more nudge before the final bet. Use this round to close the gap between what you said and what you actually need.'
 	},
 	{
 		round: 4,
@@ -209,9 +246,12 @@ export const SCENARIOS: Scenario[] = [
 		title: 'R5 · The Five-Year Bet',
 		emoji: '➕',
 		question: 'AI is embedded. What must the workplace double down on?',
-		hint: 'Restructure your ~$90M — reallocate based on everything you learned across all rounds.',
+		hint: 'Restructure tokens on your physical board first, then match digital. Final cumulative position — reallocate based on everything learned.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R5 · RESTRUCTURE ~$90M · FINAL CAPTURE'
+		instruction: 'R5 · RESTRUCTURE ~$90M · FINAL CAPTURE',
+		modelRules: 'Add only. Per-table cap applies. Capture round — final position is sealed. Cumulative across all rounds. Must freeze before editing. This is the last round — no more changes.',
+		actions: '1. Restructure tokens on your physical board — reallocate based on everything learned.\n2. Tap Freeze when your board is final.\n3. Match the digital board.\n4. Submit to seal.\n5. This is the room\'s definitive answer.',
+		experience: 'AI is embedded. Five years out, work looks different. This is the room\'s final answer — where does capital land when the technology is settled and everything you learned across four rounds is on the table? The Common Ground Index after R5 is what this room actually believes. Everything before was rehearsal. The presenter will now reveal the room\'s lead priority, its fault line, its blind spot, and — if someone surprised everyone — who broke type.'
 	}
 ];

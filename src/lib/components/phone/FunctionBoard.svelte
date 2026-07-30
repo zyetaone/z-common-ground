@@ -53,7 +53,6 @@
 
 	$effect(() => {
 		if (!flashReady) {
-			// First render — sync baseline, no flash
 			prevCounts = [...counts] as Vec7;
 			flashReady = true;
 			return;
@@ -86,17 +85,19 @@
 </script>
 
 <div class="seat-board" class:uneditable={!editable} class:remove={removeOnly} style="--seat:{color}">
-	<!-- Minimal spent / remaining -->
-	<div class="spend-line">
-		<span class="spent-label">Spent</span>
-		<span class="spent-val">{formatUsdFull(total)}</span>
-		<span class="of">of</span>
-		<span class="cap-val">{formatUsdFull(capTokens)}</span>
-		{#if remaining > 0 && !removeOnly}
-			<span class="dot-sep">·</span>
-			<span class="remaining">{formatUsd(remaining)} left</span>
-		{/if}
-	</div>
+	<!-- Spent bar — hidden until something is placed -->
+	{#if total > 0}
+		<div class="spend-line">
+			<span class="spent-label">Spent</span>
+			<span class="spent-val">{formatUsdFull(total)}</span>
+			<span class="of">of</span>
+			<span class="cap-val">{formatUsdFull(capTokens)}</span>
+			{#if remaining > 0 && !removeOnly}
+				<span class="dot-sep">·</span>
+				<span class="remaining">{formatUsd(remaining)} left</span>
+			{/if}
+		</div>
+	{/if}
 
 	{#if removeOnly}
 		<p class="remove-hint">
@@ -125,7 +126,6 @@
 					<div class="val">
 						{#if v > 0}
 							<span class="usd">{formatUsdFull(v)}</span>
-							<!-- Visual chip tokens — animated pile -->
 							{#if chipCount > 0}
 								<span class="chips">
 									{#each chipSlots[p] as slot (slot)}
@@ -156,18 +156,20 @@
 				</div>
 				{#if editable}
 					<div class="acts">
-						<button
-							type="button"
-							class="btn minus"
-							disabled={busy || v < CHIP_VALUE}
-							aria-label="Remove ${CHIP_VALUE}M from {name}"
-							onpointerup={(e) => {
-								e.preventDefault();
-								if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
-							}}
-						>
-							-
-						</button>
+						{#if v > 0}
+							<button
+								type="button"
+								class="btn minus"
+								disabled={busy || v < CHIP_VALUE}
+								aria-label="Remove ${CHIP_VALUE}M from {name}"
+								onpointerup={(e) => {
+									e.preventDefault();
+									if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
+								}}
+							>
+								-
+							</button>
+						{/if}
 						<button
 							type="button"
 							class="btn plus"
