@@ -1,6 +1,15 @@
 /**
- * Idempotency-Key store (D1) — replay cached JSON responses within TTL.
- * KISS: lazy TTL on read; no cron.
+ * Idempotency-Key store (D1) — replay a cached JSON response within the TTL.
+ *
+ * Why this exists: `session.post()` retries once on network failure using the
+ * SAME key. If the first attempt reached the Worker but the response was lost,
+ * the retry must replay the stored response instead of re-executing — otherwise
+ * a lost response double-charges fal or double-applies a mutation.
+ *
+ * Why it is this small: every client call mints a fresh crypto.randomUUID(), so
+ * a key is only ever reused by that sequential retry — the first request has
+ * already failed before the second is sent. Two requests never hold the same
+ * key at the same time, so there is no in-flight race to arbitrate.
  */
 const TABLE = `CREATE TABLE IF NOT EXISTS idempotency (
   key TEXT PRIMARY KEY,
@@ -9,7 +18,6 @@ const TABLE = `CREATE TABLE IF NOT EXISTS idempotency (
   expires_at INTEGER NOT NULL
 )`;
 
-const KEY_RE = /^[a-zA-Z0-9_-]{8,128}$/;
 const TTL_MS = 24 * 60 * 60 * 1000;
 
 let schemaReady = false;
@@ -18,10 +26,6 @@ async function ensure(db: D1Database) {
 	if (schemaReady) return;
 	await db.prepare(TABLE).run();
 	schemaReady = true;
-}
-
-export function validIdempotencyKey(key: string | null | undefined): key is string {
-	return !!key && KEY_RE.test(key);
 }
 
 export async function getIdempotentResponse(
@@ -42,6 +46,7 @@ export async function getIdempotentResponse(
 		}
 		return { status: row.status, body: row.body };
 	} catch (err) {
+		// A cache miss is always safe — fall through and re-execute.
 		console.error('[idempotency] get failed', err instanceof Error ? err.message : err);
 		return null;
 	}
@@ -56,20 +61,20 @@ export async function saveIdempotentResponse(
 	if (!db) return;
 	try {
 		await ensure(db);
-		const expires = Date.now() + TTL_MS;
 		await db
 			.prepare(
 				`INSERT INTO idempotency (key, status, body, expires_at) VALUES (?, ?, ?, ?)
 				 ON CONFLICT(key) DO UPDATE SET status = excluded.status, body = excluded.body, expires_at = excluded.expires_at`
 			)
-			.bind(key, status, body, expires)
+			.bind(key, status, body, Date.now() + TTL_MS)
 			.run();
-		// Probabilistic TTL sweep — the lazy delete on read only fires for reused
-		// keys, so without this the table grows unboundedly.
+		// The lazy delete on read only fires for keys that are actually reused, so
+		// without this sweep the table would grow without bound.
 		if (Math.random() < 0.05) {
 			await db.prepare('DELETE FROM idempotency WHERE expires_at < ?').bind(Date.now()).run();
 		}
 	} catch (err) {
+		// Failing to cache costs a replay, not correctness.
 		console.error('[idempotency] save failed', err instanceof Error ? err.message : err);
 	}
 }
