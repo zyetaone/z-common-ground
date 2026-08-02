@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
-import { finalePrompt, formatUsd, roomPriorities, tableBountyTokens } from '$lib/game';
+import { formatUsd, roomPriorities, tableBountyTokens } from '$lib/game';
+import { finalePrompt } from '$lib/server/ai/prompts';
 import { generateImage } from '$lib/server/ai/fal';
 import { withLiveRoom, readLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';

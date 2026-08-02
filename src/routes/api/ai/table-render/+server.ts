@@ -5,10 +5,10 @@ import {
 	roomPriorities,
 	sum,
 	tableBountyTokens,
-	tableFunctionPrompt,
 	tablePersona,
 	tableSeatIndex
 } from '$lib/game';
+import { tableFunctionPrompt } from '$lib/server/ai/prompts';
 import { generateImage } from '$lib/server/ai/fal';
 import { readLiveRoom, withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';

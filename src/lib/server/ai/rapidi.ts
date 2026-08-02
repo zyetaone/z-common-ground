@@ -4,10 +4,9 @@
  * Returns null if no AI binding, no stake, or the call fails (caller uses numbers brief).
  */
 import {
-	briefFactsForRapidi,
-	designCardsJsonForRapidi,
 	type DesignCard
 } from '$lib/game';
+import { briefFactsForRapidi, designCardsJsonForRapidi } from './prompts';
 import type { Aggregate, RoomState } from '$lib/game/types';
 
 export type AiBinding = {
