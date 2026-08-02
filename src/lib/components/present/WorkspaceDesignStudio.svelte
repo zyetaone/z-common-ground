@@ -328,7 +328,7 @@
 	}
 	.gate {
 		padding: 16px;
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 	}
@@ -361,7 +361,7 @@
 		border: none;
 		background: var(--color-teal);
 		color: var(--color-on-teal);
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		padding: 14px 18px;
 		font-weight: 800;
 		font-size: 14px;
@@ -378,7 +378,7 @@
 		line-height: 1.4;
 	}
 	.sheets {
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		padding: 14px;
@@ -406,9 +406,9 @@
 		width: 100%;
 		padding: 0;
 		border: 1px solid var(--color-line);
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
-		background: #0a0f1a;
+		background: var(--color-well);
 		cursor: pointer;
 		aspect-ratio: 16 / 9;
 		max-height: 420px;
@@ -458,7 +458,7 @@
 	.nb {
 		width: 36px;
 		height: 36px;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-line);
 		background: transparent;
 		font-weight: 800;
@@ -480,11 +480,11 @@
 		width: 64px;
 		height: 40px;
 		padding: 0;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		border: 2px solid transparent;
 		overflow: hidden;
 		cursor: pointer;
-		background: #111;
+		background: var(--color-well);
 	}
 	.thumb.on {
 		border-color: var(--color-teal);
@@ -585,7 +585,7 @@
 	}
 	.plan {
 		padding: 14px;
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 	}

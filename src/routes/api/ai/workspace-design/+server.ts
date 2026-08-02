@@ -8,6 +8,15 @@ import { store } from '$lib/server/store';
 import { idempotentJson } from '$lib/server/with-idempotency';
 import type { RequestHandler } from './$types';
 
+/** Allowlist of shape kinds the route accepts. Mirrors `WorkspaceDesignKind`. */
+const _VALID_WORKSPACE_DESIGN_KINDS: readonly WorkspaceDesignKind[] = [
+	'collage',
+	'plan',
+	'section',
+	'elevation',
+	'concept'
+];
+
 /**
  * POST → Generate architectural workspace design sheets from final brief + concept refs.
  * Collage, plan, section, elevation, concept axon — fal edit with all drawing URLs.
@@ -20,6 +29,12 @@ import type { RequestHandler } from './$types';
  */
 export const POST: RequestHandler = async (event) => {
 	const body = (await event.request.json().catch(() => ({}))) as { kind?: string };
+	if (
+		body.kind !== undefined &&
+		!_VALID_WORKSPACE_DESIGN_KINDS.includes(body.kind as WorkspaceDesignKind)
+	) {
+		throw error(400, `Unknown sheet kind: ${body.kind}`);
+	}
 
 	return idempotentJson(event, async () => {
 		const room = await readLiveRoom();
@@ -54,7 +69,7 @@ export const POST: RequestHandler = async (event) => {
 			const { url, error: err } = await generateImageWithRefs(key, spec.prompt, refs, {
 				aspect_ratio: '16:9',
 				quality: 'high',
-				// GPT Image 2 first for titleblock / “Created by ZyetaI”; Nano Banana 2 edit fallback
+				// GPT Image 2 first for titleblock / "Created by ZyetaI"; Nano Banana 2 edit fallback
 				preferGpt: true
 			});
 			if (err === 'no_key') {

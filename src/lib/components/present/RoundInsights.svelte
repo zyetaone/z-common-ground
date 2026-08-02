@@ -99,7 +99,7 @@
 						<span class="sub-label">{row.subLabel}</span>
 						<span class="rtotal">{fmtCoins(row.totalCoins)}</span>
 						<span class="rmove" class:add={!isCut} title={isCut ? 'Cut round' : 'Stake phase'}>
-							{isCut ? (row.cutCoins > 0 ? `−${fmtCoins(row.cutCoins).slice(1)}` : '−') : '+'}
+							{isCut ? (row.cutCoins > 0 ? `−${fmtCoins(row.cutCoins)}` : '−') : '+'}
 						</span>
 						<span class="rlead" class:changed={row.changed}>
 							{row.leadName} <span class="rshare">{row.leadShare}%</span>
@@ -194,7 +194,7 @@
 		flex-direction: column;
 		gap: 4px;
 		padding: 8px 12px 10px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		position: relative;
@@ -278,7 +278,7 @@
 		position: relative;
 		height: 28px;
 		display: flex;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
 	}
@@ -299,7 +299,7 @@
 		position: absolute;
 		inset: -3px;
 		border: 2px dashed color-mix(in srgb, var(--color-red) 65%, transparent);
-		border-radius: 9px;
+		border-radius: var(--radius-sm);
 		pointer-events: none;
 	}
 	.story {
@@ -307,7 +307,7 @@
 		grid-template-columns: 1.2fr 1fr 1fr;
 		gap: 10px;
 		padding: 10px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-panel) 80%, transparent);
 		border: 1px solid var(--color-line);
 		flex-shrink: 0;

@@ -24,7 +24,7 @@
 		<div class="regen-head">
 			<ZyetaI variant="badge" />
 			<div>
-				<p class="gm-k">Regenerate</p>
+				<p class="cg-kicker" style="margin:0">Regenerate</p>
 				<h3>What should ZyetaI redo?</h3>
 			</div>
 		</div>
@@ -58,13 +58,6 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-	}
-	.gm-k {
-		margin: 0;
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-muted);
 	}
 	.regen h3 {
 		margin: 0;

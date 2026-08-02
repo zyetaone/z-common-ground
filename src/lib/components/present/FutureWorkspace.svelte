@@ -197,7 +197,7 @@
 	{#if brief || roomCard}
 		<section class="brief-strip">
 			<div class="bs-text">
-				<span class="bs-k">Brief + DBR</span>
+				<span class="cg-kicker">Brief + DBR</span>
 				{#if roomCard}
 					<p class="bs-lead">
 						Lead <b>{roomCard.lead}</b> {roomCard.leadPct}%
@@ -216,11 +216,6 @@
 			<button type="button" class="ghost" onclick={() => futureUi.openBrief()}>Open full brief</button>
 		</section>
 	{/if}
-
-	<p class="foot-hint">
-		Palette + lens stills feed architectural drawings on the next page.
-		<a href="/present/{SESSION}/design">Workspace design →</a>
-	</p>
 </div>
 
 <ZyetaIGenerating
@@ -319,7 +314,7 @@
 		color: var(--color-red);
 		border: 1px solid color-mix(in srgb, var(--color-red) 40%, transparent);
 		background: color-mix(in srgb, var(--color-red) 8%, transparent);
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		padding: 6px 10px;
 	}
 
@@ -341,16 +336,10 @@
 		justify-content: space-between;
 		gap: 12px;
 		border: 1px solid var(--color-line);
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-panel) 60%, transparent);
 		padding: 10px 12px;
 		min-width: 0;
-	}
-	.bs-k {
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-muted);
 	}
 	.bs-text {
 		min-width: 0;
@@ -368,19 +357,5 @@
 		font-family: var(--font-mono, monospace);
 		font-size: 11px;
 		color: var(--color-muted);
-	}
-
-	.foot-hint {
-		margin: 0;
-		font-size: 10px;
-		color: var(--color-muted);
-	}
-	.foot-hint a {
-		color: var(--color-teal-ink);
-		text-decoration: none;
-		font-weight: 700;
-	}
-	.foot-hint a:hover {
-		text-decoration: underline;
 	}
 </style>

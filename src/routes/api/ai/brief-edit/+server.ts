@@ -18,7 +18,8 @@ export const POST: RequestHandler = async (event) => {
 	if (typeof body.brief !== 'string') {
 		throw error(400, 'brief must be a string');
 	}
-	if (body.brief.length > 20000) {
+	const brief: string = body.brief;
+	if (brief.length > 20000) {
 		throw error(400, 'brief exceeds 20000 chars');
 	}
 	const source = body.source ?? 'manual';
@@ -27,9 +28,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	return idempotentJson(event, async () => {
-		const room = await withLiveRoom(() =>
-			store.setEnhancedBrief('', body.brief ?? '', source)
-		);
+		const room = await withLiveRoom(() => store.setEnhancedBrief('', brief, source));
 		return {
 			ok: true,
 			brief: room.enhancedBrief,

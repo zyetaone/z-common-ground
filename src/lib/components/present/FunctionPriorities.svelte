@@ -9,6 +9,7 @@ import {
 		tableSeatIndex
 	} from '$lib/game';
 	import FunctionProfileSheet from './FunctionProfileSheet.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 
 	/**
 	 * Screen 5 — Per function. Cards sorted by alignment, with archetype + tags + top divergence. Profile sheet for depth.
@@ -116,14 +117,14 @@ import {
 			{:else}
 				{#if mostAligned}
 					<div class="fp-insight" style="--c:{mostAligned.color}">
-						<span class="fp-tag">🤝 Most Aligned Ally</span>
+						<span class="fp-tag"><Icon name="handshake" size={12} /> Most Aligned Ally</span>
 						<strong class="fp-title">{mostAligned.name} ({mostAligned.cg}/100)</strong>
 						<span class="fp-sub">Closest match to room mix</span>
 					</div>
 				{/if}
 				{#if mostDivergent}
 					<div class="fp-insight div" style="--c:{mostDivergent.color}">
-						<span class="fp-tag">⚡ Independent Lens</span>
+						<span class="fp-tag"><Icon name="lightning" size={12} /> Independent Lens</span>
 						<strong class="fp-title">{mostDivergent.name} ({mostDivergent.cg}/100)</strong>
 						<span class="fp-sub">
 							Diverges on {mostDivergent.topDivergence.name} ({mostDivergent.topDivergence.delta > 0 ? '+' : ''}{mostDivergent.topDivergence.delta}pp)
@@ -179,7 +180,7 @@ import {
 					<span class="dlab">vs room</span>
 					<span class="dval"
 						>{r.topDivergence.name}
-						<b>{r.topDivergence.delta > 0 ? '+' : ''}{r.topDivergence.delta}</b></span
+						<b>{r.topDivergence.delta > 0 ? '+' : ''}{r.topDivergence.delta}pp</b></span
 					>
 				</p>
 				<span class="more">Profile →</span>
@@ -190,20 +191,20 @@ import {
 		<!-- ── Methodology transparency note ── -->
 		<details class="method-note">
 			<summary class="method-toggle">
-				<span class="method-icon">ℹ️</span>
+				<span class="method-icon"><Icon name="info" size={13} /></span>
 				<span class="method-label">How to read this analysis</span>
 			</summary>
 			<div class="method-body">
 				<div class="method-col">
-					<span class="method-tag quant">📊 Quantitative</span>
+					<span class="method-tag quant"><Icon name="chart" size={11} /> Quantitative</span>
 					<p>Token counts and % shares are <strong>direct observations</strong> — the room placed these chips. No model or assumption involved.</p>
 				</div>
 				<div class="method-col">
-					<span class="method-tag mixed">⚖️ Assumptions</span>
+					<span class="method-tag mixed"><Icon name="scale" size={11} /> Assumptions</span>
 					<p>CGI, Lead / Fault / Blind use <strong>equal-weight aggregation</strong> — each function counts the same regardless of organisational size or budget authority. "Fault" uses variance as a proxy for disagreement; "Blind" assumes low funding = overlooked, not intentional.</p>
 				</div>
 				<div class="method-col">
-					<span class="method-tag qual">🧠 Qualitative</span>
+					<span class="method-tag qual"><Icon name="brain" size={11} /> Qualitative</span>
 					<p>Archetype labels, tags, the AI brief, and future workspace image are <strong>narrative interpretations</strong> — they help tell the story but are not statistical conclusions.</p>
 				</div>
 			</div>
@@ -252,6 +253,9 @@ import {
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		color: var(--c);
+		display: flex;
+		align-items: center;
+		gap: 4px;
 	}
 	.fp-title {
 		font-family: var(--font-display);
@@ -281,7 +285,7 @@ import {
 		gap: 10px;
 		padding: 8px 12px;
 		min-height: 44px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		flex-shrink: 0;
@@ -291,7 +295,7 @@ import {
 		display: flex;
 		height: 18px;
 		min-width: 0;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 		background: color-mix(in srgb, var(--color-ink) 6%, transparent);
 	}
@@ -326,7 +330,7 @@ import {
 		padding-bottom: 8px;
 	}
 	.card {
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--fn) 35%, var(--color-line));
 		background: color-mix(in srgb, var(--fn) 8%, var(--color-panel));
 		padding: 12px 14px;
@@ -439,7 +443,7 @@ import {
 	/* ── Methodology note ── */
 	.method-note {
 		flex-shrink: 0;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		overflow: hidden;
@@ -453,7 +457,7 @@ import {
 		list-style: none;
 	}
 	.method-toggle::-webkit-details-marker { display: none; }
-	.method-icon { font-size: 13px; }
+	.method-icon { font-size: 13px; display: flex; }
 	.method-label {
 		font-family: var(--font-mono);
 		font-size: 10px;
@@ -492,7 +496,9 @@ import {
 		text-transform: uppercase;
 		padding: 2px 8px;
 		border-radius: 999px;
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 		width: fit-content;
 	}
 	.method-tag.quant {

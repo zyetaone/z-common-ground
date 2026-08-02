@@ -17,8 +17,8 @@
 	const names = $derived(roomPriorities(room));
 	const n = $derived(personas.length);
 
-	const short = (p: string) =>
-		p.replace('Employee ', 'Emp. ').replace('Employer ', 'Emp. ').replace(' Readiness', '');
+	const SHORT = ['Talent', 'Experience', 'Brand', 'Productivity', 'Innovation', 'Cost / ROI', 'Future'];
+	const short = (ci: number, label: string) => SHORT[ci] ?? label;
 
 	const model = $derived.by(() => {
 		const seatCoins = roomPortrait(room.tables);
@@ -61,7 +61,7 @@
 		>
 			<div class="corner" aria-hidden="true"></div>
 			{#each names as col, ci (ci)}
-				<div class="colh" style="color:{PRI_COLORS[ci]}">{short(col)}</div>
+				<div class="colh" style="color:{PRI_COLORS[ci]}">{short(ci, col)}</div>
 			{/each}
 
 			{#each personas as persona, si (si)}

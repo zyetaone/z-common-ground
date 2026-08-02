@@ -77,8 +77,8 @@ const isRevealable = $derived(
 <main class="stage stage-dark">
 	<header class="topbar">
 		<div class="tb-left">
-			<a class="back" href="/present/{SESSION}">← Back to live</a>
-			<span class="tag">Analysis · {st?.code ?? SESSION}</span>
+			<a class="cg-backlink" href="/present/{SESSION}">← Back to live</a>
+			<span class="cg-kicker tag">Analysis · {st?.code ?? SESSION}</span>
 		</div>
 		<div class="tb-rungs">
 			{#each Array(roundCount) as _, i (i)}
@@ -169,7 +169,7 @@ const isRevealable = $derived(
 		align-items: center;
 		gap: 10px;
 		padding: 8px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		flex-shrink: 0;
@@ -179,27 +179,9 @@ const isRevealable = $derived(
 		align-items: center;
 		gap: 8px;
 	}
-	.back {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		color: var(--color-ink);
-		text-decoration: none;
-		padding: 2px 8px;
-		border-radius: 6px;
-		border: 1px solid var(--color-line);
-	}
-	.back:hover {
-		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
-	}
 	.tag {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--color-teal-ink);
+		--k-track: 0.12em;
+		--k-color: var(--color-teal-ink);
 	}
 	.tb-rungs {
 		display: flex;

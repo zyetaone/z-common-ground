@@ -25,7 +25,7 @@
 <div class="ap" class:compact>
 	<header class="head">
 		<div>
-			<p class="kicker">Architecture concept · presentation plan</p>
+			<p class="cg-kicker" style="margin:0; --k-color: var(--color-teal-ink)">Architecture concept · presentation plan</p>
 			<p class="mandate">{plan.mandate}</p>
 		</div>
 		{#if plan.drawingCount}
@@ -71,7 +71,7 @@
 	{/if}
 
 	<section class="zones" aria-label="Function contribution to Common Ground zones">
-		<p class="zk">Who built each Common Ground zone</p>
+		<p class="cg-kicker" style="margin:0; --k-track: 0.12em">Who built each Common Ground zone</p>
 		<p class="zs">{plan.layoutPlan}</p>
 		{#each plan.zones.filter((z) => z.preferred || z.pct >= 8) as z (z.priority)}
 			<div class="zrow">
@@ -115,14 +115,6 @@
 		gap: 10px;
 		align-items: flex-start;
 	}
-	.kicker {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-teal-ink);
-	}
 	.mandate {
 		margin: 4px 0 0;
 		font-size: 13px;
@@ -141,10 +133,10 @@
 		color: var(--color-teal-ink);
 	}
 	.slide {
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		border: 1px solid var(--color-line);
-		background: #0a0f1a;
+		background: var(--color-well);
 	}
 	.slide img {
 		width: 100%;
@@ -163,7 +155,7 @@
 		place-items: center;
 		color: var(--color-muted);
 		font-size: 12px;
-		background: #111;
+		background: var(--color-well);
 	}
 	.slide-body {
 		padding: 10px 12px;
@@ -190,7 +182,7 @@
 	.nb {
 		width: 28px;
 		height: 28px;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		cursor: pointer;
@@ -220,18 +212,10 @@
 		box-shadow: 0 0 8px var(--c, var(--color-teal));
 	}
 	.zones {
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		padding: 10px 12px;
-	}
-	.zk {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--color-muted);
 	}
 	.zs {
 		margin: 4px 0 10px;
@@ -261,7 +245,7 @@
 	.stack {
 		display: flex;
 		height: 10px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 		background: color-mix(in srgb, var(--color-ink) 6%, transparent);
 	}

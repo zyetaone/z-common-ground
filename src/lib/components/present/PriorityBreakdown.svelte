@@ -173,7 +173,7 @@
 		position: relative;
 		height: 16px;
 		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 	}
 	.pbar-fill {

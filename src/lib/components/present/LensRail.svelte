@@ -130,7 +130,7 @@
 		flex-direction: column;
 		gap: 10px;
 		border: 1px solid var(--color-line);
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-panel) 60%, transparent);
 		padding: 12px;
 	}
@@ -204,7 +204,7 @@
 	.thumb {
 		width: 54px;
 		height: 34px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 		border: 1px solid color-mix(in srgb, var(--fn) 40%, transparent);
 		background: color-mix(in srgb, var(--color-ink) 8%, transparent);
@@ -225,10 +225,10 @@
 	}
 	.lens-regen {
 		position: absolute;
-		right: -4px;
-		bottom: -4px;
-		width: 18px;
-		height: 18px;
+		right: -6px;
+		top: -6px;
+		width: 20px;
+		height: 20px;
 		border-radius: 50%;
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);

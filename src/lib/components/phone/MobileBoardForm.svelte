@@ -134,7 +134,7 @@
 	}
 	.submit {
 		border: none;
-		border-radius: 14px;
+		border-radius: var(--radius-sm);
 		padding: 16px;
 		font-family: var(--font-display);
 		font-weight: 800;

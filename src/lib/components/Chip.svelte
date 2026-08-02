@@ -1,7 +1,9 @@
 <script lang="ts">
 	// Poker-chip token — single $10M denom.
+	// Default is the brand red (--color-red); CHIP_DENOMS in game/config owns
+	// the gameplay chip color — every gameplay call site passes `hex` explicitly.
 	let {
-		hex = '#e0554b',
+		hex = '#c9403a',
 		value,
 		size = 30
 	}: { hex?: string; value?: number | string; size?: number } = $props();
@@ -27,9 +29,9 @@
 			text-anchor="middle"
 			dominant-baseline="central"
 			fill="#fff"
-			font-family="var(--font-display), sans-serif"
+			font-family="var(--font-display)"
 			font-weight="800"
-			font-size="14">{value}</text
+			font-size={size * 0.47}>{value}</text
 		>
 	{/if}
 </svg>

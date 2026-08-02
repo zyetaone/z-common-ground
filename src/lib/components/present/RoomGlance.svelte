@@ -107,7 +107,7 @@
 		gap: 12px 18px;
 		padding: 8px 14px;
 		min-height: 48px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		flex-shrink: 0;

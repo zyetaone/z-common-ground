@@ -39,7 +39,7 @@
 
 <div class="finale">
 	<section class="f-card">
-		<div class="kicker">{persona.name}</div>
+		<div class="cg-kicker" style="--k-track: 0.16em; margin-bottom:8px">{persona.name}</div>
 		<div class="f-hero">
 			<span class="f-big">{top.share}%</span>
 			<span class="f-unit">on {top.name}</span>
@@ -78,14 +78,6 @@
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		padding: 14px;
-	}
-	.kicker {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: var(--color-muted);
-		margin-bottom: 8px;
 	}
 	.f-hero {
 		display: flex;
@@ -143,7 +135,7 @@
 	}
 	.qbtn.primary {
 		border: none;
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		background: var(--color-teal);
 		color: var(--color-on-teal);
 		padding: 14px;

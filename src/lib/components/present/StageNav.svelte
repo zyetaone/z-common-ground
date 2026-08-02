@@ -30,7 +30,7 @@
 
 <nav class="nav" aria-label="Analysis screens">
 	{#if title}
-		<p class="title" aria-live="polite">{title}</p>
+		<p class="cg-kicker title" aria-live="polite">{title}</p>
 	{/if}
 	<div class="dots" role="group" aria-label="Screen {page} of {total}">
 		{#each Array(total) as _, i (i)}
@@ -72,12 +72,8 @@
 	}
 	.title {
 		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--color-muted);
+		--k-size: 11px;
+		--k-track: 0.08em;
 		text-align: center;
 	}
 	.dots {
@@ -129,7 +125,7 @@
 		flex: 0 0 auto;
 		min-width: 100px;
 		min-height: 44px;
-		border-radius: 14px;
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-line);
 		background: transparent;
 		color: var(--color-muted);
@@ -145,7 +141,7 @@
 		flex: 1;
 		min-height: 44px;
 		border: none;
-		border-radius: 14px;
+		border-radius: var(--radius-sm);
 		background: var(--color-teal);
 		color: var(--color-on-teal);
 		padding: 12px 18px;

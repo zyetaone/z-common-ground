@@ -107,8 +107,9 @@
 	let showHelp = $state(false);
 
 	function fmtDelta(t: number): string {
-		// already signed; we want absolute $M with sign
-		return (t > 0 ? '+' : '') + t + 'M';
+		// signed $M: +$40M / −$30M
+		const sign = t > 0 ? '+' : t < 0 ? '−' : '';
+		return sign + '$' + Math.abs(t) + 'M';
 	}
 </script>
 
@@ -240,7 +241,7 @@
 	}
 	.help {
 		padding: 12px 14px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-panel) 80%, transparent);
 		border: 1px solid color-mix(in srgb, var(--color-teal) 35%, transparent);
 		font-size: 12px;
@@ -330,7 +331,7 @@
 		font-size: 10px;
 		font-weight: 700;
 		padding: 2px 6px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		background: color-mix(in srgb, var(--c) 12%, transparent);
 		color: var(--color-ink);
 		border: 1px solid color-mix(in srgb, var(--c) 35%, transparent);

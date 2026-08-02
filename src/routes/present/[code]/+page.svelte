@@ -13,6 +13,7 @@
 		tablePersona
 	} from '$lib/game';
 	import { present, SESSION, session } from '$lib/state';
+	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 
 	const st = $derived(session.room);
@@ -80,8 +81,8 @@
 	<header class="topbar">
 		<div class="tb-left">
 			<h1 class="brand">COMMON <span class="gold">GROUND</span></h1>
-			<span class="conn" class:on={session.connected} aria-label={session.connected ? 'Connected' : 'Reconnecting'}>
-				{session.connected ? '●' : '○'}
+			<span class="conn" class:on={session.connected} aria-label={session.connected ? 'Live' : 'Offline'}>
+				{session.connected ? '● live' : '○ …'}
 			</span>
 		</div>
 		<div class="tb-rungs">
@@ -100,15 +101,15 @@
 			{#if phase === 'round' && lockedCount > 0}
 				<span class="count-chip">{lockedCount}/{totalTables}</span>
 			{/if}
-			<a class="look" href="/presenter/analysis">Analysis →</a>
-			<a class="host" href="/host/{SESSION}" target="_blank">Host</a>
+			<a class="cg-backlink" href="/presenter/analysis">Analysis →</a>
+			<a class="cg-backlink" href="/host/{SESSION}" target="_blank">Host</a>
 		</div>
 	</header>
 
 	{#if phase === 'lobby'}
 		<div class="sc-bar">
 			<div class="sc-left">
-				<span class="sc-emoji">🏁</span>
+				<span class="sc-emoji"><Icon name="flag" size={18} /></span>
 				<span class="sc-q">Session ready — tables scan QR to join</span>
 			</div>
 			<div class="sc-act">
@@ -123,9 +124,6 @@
 				<span class="sc-emoji">{scenario.emoji}</span>
 				<div class="sc-text">
 					<span class="sc-q">{scenario.question}</span>
-					{#if scenario.experience}
-						<span class="sc-experience">{scenario.experience}</span>
-					{/if}
 				</div>
 			</div>
 			<div class="sc-act">
@@ -140,7 +138,7 @@
 	{:else if phase === 'reveal' || phase === 'finale'}
 		<div class="sc-bar finale">
 			<div class="sc-left">
-				<span class="sc-emoji">{phase === 'reveal' ? '📊' : '🏆'}</span>
+				<span class="sc-emoji"><Icon name={phase === 'reveal' ? 'chart' : 'trophy'} size={18} /></span>
 				<div class="sc-text">
 					<span class="sc-q">{thesis.cgiLine}</span>
 					<span class="sc-sub">Open the analysis — shape · moves · functions</span>
@@ -159,7 +157,7 @@
 			{#if phase === 'lobby'}
 				<div class="submissions">
 					<div class="sub-head">
-						<span class="sub-title">Table Directory</span>
+						<span class="cg-kicker" style="--k-size: 11px; --k-color: var(--color-gold-ink)">Table Directory</span>
 						<span class="sub-count">{joinedCount}/{totalTables} joined</span>
 					</div>
 					<div class="sub-grid">
@@ -171,7 +169,7 @@
 									<span class="sub-name">{fn.name}</span>
 								</div>
 								{#if t.joined}
-									<div class="sub-badge">✓ Joined</div>
+									<div class="sub-badge"><Icon name="check" size={12} /> Joined</div>
 								{:else}
 									<div class="sub-badge idle">Table {t.id}</div>
 								{/if}
@@ -183,7 +181,7 @@
 			{:else if phase === 'round'}
 				<div class="submissions">
 					<div class="sub-head">
-						<span class="sub-title">Live Table Submissions</span>
+						<span class="cg-kicker" style="--k-size: 11px; --k-color: var(--color-gold-ink)">Live Table Submissions</span>
 						<span class="sub-count">{frozenCount}/{totalTables} Frozen  ·  {lockedCount}/{totalTables} Submitted</span>
 					</div>
 					<div class="sub-grid">
@@ -195,10 +193,10 @@
 									<span class="sub-name">{fn.name}</span>
 								</div>
 								{#if t.lockedThisRound}
-									<div class="sub-badge">✓ Sealed</div>
+									<div class="sub-badge"><Icon name="check" size={12} /> Sealed</div>
 									<div class="sub-status">Mix locked</div>
 								{:else if t.physicallyDone}
-									<div class="sub-badge">❄ Frozen</div>
+									<div class="sub-badge"><Icon name="snowflake" size={12} /> Frozen</div>
 									<div class="sub-status">Matching digital…</div>
 								{:else}
 									<div class="sub-badge idle">Physical board</div>
@@ -215,7 +213,7 @@
 
 <Modal bind:open={retreatOpen} label="Step back one round">
 	<div class="confirm-panel">
-		<p class="confirm-kicker">Step back</p>
+		<p class="cg-kicker" style="margin:0; --k-track: 0.2em; --k-color: var(--color-red)">Step back</p>
 		<h2 class="confirm-title">Step back one round?</h2>
 		<p class="confirm-copy">Boards reopen so tables can fix mistakes. Tokens stay.</p>
 		<div class="confirm-acts">
@@ -246,7 +244,7 @@
 		align-items: center;
 		gap: 10px;
 		padding: 8px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		flex-shrink: 0;
@@ -268,7 +266,8 @@
 		color: var(--color-gold-ink);
 	}
 	.conn {
-		font-size: 10px;
+		font-family: var(--font-mono);
+		font-size: 11px;
 		color: var(--color-muted);
 	}
 	.conn.on {
@@ -306,9 +305,7 @@
 		align-items: center;
 		gap: 8px;
 	}
-	.count-chip,
-	.look,
-	.host {
+	.count-chip {
 		font-family: var(--font-mono);
 		font-size: 10px;
 		font-weight: 700;
@@ -317,14 +314,6 @@
 		padding: 4px 10px;
 		border-radius: 999px;
 		border: 1px solid var(--color-line);
-	}
-	.look,
-	.host {
-		color: var(--color-teal-ink);
-	}
-	.look:hover,
-	.host:hover {
-		background: color-mix(in srgb, var(--color-teal) 10%, transparent);
 	}
 	.center {
 		padding: 48px;
@@ -341,7 +330,7 @@
 		gap: 12px;
 		margin-top: 8px;
 		padding: 10px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		flex-shrink: 0;
@@ -359,6 +348,7 @@
 	.sc-emoji {
 		font-size: 18px;
 		flex-shrink: 0;
+		display: flex;
 	}
 	.sc-text {
 		display: flex;
@@ -378,13 +368,6 @@
 		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
-	}
-	.sc-experience {
-		font-size: 12px;
-		color: var(--color-muted);
-		line-height: 1.4;
-		font-weight: 500;
-		display: none;
 	}
 	.sc-sub {
 		font-size: 13px;
@@ -445,14 +428,6 @@
 		border-bottom: 1px solid var(--color-line);
 		margin-bottom: 12px;
 	}
-	.sub-title {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-gold-ink);
-	}
 	.sub-count {
 		font-family: var(--font-mono);
 		font-size: 11px;
@@ -466,7 +441,7 @@
 		gap: 8px;
 	}
 	.sub-card {
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		padding: 16px;
@@ -514,7 +489,9 @@
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--color-teal) 18%, transparent);
 		color: var(--color-teal-ink);
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
 		margin-bottom: 6px;
 	}
 	.sub-badge.idle {
@@ -541,15 +518,6 @@
 		border-radius: 16px;
 		border: 1px solid color-mix(in srgb, var(--color-red) 40%, var(--color-line));
 		background: var(--color-panel);
-	}
-	.confirm-kicker {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 800;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		color: var(--color-red);
 	}
 	.confirm-title {
 		margin: 6px 0 0;

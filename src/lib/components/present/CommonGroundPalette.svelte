@@ -165,7 +165,7 @@
 		flex-direction: column;
 		gap: 10px;
 		border: 1px solid var(--color-line);
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		background: color-mix(in srgb, var(--color-panel) 60%, transparent);
 		padding: 12px;
 	}
@@ -196,7 +196,7 @@
 	.icon-btn {
 		width: 26px;
 		height: 26px;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-line);
 		background: transparent;
 		color: var(--color-ink);
@@ -222,7 +222,7 @@
 
 	.hero {
 		position: relative;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		border: 1px solid var(--color-line);
 		background: color-mix(in srgb, var(--color-ink) 8%, transparent);
@@ -279,7 +279,7 @@
 	.pchip {
 		width: 46px;
 		height: 30px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 		border: 1px solid var(--color-line);
 		background: transparent;

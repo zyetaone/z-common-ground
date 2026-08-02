@@ -15,7 +15,7 @@
 
 <main class="page stage-dark">
 	<header class="top">
-		<a class="back" href="/present/{SESSION}">← COMMON <span class="gold">GROUND</span></a>
+		<a class="cg-backlink" href="/present/{SESSION}">← Back</a>
 		<span class="tag">ZyetaI · Workspace design</span>
 		<span class="conn" class:on={session.connected} aria-label={session.connected ? 'Live' : 'Offline'}>
 			{session.connected ? '● live' : '○ …'}
@@ -44,17 +44,6 @@
 		margin-bottom: 12px;
 		padding-bottom: 10px;
 		border-bottom: 1px solid var(--color-line);
-	}
-	.back {
-		font-family: var(--font-display);
-		font-weight: 900;
-		font-size: 0.95rem;
-		letter-spacing: -0.02em;
-		text-decoration: none;
-		color: var(--color-ink);
-	}
-	.gold {
-		color: var(--color-gold-ink);
 	}
 	.tag {
 		font-family: var(--font-mono);

@@ -21,7 +21,7 @@
 				<div class="id">
 					<span class="dot"></span>
 					<div>
-						<p class="kicker">Table {profile.tableId} · personality scan</p>
+						<p class="cg-kicker" style="margin:0">Table {profile.tableId} · personality scan</p>
 						<h2>{profile.name}</h2>
 						<p class="archetype">{profile.archetype}</p>
 					</div>
@@ -145,7 +145,7 @@
 		width: min(560px, 100vw - 32px);
 		max-height: min(88dvh, 820px);
 		overflow: auto;
-		border-radius: 20px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--fn) 40%, var(--color-line));
 		background: var(--color-bg);
 		padding: 20px 22px 24px;
@@ -172,14 +172,6 @@
 		box-shadow: 0 0 16px var(--fn);
 		margin-top: 6px;
 		flex-shrink: 0;
-	}
-	.kicker {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-muted);
 	}
 	h2 {
 		margin: 2px 0 0;
@@ -235,7 +227,7 @@
 		margin-bottom: 16px;
 	}
 	.chip {
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
 		padding: 10px 12px;
@@ -345,7 +337,7 @@
 		gap: 8px;
 		font-size: 13px;
 		padding: 6px 8px;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		background: var(--color-panel);
 		border: 1px solid var(--color-line);
 	}

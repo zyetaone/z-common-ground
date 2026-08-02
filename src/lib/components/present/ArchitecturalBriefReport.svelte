@@ -68,7 +68,7 @@
 			<div class="cover-brand">
 				<ZyetaI variant="badge" />
 			</div>
-			<p class="kicker">Lookbook · brief + concept refs</p>
+			<p class="cg-kicker" style="margin:0">Lookbook · brief + concept refs</p>
 			<h1>Common Ground</h1>
 			<p class="sub">{thesis.wallet} {thesis.commonGround}</p>
 			{#if insights.hasData}
@@ -200,7 +200,7 @@
 	{/if}
 
 	<section class="sec extra-call">
-		<p class="extra-k">Extra · ZyetaI architectural set</p>
+		<p class="cg-kicker" style="margin:0 0 4px; --k-track: 0.12em; --k-color: var(--color-teal-ink)">Extra · ZyetaI architectural set</p>
 		<p class="muted">
 			Plans, sections, elevations, and collage are on a separate page — keep the analysis deck
 			clean.
@@ -221,7 +221,7 @@
 		width: min(720px, 100vw - 20px);
 		max-height: min(90dvh, 880px);
 		overflow: auto;
-		border-radius: 18px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-bg);
 		padding: 0 0 16px;
@@ -237,14 +237,6 @@
 	}
 	.cover-brand {
 		margin-bottom: 8px;
-	}
-	.kicker {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-muted);
 	}
 	.cover h1 {
 		margin: 4px 0 0;
@@ -335,10 +327,10 @@
 	}
 	.draw-stage {
 		position: relative;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		border: 1px solid var(--color-line);
-		background: #0a0f1a;
+		background: var(--color-well);
 		aspect-ratio: 16 / 9;
 		max-height: 240px;
 	}
@@ -352,7 +344,7 @@
 		left: 8px;
 		bottom: 8px;
 		padding: 6px 10px;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		background: rgba(0, 0, 0, 0.65);
 		border-left: 3px solid var(--c);
 		display: flex;
@@ -386,11 +378,11 @@
 		width: 48px;
 		height: 32px;
 		padding: 0;
-		border-radius: 5px;
+		border-radius: var(--radius-sm);
 		border: 2px solid transparent;
 		overflow: hidden;
 		cursor: pointer;
-		background: #111;
+		background: var(--color-well);
 	}
 	.thumb.on {
 		border-color: var(--c, var(--color-teal));
@@ -435,7 +427,7 @@
 		width: 100%;
 		aspect-ratio: 16 / 10;
 		object-fit: cover;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 	}
 	.mix-line {
 		margin: 0;
@@ -448,12 +440,10 @@
 		border-radius: 10px;
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
-		font-family: var(--font-mono);
-		font-size: 11px;
-		line-height: 1.45;
+		font-family: var(--font-sans);
+		font-size: 15px;
+		line-height: 1.6;
 		white-space: pre-wrap;
-		max-height: 220px;
-		overflow: auto;
 	}
 	.edit-area {
 		width: 100%;
@@ -471,15 +461,6 @@
 	}
 	.extra-call {
 		background: color-mix(in srgb, var(--color-teal) 5%, var(--color-bg));
-	}
-	.extra-k {
-		margin: 0 0 4px;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--color-teal-ink);
-		font-weight: 700;
 	}
 	.design-cta {
 		display: inline-block;

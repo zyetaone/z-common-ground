@@ -45,7 +45,7 @@
 	<section class="sheet" aria-label="Workspace design composition">
 		<header class="titleblock">
 			<div class="tb-left">
-				<p class="kicker">ZyetaI · workspace design set</p>
+				<p class="cg-kicker" style="margin:0; --k-size: 9px; --k-track: 0.18em; --k-color: var(--color-teal-ink)">ZyetaI · workspace design set</p>
 				<h2>Architectural composition</h2>
 				<p class="sub">{plan.layoutPlan}</p>
 			</div>
@@ -62,7 +62,7 @@
 			<figure class="hero-sheet">
 				<img src={collage.url} alt={collage.label} />
 				<figcaption>
-					<span class="rh-lab">A · {collage.label}</span>
+					<span class="cg-kicker" style="--k-color: var(--color-teal-ink)">A · {collage.label}</span>
 					<span class="rh-m">{plan.mandate}</span>
 				</figcaption>
 			</figure>
@@ -70,7 +70,7 @@
 
 		{#if otherSheets.length}
 			<div class="sheets-row">
-				<p class="zb-lab">B · Plans · sections · elevations · concepts</p>
+				<p class="cg-kicker" style="margin:0 0 8px; --k-size: 9px; --k-track: 0.12em; --k-color: #8a8578">B · Plans · sections · elevations · concepts</p>
 				<div class="sgrid">
 					{#each otherSheets as s (s.url)}
 						<figure class="sfig">
@@ -87,7 +87,7 @@
 
 		{#if preferred.length}
 			<div class="fund">
-				<p class="fund-lab">C · Who funds each zone</p>
+				<p class="cg-kicker" style="margin:0 0 8px; --k-size: 9px; --k-track: 0.12em; --k-color: #8a8578">C · Who funds each zone</p>
 				<div class="fund-grid">
 					{#each preferred as z (z.priority)}
 						<div class="frow" style="--zc:{z.color}">
@@ -110,7 +110,7 @@
 
 		{#if fnDrawings.length}
 			<div class="lenses">
-				<p class="lk">D · Concept reference lenses</p>
+				<p class="cg-kicker" style="margin:0 0 8px; --k-size: 9px; --k-track: 0.12em">D · Concept reference lenses</p>
 				<div class="lrow">
 					{#each fnDrawings as d (d.url)}
 						<figure class="lfig" style="--c:{d.color}">
@@ -131,7 +131,7 @@
 	<section class="sheet pending" aria-label="Awaiting workspace design">
 		<header class="titleblock">
 			<div class="tb-left">
-				<p class="kicker">Concept refs ready</p>
+				<p class="cg-kicker" style="margin:0; --k-size: 9px; --k-track: 0.18em; --k-color: var(--color-teal-ink)">Concept refs ready</p>
 				<h2>Generate workspace design</h2>
 				<p class="sub">
 					Brief is final and {drawings.length} concept images are ready. Run
@@ -189,14 +189,6 @@
 			var(--color-panel) 55%
 		);
 	}
-	.kicker {
-		margin: 0;
-		font-family: var(--font-mono);
-		font-size: 9px;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		color: var(--color-teal-ink);
-	}
 	h2 {
 		margin: 3px 0 0;
 		font-family: var(--font-display);
@@ -245,7 +237,7 @@
 	.hero-sheet {
 		margin: 0;
 		position: relative;
-		background: #0a0f1a;
+		background: var(--color-well);
 	}
 	.hero-sheet img {
 		width: 100%;
@@ -262,13 +254,6 @@
 		flex-direction: column;
 		gap: 4px;
 	}
-	.rh-lab {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-teal-ink);
-	}
 	.rh-m {
 		font-size: 12px;
 		font-weight: 600;
@@ -278,17 +263,7 @@
 	}
 	.sheets-row {
 		padding: 12px 12px 10px;
-		background: #0a0f1a;
-	}
-	.zb-lab,
-	.fund-lab,
-	.lk {
-		margin: 0 0 8px;
-		font-family: var(--font-mono);
-		font-size: 9px;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: #8a8578;
+		background: var(--color-well);
 	}
 	.sgrid {
 		display: grid;
@@ -297,7 +272,7 @@
 	}
 	.sfig {
 		margin: 0;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		overflow: hidden;
 		border: 1px solid color-mix(in srgb, #fff 12%, transparent);
 	}
@@ -312,7 +287,7 @@
 		font-size: 10px;
 		font-weight: 700;
 		color: #d8d0bc;
-		background: #121820;
+		background: var(--color-well);
 	}
 	.sk {
 		display: block;
@@ -370,9 +345,6 @@
 		padding: 12px 14px 14px;
 		border-top: 1px solid var(--color-line);
 	}
-	.lk {
-		color: var(--color-muted);
-	}
 	.lrow {
 		display: flex;
 		gap: 8px;
@@ -419,7 +391,7 @@
 		flex-wrap: wrap;
 		gap: 4px;
 		padding: 8px;
-		background: #0a0f1a;
+		background: var(--color-well);
 		min-height: 120px;
 	}
 	.zone-mosaic.preview {
@@ -431,7 +403,7 @@
 		min-width: 100px;
 		min-height: 90px;
 		overflow: hidden;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		border: 1px solid color-mix(in srgb, var(--zc) 55%, transparent);
 	}
 	.zcell img {
@@ -480,7 +452,7 @@
 		padding: 14px;
 		font-size: 12px;
 		color: var(--color-muted);
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px dashed var(--color-line);
 		text-align: center;
 	}

@@ -301,7 +301,7 @@
 		justify-content: space-between;
 		gap: 8px;
 		padding: 10px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: var(--color-bg-elevated);
 		transition:
@@ -400,7 +400,7 @@
 	.btn {
 		width: 44px;
 		height: 44px;
-		border-radius: 8px;
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-line);
 		background: transparent;
 		color: var(--color-ink);

@@ -131,7 +131,7 @@
 		align-items: flex-start;
 		gap: 8px;
 		padding: 8px 12px;
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, var(--color-line));
 		background: color-mix(in srgb, var(--color-gold) 12%, var(--color-panel));
 		font-size: 12px;

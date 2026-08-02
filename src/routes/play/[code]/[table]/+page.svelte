@@ -254,7 +254,7 @@
 	{#if !session.room}
 		<MobileWaitStage showDot text="Connecting to session…" />
 	{:else if !table || tableId < 1 || tableId > 7}
-		<MobileWaitStage icon="📱" heading="Wrong table link" sub="Scan the QR for your function table (1–7)." />
+		<MobileWaitStage icon="phone" heading="Wrong table link" sub="Scan the QR for your function table (1–7)." />
 	{:else if tab === 'render'}
 		<MobileRender room={session.room} {tableId} {counts} />
 		{#if isFinale}
@@ -295,14 +295,14 @@
 		{:else}
 			<MobileWaitStage
 				joined
-				icon="✅"
+				icon="check"
 				heading="Joined"
 				sub="Waiting for presenter to start Round 1…"
 			/>
 		{/if}
 	{:else if phase === 'round' && !physicallyDone}
 		<MobileWaitStage
-			icon="🎯"
+			icon="target"
 			heading={freezeHeading}
 			sub={freezeSub}
 			actionLabel={session.busy ? 'Freezing…' : 'Freeze'}
@@ -359,7 +359,7 @@
 	}
 	.qbtn {
 		flex: 1;
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		border: 1px solid var(--color-line);
 		background: transparent;
 		color: var(--color-gold-ink);

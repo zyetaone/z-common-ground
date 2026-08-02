@@ -56,12 +56,12 @@
 				class="flex flex-col items-center gap-3 rounded-2xl border border-line bg-panel/30 p-6 print:break-inside-avoid print:border-black/15 print:bg-white print:text-black"
 			>
 				<div class="flex items-center gap-2">
-					<span class="h-3 w-3 rounded-full" style="background:{persona.color}"></span>
+					<span class="h-4 w-4 rounded-full" style="background:{persona.color}"></span>
 					<div class="text-center">
 						<div class="font-mono text-[10px] uppercase tracking-[0.18em] text-muted print:text-black/55">
 							Table {id}
 						</div>
-						<div class="font-display text-xl font-bold">{persona.name}</div>
+						<div class="font-display text-2xl font-bold">{persona.name}</div>
 						<div class="text-xs text-muted print:text-black/65">{persona.lens}</div>
 					</div>
 				</div>

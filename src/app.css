@@ -30,6 +30,12 @@
 	--color-well: #0a0f1a;
 	--color-scrim: rgba(0, 0, 0, 0.85);
 
+	/* Board felt — printable board / QR artifacts (BoardSheet, /board, /boards) */
+	--color-felt: #0e6b41;
+	--color-felt-deep: #0a5735;
+	--color-felt-ink: #f3ecd8;
+	--color-felt-muted: #bfd8c7;
+
 	/* ZyetaI brand surface */
 	--color-zi: var(--color-teal);
 	--color-zi-accent: var(--color-gold);
@@ -137,9 +143,6 @@ body::before {
 .font-mono {
 	font-family: var(--font-mono);
 }
-.font-serif {
-	font-family: var(--font-serif);
-}
 
 /* Type roles — use by meaning, not size */
 .t-display {
@@ -214,12 +217,31 @@ body::before {
 	color: var(--color-muted);
 	font-size: 14px;
 	border: 1px dashed var(--color-line);
-	border-radius: 12px;
+	border-radius: var(--radius-lg);
 	text-align: center;
 }
-.cg-empty-inline {
-	color: var(--color-muted);
-	font-size: 14px;
+
+/* Shared back/nav link chrome — the presenter routes had four near-identical
+ * back-link designs (serif wordmark, mono pill, bordered chip). One pattern:
+ * mono 11px pill, muted border, "← Back" text supplied by the caller. */
+.cg-backlink {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	color: var(--color-fg-muted);
+	text-decoration: none;
+	padding: 4px 10px;
+	border-radius: 999px;
+	border: 1px solid var(--color-border);
+	background: transparent;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.cg-backlink:hover {
+	color: var(--color-teal-ink);
+	border-color: color-mix(in srgb, var(--color-teal) 40%, var(--color-border));
+	background: color-mix(in srgb, var(--color-teal) 8%, transparent);
 }
 
 .stagger > * {

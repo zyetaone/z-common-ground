@@ -18,51 +18,38 @@
 	const v = $derived(variant);
 </script>
 
+{#snippet zMark(size: number, rx: number, fill: string, zWidth: number, barWidth: number, barOpacity = 1)}
+	<svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
+		<rect width="32" height="32" {rx} {fill} />
+		<!-- Z stroke -->
+		<path
+			d="M9 9.5 h14 l-14 13 h14"
+			fill="none"
+			stroke="var(--color-teal)"
+			stroke-width={zWidth}
+			stroke-linecap="round"
+			stroke-linejoin="round"
+		/>
+		<!-- gold accent bar -->
+		<path
+			d="M11 16 h10"
+			fill="none"
+			stroke="var(--color-gold)"
+			stroke-width={barWidth}
+			stroke-linecap="round"
+			opacity={barOpacity}
+		/>
+	</svg>
+{/snippet}
+
 {#if v === 'mark'}
 	<span class="zi-mark" aria-label="ZyetaI" title="ZyetaI — workplace strategy AI">
-		<svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
-			<rect width="32" height="32" rx="8" fill="var(--color-zi-bg, #FDF8ED)" />
-			<!-- Z stroke -->
-			<path
-				d="M9 9.5 h14 l-14 13 h14"
-				fill="none"
-				stroke="var(--color-teal)"
-				stroke-width="2.6"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			/>
-			<!-- gold accent bar -->
-			<path
-				d="M11 16 h10"
-				fill="none"
-				stroke="var(--color-gold)"
-				stroke-width="2"
-				stroke-linecap="round"
-				opacity="0.9"
-			/>
-		</svg>
+		{@render zMark(28, 8, 'var(--color-zi-bg, #FDF8ED)', 2.6, 2, 0.9)}
 	</span>
 {:else if v === 'badge'}
 	<span class="zi-badge" aria-label="ZyetaI">
 		<span class="zi-mark mini" aria-hidden="true">
-			<svg viewBox="0 0 32 32" width="18" height="18">
-				<rect width="32" height="32" rx="7" fill="color-mix(in srgb, var(--color-teal) 12%, transparent)" />
-				<path
-					d="M9 9.5 h14 l-14 13 h14"
-					fill="none"
-					stroke="var(--color-teal)"
-					stroke-width="2.8"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				/>
-				<path
-					d="M11 16 h10"
-					fill="none"
-					stroke="var(--color-gold)"
-					stroke-width="2.2"
-					stroke-linecap="round"
-				/>
-			</svg>
+			{@render zMark(18, 7, 'color-mix(in srgb, var(--color-teal) 12%, transparent)', 2.8, 2.2)}
 		</span>
 		<span class="zi-badge-text">
 			<span class="zi-name">ZyetaI</span>
@@ -76,24 +63,7 @@
 {:else if v === 'hero'}
 	<div class="zi-hero" aria-label="ZyetaI">
 		<span class="zi-mark" aria-hidden="true">
-			<svg viewBox="0 0 32 32" width="36" height="36">
-				<rect width="32" height="32" rx="9" fill="color-mix(in srgb, var(--color-teal) 14%, var(--color-panel))" />
-				<path
-					d="M9 9.5 h14 l-14 13 h14"
-					fill="none"
-					stroke="var(--color-teal)"
-					stroke-width="2.6"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				/>
-				<path
-					d="M11 16 h10"
-					fill="none"
-					stroke="var(--color-gold)"
-					stroke-width="2"
-					stroke-linecap="round"
-				/>
-			</svg>
+			{@render zMark(36, 9, 'color-mix(in srgb, var(--color-teal) 14%, var(--color-panel))', 2.6, 2)}
 		</span>
 		<div class="zi-hero-copy">
 			<p class="zi-hero-name">ZyetaI</p>
@@ -153,7 +123,7 @@
 		color: var(--color-teal);
 		font-weight: 800;
 		letter-spacing: 0.08em;
-		transition: color var(--dur-fast, 180ms) ease;
+		transition: color var(--dur-fast) var(--ease-out-quart);
 	}
 	.zi:hover .zi-brand {
 		color: color-mix(in srgb, var(--color-teal) 75%, var(--color-gold));
@@ -174,8 +144,8 @@
 		gap: 8px;
 		padding: 5px 10px 5px 6px;
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--color-teal) 35%, var(--color-line));
-		background: color-mix(in srgb, var(--color-teal) 8%, var(--color-panel));
+		border: 1px solid var(--color-zi-border);
+		background: var(--color-zi-bg);
 		box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
 	}
 	.zi-badge-text {

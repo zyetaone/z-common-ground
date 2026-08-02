@@ -15,9 +15,9 @@
 
 <main class="page stage-dark">
 	<header class="top">
-		<a class="back" href="/present/{SESSION}">← Analysis</a>
+		<a class="cg-backlink" href="/present/{SESSION}">← Analysis</a>
 		<span class="tag">ZyetaI · Look</span>
-		<span class="conn" class:on={session.connected}>
+		<span class="conn" class:on={session.connected} aria-label={session.connected ? 'Live' : 'Offline'}>
 			{session.connected ? '● live' : '○ …'}
 		</span>
 	</header>
@@ -51,13 +51,6 @@
 		padding-bottom: 10px;
 		border-bottom: 1px solid var(--color-line);
 		flex-shrink: 0;
-	}
-	.back {
-		font-family: var(--font-display);
-		font-weight: 800;
-		font-size: 0.95rem;
-		text-decoration: none;
-		color: var(--color-ink);
 	}
 	.tag {
 		font-family: var(--font-mono);

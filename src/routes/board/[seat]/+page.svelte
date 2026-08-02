@@ -37,9 +37,9 @@
 		align-items: center;
 		gap: 12px;
 		padding: 12px 20px;
-		background: #0A3D2B;
-		color: #F3ECD8;
-		font-family: Helvetica, Arial, sans-serif;
+		background: var(--color-felt-deep);
+		color: var(--color-felt-ink);
+		font-family: var(--font-display);
 		flex-wrap: wrap;
 	}
 	.bar b {
@@ -48,9 +48,9 @@
 	}
 	.btn {
 		font-size: 12px;
-		background: #0E543A;
-		color: #F3ECD8;
-		border: 1px solid #1A6B4A;
+		background: var(--color-felt);
+		color: var(--color-felt-ink);
+		border: 1px solid color-mix(in srgb, var(--color-felt-ink) 22%, transparent);
 		padding: 8px 12px;
 		border-radius: 8px;
 		text-decoration: none;
@@ -63,7 +63,7 @@
 	}
 	.stage {
 		padding: 22px;
-		background: #0E543A;
+		background: var(--color-felt);
 		min-height: 100vh;
 	}
 	@media print {

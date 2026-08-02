@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { host, session } from '$lib/state';
+	import { formatUsd } from '$lib/game';
 
 	/**
 	 * Session controls — analysis force, room wallet, table count, and the
@@ -80,7 +81,7 @@
 			/>
 		</label>
 		<p class="text-xs text-muted">
-			~{Math.floor(host.roomBountyTokens / Math.max(1, st?.tables.length ?? 7))} $M per table
+			~{formatUsd(Math.floor(host.roomBountyTokens / Math.max(1, st?.tables.length ?? 7)))} per table
 		</p>
 	</div>
 

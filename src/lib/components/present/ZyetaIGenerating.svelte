@@ -108,7 +108,7 @@
 	}
 	.card {
 		width: min(420px, 100%);
-		border-radius: 20px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--color-teal) 40%, var(--color-line));
 		background: var(--color-panel);
 		padding: 22px 22px 18px;
@@ -179,7 +179,7 @@
 		gap: 10px;
 		align-items: center;
 		padding: 10px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: transparent;
 		opacity: 0.42;
@@ -244,7 +244,7 @@
 	}
 	.room-hint {
 		padding: 12px 14px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--color-teal) 28%, var(--color-line));
 		background: color-mix(in srgb, var(--color-teal) 6%, transparent);
 		margin-bottom: 12px;

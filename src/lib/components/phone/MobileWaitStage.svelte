@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 
 	/**
 	 * Centered wait / join / freeze chrome for the phone play page.
@@ -8,7 +9,7 @@
 	let {
 		joined = false,
 		sealed = false,
-		icon = '',
+		icon = undefined,
 		heading = '',
 		sub = '',
 		text = '',
@@ -21,7 +22,7 @@
 		joined?: boolean;
 		/** Stretch full width for MobileSealed etc. */
 		sealed?: boolean;
-		icon?: string;
+		icon?: IconName;
 		heading?: string;
 		sub?: string;
 		/** Single line (connecting / waiting) when no heading */
@@ -43,7 +44,7 @@
 				<span class="wait-dot"></span>
 			{/if}
 			{#if icon}
-				<span class="wait-icon">{icon}</span>
+				<span class="wait-icon"><Icon name={icon} size={28} /></span>
 			{/if}
 			{#if heading}
 				<p class="wait-heading">{heading}</p>
@@ -108,6 +109,7 @@
 		font-size: 28px;
 		line-height: 1;
 		flex-shrink: 0;
+		display: flex;
 	}
 	.wait-heading {
 		font-family: var(--font-display);
@@ -134,7 +136,7 @@
 		margin: 0;
 		padding: 16px;
 		border: none;
-		border-radius: 14px;
+		border-radius: var(--radius-sm);
 		background: var(--color-teal);
 		color: var(--color-on-teal);
 		font-family: var(--font-display);

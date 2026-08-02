@@ -33,7 +33,7 @@
 
 <main class="shell">
 	<header>
-		<p class="kicker">Tech check</p>
+		<p class="cg-kicker" style="margin:0; --k-track: 0.22em; --k-color: var(--color-gold-ink)">Tech check</p>
 		<h1>7 tables</h1>
 		<p class="sub">Open a table board — live play uses the printed QR.</p>
 	</header>
@@ -47,7 +47,7 @@
 				<button type="button" class="open" onclick={() => openTable(id)}>
 					<span class="dot"></span>
 					<span class="meta">
-						<span class="t">Table {id}</span>
+						<span class="cg-kicker">Table {id}</span>
 						<span class="n">{persona.name}</span>
 						<span class="l">{persona.lens}</span>
 					</span>
@@ -74,14 +74,6 @@
 		padding: 18px 14px calc(28px + env(safe-area-inset-bottom));
 		max-width: 520px;
 		margin: 0 auto;
-	}
-	.kicker {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
-		color: var(--color-gold-ink);
-		margin: 0;
 	}
 	h1 {
 		font-family: var(--font-display);
@@ -136,13 +128,6 @@
 		flex-direction: column;
 		gap: 2px;
 		min-width: 0;
-	}
-	.t {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-muted);
 	}
 	.n {
 		font-family: var(--font-display);

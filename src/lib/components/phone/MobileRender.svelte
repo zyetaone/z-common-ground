@@ -130,7 +130,7 @@
 <div class="mr">
 	<section class="card">
 		<div class="head">
-			<div class="kicker">Your lens · {persona.name}</div>
+			<div class="cg-kicker" style="--k-track: 0.16em">Your lens · {persona.name}</div>
 			<ZyetaI compact />
 		</div>
 		<p class="sub">
@@ -187,7 +187,7 @@
 
 	<section class="card dim">
 		<div class="head">
-			<div class="kicker">Room render · presenter only</div>
+			<div class="cg-kicker" style="--k-track: 0.16em">Room render · presenter only</div>
 			<ZyetaI compact />
 		</div>
 		<p class="sub">Appears when presenter generates Future workspace.</p>
@@ -227,7 +227,7 @@
 		<div class="li-sheet">
 			<header class="li-head">
 				<div>
-					<p class="kicker gold">LinkedIn moment</p>
+					<p class="cg-kicker" style="--k-track: 0.16em; --k-color: var(--color-gold-ink)">LinkedIn moment</p>
 					<h2>#WeFoundCommonGround</h2>
 				</div>
 				<ZyetaI compact />
@@ -315,14 +315,6 @@
 		gap: 8px;
 		margin-bottom: 6px;
 	}
-	.kicker {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
-		color: var(--color-muted);
-	}
-	.kicker.gold,
 	.gold {
 		color: var(--color-gold-ink);
 	}
@@ -334,7 +326,7 @@
 	}
 	.frame {
 		position: relative;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		overflow: hidden;
 		min-height: 200px;
@@ -457,7 +449,7 @@
 	.gen {
 		flex: 1;
 		border: none;
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		padding: 12px;
 		font-family: var(--font-display);
 		font-weight: 800;
@@ -470,10 +462,10 @@
 		opacity: 0.4;
 	}
 	.share-btn {
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		border: 1px solid #0a66c2;
-		background: color-mix(in srgb, #0a66c2 15%, transparent);
-		color: #388bfd;
+		background: #0a66c2;
+		color: #fff;
 		padding: 0 12px;
 		font-family: var(--font-display);
 		font-weight: 800;
@@ -508,7 +500,7 @@
 		width: min(480px, 100%);
 		max-height: 92vh;
 		overflow: auto;
-		border-radius: 20px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
 		background: var(--color-bg2);
 		padding: 18px;
@@ -533,7 +525,7 @@
 		justify-content: space-between;
 		gap: 8px;
 		padding: 10px 12px;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		border: 1px solid color-mix(in srgb, var(--color-gold) 30%, transparent);
 		background: color-mix(in srgb, var(--color-gold) 8%, transparent);
 		font-size: 12px;
@@ -549,7 +541,7 @@
 	}
 	.li-box {
 		position: relative;
-		border-radius: 14px;
+		border-radius: var(--radius-lg);
 		border: 1px solid var(--color-line);
 		background: rgba(0, 0, 0, 0.4);
 		overflow: hidden;
@@ -603,7 +595,7 @@
 	}
 	.li-post {
 		border: none;
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		padding: 12px;
 		font-family: var(--font-display);
 		font-weight: 800;
@@ -620,7 +612,7 @@
 		border: 1px solid var(--color-line);
 		background: transparent;
 		color: var(--color-muted);
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		padding: 10px;
 		font-size: 12px;
 		font-weight: 700;
