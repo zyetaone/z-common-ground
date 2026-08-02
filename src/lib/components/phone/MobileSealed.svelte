@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import ConvictionBars from './ConvictionBars.svelte';
 	import { confetti } from '$lib/actions/confetti';
-	import { formatUsdFull } from '$lib/game';
+	import { formatUsd } from '$lib/game';
 	import type { Vec7 } from '$lib/game/types';
 
 	let {
@@ -35,7 +35,7 @@
 		<span class="tick">✓</span>
 		<div>
 			<p class="sk">Submitted · Round {roundLabel}</p>
-			<p class="sname">{formatUsdFull(totalTokens)} locked in</p>
+			<p class="sname">{formatUsd(totalTokens)} locked in</p>
 		</div>
 	</div>
 	<ConvictionBars bets={counts} {color} {labels} />

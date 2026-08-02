@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd, formatUsdFull } from '$lib/game';
+	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd } from '$lib/game';
 	import type { Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
 
@@ -21,7 +21,7 @@
 </script>
 
 <div class="mini" style="--seat:{color}">
-	<p class="cap">Your conviction · <span>{formatUsdFull(total)}</span></p>
+	<p class="cap">Your conviction · <span>{formatUsd(total)}</span></p>
 	<div class="bars">
 		{#each rowLabels as p, i (i)}
 			{@const v = bets[i] ?? 0}

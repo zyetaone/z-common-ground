@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ConvictionBars from './ConvictionBars.svelte';
-	import { CHIP_DENOMS, CHIP_VALUE, formatUsdFull } from '$lib/game';
+	import { CHIP_DENOMS, CHIP_VALUE, formatUsd } from '$lib/game';
 	import type { Persona, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
 
@@ -44,7 +44,7 @@
 			<span class="f-big">{top.share}%</span>
 			<span class="f-unit">on {top.name}</span>
 		</div>
-		<p class="f-sub">Your mix · wallet {formatUsdFull(totalTokens)}</p>
+		<p class="f-sub">Your mix · wallet {formatUsd(totalTokens)}</p>
 		{#if chipCount > 0}
 			<div class="f-chips">
 				{#each { length: Math.min(chipCount, 12) } as _, i}

@@ -329,14 +329,49 @@ export function roomPersonas(room?: { personas?: Persona[] } | null): Persona[] 
 }
 
 /**
- * Merge runtime scenario overrides with static defaults.
- * If room.scenarios[i] exists, use it; otherwise fall back to SCENARIOS[i].
+ * Merge runtime scenario overrides with static defaults, then retarget wallet copy.
+ *
+ * Scenario copy quotes the default $100M wallet, but the room budget is
+ * host-editable — with 6 tables on a 700 pool the real wallet is $116M, and the
+ * phone would show "full $100M" directly above "full $116M". Rewrite the
+ * default-wallet figures to the room's actual per-table wallet so every surface
+ * quotes one number.
+ *
+ * Only the budget-arc constants are substituted, and only when the wallet
+ * actually differs, so host-authored copy is left alone.
  */
-export function roomScenarios(room?: { scenarios?: Scenario[] } | null): Scenario[] {
-	if (!room?.scenarios?.length) return SCENARIOS;
+function retargetWalletCopy<T extends string | undefined>(text: T, wallet: number): T {
+	if (!text || wallet === R2_FULL_BUDGET) return text;
+	const sub: Array<[number, number]> = [
+		[R2_FULL_BUDGET, wallet],
+		[R3_REMOVE_TARGET, r3RemoveTarget(wallet)],
+		[R5_RESTRUCTURE_CAP, r5CapForWallet(wallet)]
+	];
+	let out: string = text;
+	for (const [from, to] of sub) {
+		if (from === to) continue;
+		// Match the compact form ("$100M") only — never bare numbers, which could
+		// be a round number, a percentage or a year.
+		out = out.split(`$${from}M`).join(`$${to}M`);
+	}
+	return out as T;
+}
+
+export function roomScenarios(room?: { scenarios?: Scenario[]; tableBountyTokens?: number } | null): Scenario[] {
+	const wallet = room?.tableBountyTokens ?? R2_FULL_BUDGET;
+	const withWallet = (s: Scenario): Scenario =>
+		wallet === R2_FULL_BUDGET
+			? s
+			: {
+					...s,
+					hint: retargetWalletCopy(s.hint, wallet),
+					modelRules: retargetWalletCopy(s.modelRules, wallet),
+					actions: retargetWalletCopy(s.actions, wallet)
+				};
+	if (!room?.scenarios?.length) return SCENARIOS.map(withWallet);
 	return SCENARIOS.map((s, i) => {
 		const over = room.scenarios![i];
-		return over ? { ...s, ...over, round: i, roundLabel: i + 1 } : s;
+		return withWallet(over ? { ...s, ...over, round: i, roundLabel: i + 1 } : s);
 	});
 }
 

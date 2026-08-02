@@ -9,6 +9,8 @@ import {
 	N_SEATS,
 	PRIORITIES,
 	ROUND_COUNT,
+	SCENARIOS,
+	roomScenarios,
 	aggregate,
 	badgeForTable,
 	emptyMatrix,
@@ -550,5 +552,41 @@ describe('badgeForTable — observed play from round history', () => {
 		expect(badge.badge).toBe('Held ' + PRIORITIES[0]);
 		expect(badge.badgePriority).toBe(0);
 		expect(badge.badgeShare).toBe(50);
+	});
+});
+
+describe('scenario copy quotes the room wallet, not the $100M default', () => {
+	// Regression: the phone showed "Physical board = full $100M" (static scenario
+	// hint) directly above "Physical board - full $116M" (derived from state),
+	// because roomBountyTokens is host-editable but the copy was hard-coded.
+	it('rewrites the R2 hint to the actual per-table wallet', () => {
+		const room = makeRoom({ tableBountyTokens: 116 });
+		const r2 = roomScenarios(room)[1];
+		expect(r2.hint).toContain('$116M');
+		expect(r2.hint).not.toContain('$100M');
+		expect(r2.modelRules).toContain('$116M');
+	});
+
+	it('leaves copy untouched at the default wallet', () => {
+		const room = makeRoom({ tableBountyTokens: 100 });
+		expect(roomScenarios(room)[1].hint).toBe(SCENARIOS[1].hint);
+	});
+
+	it('scales the R3 removal target with the wallet', () => {
+		// 30% of a $50M wallet is $15M, not the default $30M.
+		const room = makeRoom({ tableBountyTokens: 50 });
+		const all = roomScenarios(room)
+			.map((sc) => [sc.hint, sc.modelRules].filter(Boolean).join(' '))
+			.join(' ');
+		expect(all).not.toContain('$100M');
+		expect(all).not.toContain('$30M');
+	});
+
+	it('preserves host-authored overrides', () => {
+		const room = makeRoom({
+			tableBountyTokens: 116,
+			scenarios: [{ ...SCENARIOS[0], hint: 'Custom facilitator note' }] as never
+		});
+		expect(roomScenarios(room)[0].hint).toBe('Custom facilitator note');
 	});
 });
