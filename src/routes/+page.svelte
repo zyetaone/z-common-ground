@@ -7,9 +7,6 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import {
 		R2_FULL_BUDGET,
-		R3_REMOVE_TARGET,
-		R4_ADD_BACK,
-		R5_RESTRUCTURE_CAP,
 		formatUsd,
 		roomPersonas,
 		tablePersona

@@ -31,6 +31,7 @@
 	let resetOpen = $state(false);
 	let resetConfirm = $state('');
 	let lockingAll = $state(false);
+	let sealMsg = $state('');
 	let emulateBusy = $state(false);
 	let emulateMsg = $state('');
 
@@ -57,12 +58,22 @@
 	async function sealAll() {
 		if (!st) return;
 		lockingAll = true;
+		sealMsg = '';
+		let failed = 0;
 		try {
 			for (const t of st.tables) {
-				if (!t.lockedThisRound) await session.lockTable(t.id);
+				if (t.lockedThisRound) continue;
+				try {
+					await session.lockTable(t.id);
+				} catch {
+					failed += 1;
+				}
 			}
 		} finally {
 			lockingAll = false;
+		}
+		if (failed > 0) {
+			sealMsg = `Seal failed for ${failed} table${failed === 1 ? '' : 's'} — seals only work on capture rounds (R2 · R3 · R5).`;
 		}
 	}
 
@@ -83,7 +94,11 @@
 		emulateBusy = true;
 		emulateMsg = '';
 		try {
-			await session.emulateDemoPlay(Date.now());
+			const res = await session.emulateDemoPlay(Date.now());
+			if (!res.ok) {
+				emulateMsg = 'Busy — another action is running. Try again in a moment.';
+				return;
+			}
 			emulateMsg = captureRound
 				? 'Demo boards sealed for all tables. Open Presenter → analysis.'
 				: 'Demo boards saved (no seal this round). Advance or open analysis as needed.';
@@ -237,9 +252,11 @@
 						<button
 							type="button"
 							onclick={sealAll}
-							disabled={session.busy || lockingAll || openCount === 0}
+							disabled={session.busy || lockingAll || openCount === 0 || !captureRound}
 							class="rounded-lg border border-gold px-2.5 py-1 text-[10px] font-bold text-gold hover:bg-gold/10 disabled:opacity-40"
-							title="Seal all open tables for this round"
+							title={captureRound
+								? 'Seal all open tables for this round'
+								: 'Seals only work on capture rounds (R2 · R3 · R5)'}
 						>
 							Seal all
 						</button>
@@ -254,6 +271,9 @@
 						</button>
 					</div>
 				</div>
+				{#if sealMsg}
+					<p class="text-xs text-red mb-2">{sealMsg}</p>
+				{/if}
 				<div class="grid gap-2.5">
 					{#each st?.tables ?? [] as t (t.id)}
 						{@const fn = tablePersona(t.id, st)}
@@ -297,8 +317,10 @@
 									<button
 										type="button"
 										onclick={() => session.lockTable(t.id)}
-										disabled={session.busy}
-										title="Seal — capture current board for this round (host force-submit)"
+										disabled={session.busy || !captureRound}
+										title={captureRound
+											? 'Seal — capture current board for this round (host force-submit)'
+											: 'Seals only work on capture rounds (R2 · R3 · R5)'}
 										class="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold hover:bg-gold/10 disabled:opacity-40"
 										>Seal</button
 									>

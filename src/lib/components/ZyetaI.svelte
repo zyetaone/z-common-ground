@@ -21,7 +21,7 @@
 {#if v === 'mark'}
 	<span class="zi-mark" aria-label="ZyetaI" title="ZyetaI — workplace strategy AI">
 		<svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
-			<rect width="32" height="32" rx="8" fill="var(--zi-bg, #FDF8ED)" />
+			<rect width="32" height="32" rx="8" fill="var(--color-zi-bg, #FDF8ED)" />
 			<!-- Z stroke -->
 			<path
 				d="M9 9.5 h14 l-14 13 h14"
