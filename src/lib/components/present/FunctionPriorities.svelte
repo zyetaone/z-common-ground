@@ -4,7 +4,6 @@ import {
 		PRIORITY_COLORS,
 		functionProfile,
 		priorityMix,
-		roomInsights,
 		roomPersonas,
 		roomPriorities,
 		tableSeatIndex,
@@ -18,7 +17,6 @@ import {
 	let { room }: { room: RoomState } = $props();
 
 	const labels = $derived(roomPriorities(room));
-	const align = $derived(roomInsights(room).tables);
 	const hasData = $derived(room.aggregate.totalCoins > 0);
 	const roomMix = $derived(
 		priorityMix(room.aggregate.matrix, labels).filter((m) => m.pct > 0)

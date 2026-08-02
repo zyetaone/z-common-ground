@@ -19,6 +19,8 @@
 		subLabel: string;
 		shares: number[];
 		totalCoins: number;
+		/** $M actually removed at R3 (baseline minus cut-round total); 0 on add rows. */
+		cutCoins: number;
 		move: 'add' | 'remove';
 		leadName: string;
 		leadShare: number;
@@ -46,6 +48,7 @@
 				subLabel,
 				shares,
 				totalCoins: total,
+				cutCoins: 0,
 				move,
 				leadName,
 				leadShare: shares[leadIdx] ?? 0,
@@ -59,8 +62,11 @@
 		const r1 = toRow('R1+R2', 'Baseline Stake', r12, 'add', null);
 		if (r1) {
 			out.push(r1);
-			const r3r = toRow('R3', '−$30M Budget Cut', r3, 'remove', r1.leadName);
+			const r3r = toRow('R3', 'Budget Cut', r3, 'remove', r1.leadName);
 			if (r3r) {
+				// Real removed amount: baseline (R1+R2) total minus what survived the cut.
+				r3r.cutCoins = Math.max(0, r1.totalCoins - r3r.totalCoins);
+				if (r3r.cutCoins > 0) r3r.subLabel = `−${fmtCoins(r3r.cutCoins)} Budget Cut`;
 				out.push(r3r);
 				const r45r = toRow('R4+R5', 'Final Synthesis', r45, 'add', r3r.leadName);
 				if (r45r) out.push(r45r);
@@ -94,7 +100,7 @@
 						<span class="sub-label">{row.subLabel}</span>
 						<span class="rtotal">{fmtCoins(row.totalCoins)}</span>
 						<span class="rmove" class:add={!isCut} title={isCut ? 'Cut round' : 'Stake phase'}>
-							{isCut ? '−30M' : '+'}
+							{isCut ? (row.cutCoins > 0 ? `−${fmtCoins(row.cutCoins).slice(1)}` : '−') : '+'}
 						</span>
 						<span class="rlead" class:changed={row.changed}>
 							{row.leadName} <span class="rshare">{row.leadShare}%</span>

@@ -114,7 +114,7 @@
 	}
 	.legend {
 		display: grid;
-		grid-template-columns: 28px 12px minmax(110px, 1fr) 80px 44px 88px;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 80px 44px 88px;
 		align-items: center;
 		gap: 10px;
 		padding: 0 12px;
@@ -125,6 +125,10 @@
 		text-transform: uppercase;
 		color: var(--color-muted);
 	}
+	.lg-rank {
+		/* spans the rank + colour-dot columns so the 6 labels align with the 7 row cells */
+		grid-column: span 2;
+	}
 	.list {
 		display: flex;
 		flex-direction: column;
@@ -134,7 +138,7 @@
 	}
 	.row {
 		display: grid;
-		grid-template-columns: 28px 12px minmax(110px, 1fr) 80px 44px 88px;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 80px 44px 88px;
 		align-items: center;
 		gap: 10px;
 		padding: 8px 12px;

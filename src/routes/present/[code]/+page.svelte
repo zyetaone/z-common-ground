@@ -7,6 +7,7 @@
 	} from '$lib/client/present-labels';
 	import {
 		ROUND_COUNT,
+		isCaptureRound,
 		roomScenarios,
 		roomThesis,
 		tablePersona
@@ -20,7 +21,6 @@
 	const roundCount = $derived(st?.roundCount ?? ROUND_COUNT);
 	const rs = $derived(roomScenarios(st));
 	const scenario = $derived(rs[Math.min(round, rs.length - 1)] ?? rs[0]);
-	const open = $derived(session.analysisOpen);
 	const thesis = $derived(roomThesis(st));
 	const joinedCount = $derived(st?.tables.filter((t) => t.joined).length ?? 0);
 	const lockedCount = $derived(st?.tables.filter((t) => t.lockedThisRound).length ?? 0);
@@ -86,7 +86,7 @@
 				{@const r = i + 1}
 				{@const cur = phase === 'round' && roundLabel === r}
 				{@const past = phase === 'lobby' ? false : phase === 'round' ? r < roundLabel : true}
-				{@const evo = [2, 3, 5].includes(r)}
+				{@const evo = isCaptureRound(r, st)}
 				<span class="rung" class:on={cur} class:past={past && !cur} class:evo={evo}>R{r}</span>
 			{/each}
 			{#if phase === 'reveal' || phase === 'finale'}
@@ -114,7 +114,7 @@
 				</button>
 			</div>
 		</div>
-	{:else if phase === 'round' && scenario && !open}
+	{:else if phase === 'round' && scenario}
 		<div class="sc-bar">
 			<div class="sc-left">
 				<span class="sc-emoji">{scenario.emoji}</span>
@@ -151,7 +151,7 @@
 
 	{#if !st}
 		<div class="center muted">Connecting…</div>
-	{:else if !open}
+	{:else}
 		<div class="lobby-wrap">
 			{#if phase === 'lobby'}
 				<div class="submissions">

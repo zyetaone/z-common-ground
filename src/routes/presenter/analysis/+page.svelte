@@ -10,7 +10,7 @@
 		RoundInsights,
 		StageNav
 	} from '$lib/components/present';
-import { DECK_SCREENS, ROUND_COUNT } from '$lib/game';
+import { DECK_SCREENS, ROUND_COUNT, isCaptureRound } from '$lib/game';
 import { present, SESSION, session } from '$lib/state';
 
 const labels = DECK_SCREENS.map((s) => s.short);
@@ -26,9 +26,9 @@ const isRevealable = $derived(
 
 	/** Optional deep-link ?s=1..5 */
 	onMount(() => {
-		const raw = Number(page.url.searchParams.get('s'));
-		if (raw >= 1 && raw <= present.total) {
-			present.setScreen(raw);
+		const s = Math.floor(Number(page.url.searchParams.get('s')));
+		if (s >= 1 && s <= present.total) {
+			present.setScreen(s);
 		}
 		// The analysis page is the analysis deck — auto-enter analysis if possible.
 		if (isRevealable) {
@@ -42,7 +42,29 @@ const isRevealable = $derived(
 		url.searchParams.set('s', String(n));
 		replaceState(url, {});
 	}
+
+	function onKey(e: KeyboardEvent) {
+		const t = e.target;
+		if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+		if (e.key === 'ArrowLeft' || e.key === 'b' || e.key === 'B') {
+			e.preventDefault();
+			present.prev();
+			goScreen(present.screen);
+		} else if (
+			e.key === 'ArrowRight' ||
+			e.key === ' ' ||
+			e.key === 'Enter' ||
+			e.key === 'n' ||
+			e.key === 'N'
+		) {
+			e.preventDefault();
+			present.next();
+			goScreen(present.screen);
+		}
+	}
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <svelte:head>
 	<title>Analysis · LIVE</title>
@@ -63,7 +85,7 @@ const isRevealable = $derived(
 				{@const r = i + 1}
 				{@const cur = phase === 'round' && roundLabel === r}
 				{@const past = phase === 'lobby' ? false : phase === 'round' ? r < roundLabel : true}
-				{@const evo = [2, 3, 5].includes(r)}
+				{@const evo = isCaptureRound(r, st)}
 				<span class="rung" class:on={cur} class:past={past && !cur} class:evo={evo}>R{r}</span>
 			{/each}
 			{#if phase === 'reveal' || phase === 'finale'}

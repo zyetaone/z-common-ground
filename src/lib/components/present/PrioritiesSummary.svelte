@@ -1,12 +1,9 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import { N_PRIORITIES } from '$lib/game/types';
 	import {
-		PRIORITIES,
 		PRIORITY_COLORS,
 		roomPersonas,
-		roomPriorities,
-		roomRoundStory
+		roomPriorities
 	} from '$lib/game';
 
 	/**
@@ -23,7 +20,6 @@
 	 */
 	let { room }: { room: RoomState } = $props();
 
-	const story = $derived(roomRoundStory(room));
 	const names = $derived(roomPriorities(room));
 	const colors = PRIORITY_COLORS;
 	const personas = $derived(roomPersonas(room));

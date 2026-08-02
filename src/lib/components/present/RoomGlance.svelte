@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
 	import PortraitMatrix from '$lib/components/analytics/PortraitMatrix.svelte';
-	import { priorityMix, roomInsights, roomPriorities } from '$lib/game';
+	import { roomInsights, roomPriorities } from '$lib/game';
 
 	/**
 	 * Screen 1 — Seat Matrix.
@@ -53,11 +53,11 @@
 				<span class="m-val">{i.blind}</span>
 			</div>
 			<div class="dots" aria-label="{sealed} of {tables} sealed">
-				{#each Array(tables) as _, j (j)}
+				{#each i.tables as t (t.id)}
 					<span
 						class="dot"
-						class:on={j < sealed}
-						style="--fn:{i.tables[j]?.color ?? 'var(--color-muted)'}"
+						class:on={t.locked}
+						style="--fn:{t.color}"
 					></span>
 				{/each}
 			</div>
