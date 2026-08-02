@@ -214,7 +214,7 @@
 		font-weight: 800;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.info-btn {
 		display: inline-flex;
@@ -228,7 +228,7 @@
 		border-radius: 999px;
 		border: 1px solid color-mix(in srgb, var(--color-teal) 35%, transparent);
 		background: color-mix(in srgb, var(--color-teal) 10%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		cursor: pointer;
 	}
 	.info-btn:hover {
@@ -265,9 +265,9 @@
 	.help em {
 		font-style: normal;
 		font-weight: 700;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
-	.help .up { color: var(--color-teal); font-weight: 700; }
+	.help .up { color: var(--color-teal-ink); font-weight: 700; }
 	.help .dn { color: var(--color-red); font-weight: 700; }
 	.empty {
 		margin: auto;
@@ -364,6 +364,6 @@
 		text-align: right;
 		padding-top: 2px;
 	}
-	.net.up { color: var(--color-teal); }
+	.net.up { color: var(--color-teal-ink); }
 	.net.dn { color: var(--color-red); }
 </style>

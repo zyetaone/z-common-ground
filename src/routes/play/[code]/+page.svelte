@@ -80,7 +80,7 @@
 		font-size: 10px;
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		margin: 0;
 	}
 	h1 {
@@ -159,7 +159,7 @@
 		margin-top: 4px;
 		font-size: 12px;
 		font-weight: 700;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.qr {
 		flex-shrink: 0;
@@ -179,7 +179,7 @@
 		display: block;
 		text-align: center;
 		margin-top: 10px;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		font-weight: 700;
 		font-size: 14px;
 	}

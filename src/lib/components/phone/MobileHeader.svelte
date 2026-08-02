@@ -119,7 +119,7 @@
 		flex-shrink: 0;
 	}
 	.live.on {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.qcompact {
 		display: flex;
@@ -172,7 +172,7 @@
 		font-weight: 700;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		line-height: 1.35;
 	}
 	.mission {
@@ -188,7 +188,7 @@
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		margin-right: 6px;
 	}
 	.persona-hashtag {
@@ -197,12 +197,12 @@
 		font-size: 13px;
 		font-weight: 700;
 		letter-spacing: 0.04em;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.budget-hint {
 		margin: 4px 0 0;
 		font-size: 12px;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		line-height: 1.4;
 		font-weight: 600;
 	}

@@ -28,7 +28,7 @@
 
 <section class="rounded-2xl border border-teal/35 bg-panel/40 overflow-hidden">
 	<header class="p-5 border-b border-line/40">
-		<h2 class="text-[11px] uppercase tracking-[0.26em] text-teal">Content &amp; settings</h2>
+		<h2 class="text-[11px] uppercase tracking-[0.26em] text-teal-ink">Content &amp; settings</h2>
 		<p class="text-xs text-muted mt-0.5">
 			Edit questions, board option names, personas, and session controls. Saves to LIVE (D1).
 		</p>
@@ -41,7 +41,7 @@
 				onclick={() => (tab = t.id)}
 				class="px-3 sm:px-4 py-2.5 text-xs font-semibold border-b-2 transition text-left"
 				class:border-teal={tab === t.id}
-				class:text-teal={tab === t.id}
+				class:text-teal-ink={tab === t.id}
 				class:border-transparent={tab !== t.id}
 				class:text-muted={tab !== t.id}
 			>

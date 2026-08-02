@@ -362,7 +362,7 @@
 		border-radius: 12px;
 		border: 1px solid var(--color-line);
 		background: transparent;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		padding: 14px;
 		min-height: 44px;
 		font-weight: 700;

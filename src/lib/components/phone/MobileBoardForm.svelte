@@ -147,7 +147,7 @@
 		background: color-mix(in srgb, var(--color-bg) 92%, transparent);
 		backdrop-filter: blur(6px);
 		border: 1px solid var(--color-gold);
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		box-shadow: none;
 	}
 	.hint-cap {

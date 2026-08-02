@@ -145,7 +145,7 @@
 		margin: 0 0 14px;
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		line-height: 1.4;
 		min-height: 1.4em;
 	}
@@ -212,7 +212,7 @@
 	}
 	.step.done .n {
 		background: color-mix(in srgb, var(--color-teal) 18%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.step.on .n {
 		background: var(--color-teal);
@@ -255,7 +255,7 @@
 		font-weight: 800;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.rh-p {
 		margin: 6px 0 0;

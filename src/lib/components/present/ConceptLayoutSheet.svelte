@@ -195,7 +195,7 @@
 		font-size: 9px;
 		letter-spacing: 0.18em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	h2 {
 		margin: 3px 0 0;
@@ -228,7 +228,7 @@
 		border-radius: 999px;
 		border: 1px solid color-mix(in srgb, var(--color-teal) 45%, transparent);
 		background: color-mix(in srgb, var(--color-teal) 12%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.meta {
 		font-size: 11px;
@@ -267,7 +267,7 @@
 		font-size: 10px;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.rh-m {
 		font-size: 12px;
@@ -320,7 +320,7 @@
 		font-size: 8px;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		margin-bottom: 2px;
 	}
 	.fund {
@@ -412,7 +412,7 @@
 	}
 	.sf-n {
 		font-weight: 800;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.zone-mosaic {
 		display: flex;

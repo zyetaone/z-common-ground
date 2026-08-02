@@ -92,7 +92,7 @@
 		font-weight: 800;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.hdr-sub {
 		font-family: var(--font-mono);
@@ -147,7 +147,7 @@
 	}
 	.m-verdict {
 		--k-track: 0.06em;
-		--k-color: var(--color-teal);
+		--k-color: var(--color-teal-ink);
 	}
 	.m-val {
 		font-family: var(--font-display);

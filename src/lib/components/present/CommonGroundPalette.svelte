@@ -209,7 +209,7 @@
 	}
 	.icon-btn.plus:hover:not(:disabled) {
 		border-color: var(--color-teal);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.icon-btn.minus:hover:not(:disabled) {
 		border-color: var(--color-red);

@@ -46,9 +46,9 @@
 
 <main class="mx-auto min-h-screen max-w-5xl px-5 py-10">
 	<header class="text-center">
-		<p class="font-mono text-xs uppercase tracking-[0.32em] text-gold">Common Ground · LIVE</p>
+		<p class="font-mono text-xs uppercase tracking-[0.32em] text-gold-ink">Common Ground · LIVE</p>
 		<h1 class="font-display mt-2 text-4xl font-bold tracking-tight md:text-5xl">
-			If your function had <span class="text-gold">{formatUsd(R2_FULL_BUDGET)}</span>
+			If your function had <span class="text-gold-ink">{formatUsd(R2_FULL_BUDGET)}</span>
 		</h1>
 		<p class="mx-auto mt-3 max-w-xl text-sm text-muted leading-relaxed">
 			Where would you put it? Seven functions · same wallet · five rounds. Stats find Common Ground.
@@ -59,18 +59,18 @@
 			class="mx-auto mt-6 max-w-lg text-left text-sm text-muted space-y-2.5 rounded-2xl border border-line bg-panel/40 px-5 py-4"
 		>
 			<li class="flex gap-3">
-				<span class="font-mono text-gold font-bold shrink-0">1</span>
+				<span class="font-mono text-gold-ink font-bold shrink-0">1</span>
 				<span><b class="text-ink">Scan your table QR</b> — one function, one $100M wallet.</span>
 			</li>
 			<li class="flex gap-3">
-				<span class="font-mono text-gold font-bold shrink-0">2</span>
+				<span class="font-mono text-gold-ink font-bold shrink-0">2</span>
 				<span
 					><b class="text-ink">Prioritise</b> — physical board first; R2 full {formatUsd(R2_FULL_BUDGET)} · R3
 					cut · R5 restructure.</span
 				>
 			</li>
 			<li class="flex gap-3">
-				<span class="font-mono text-gold font-bold shrink-0">3</span>
+				<span class="font-mono text-gold-ink font-bold shrink-0">3</span>
 				<span
 					><b class="text-ink">Reveal</b> — shape of the room · Common Ground · what it looks like.</span
 				>
@@ -80,7 +80,7 @@
 		<nav class="mt-6 flex flex-wrap items-center justify-center gap-3">
 			<Button href="/play/{SESSION}" variant="primary">Join a table</Button>
 			<Button href="/present/{SESSION}" variant="secondary">Presenter</Button>
-			<Button href="/host/{SESSION}" variant="outline">Host console</Button>
+			<Button href="/host/{SESSION}" variant="secondary">Host console</Button>
 		</nav>
 	</header>
 
@@ -104,14 +104,14 @@
 						</div>
 						<a
 							href="/play/{SESSION}/{id}"
-							class="font-display text-lg font-bold hover:text-gold block truncate"
+							class="font-display text-lg font-bold hover:text-gold-ink block truncate"
 						>
 							{persona.name}
 						</a>
 						<div class="text-sm text-muted line-clamp-2 leading-snug mt-0.5">{persona.lens}</div>
 						{#if persona.hashtag}
 							<div
-								class="font-mono text-[11px] font-bold tracking-wide text-gold mt-0.5"
+								class="font-mono text-[11px] font-bold tracking-wide text-gold-ink mt-0.5"
 								data-testid="persona-hashtag"
 							>
 								{persona.hashtag}
@@ -137,7 +137,7 @@
 					<div class="h-[132px] w-[132px] animate-pulse rounded-xl bg-panel"></div>
 				{/if}
 				<div class="flex gap-2 text-xs">
-					<a href="/play/{SESSION}/{id}" class="text-gold underline">Open Board →</a>
+					<a href="/play/{SESSION}/{id}" class="text-gold-ink underline">Open Board →</a>
 				</div>
 			</div>
 		{/each}
@@ -145,7 +145,7 @@
 
 	<footer class="mt-10 flex flex-col items-center gap-4 text-xs text-muted">
 		<div class="flex flex-wrap justify-center gap-x-4 gap-y-1">
-			<a href="/present/{SESSION}/qrs" class="underline hover:text-gold">Print all 7 QRs</a>
+			<a href="/present/{SESSION}/qrs" class="underline hover:text-gold-ink">Print all 7 QRs</a>
 		</div>
 		<div class="flex flex-col items-center gap-2">
 			<ZyetaI variant="badge" tagline />
@@ -178,7 +178,7 @@
 				<Button variant="primary" onclick={() => copyUrl(activeQr!.url)}>
 					{copied ? '✓ Copied!' : 'Copy Link'}
 				</Button>
-				<Button variant="outline" onclick={() => (activeQr = null)}>Close</Button>
+				<Button variant="secondary" onclick={() => (activeQr = null)}>Close</Button>
 			</div>
 		</div>
 	{/if}

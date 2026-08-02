@@ -62,7 +62,7 @@
 		margin-bottom: 10px;
 	}
 	.cap span {
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.bars {
 		display: flex;

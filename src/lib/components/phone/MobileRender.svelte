@@ -324,7 +324,7 @@
 	}
 	.kicker.gold,
 	.gold {
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.sub {
 		margin: 0 0 10px;

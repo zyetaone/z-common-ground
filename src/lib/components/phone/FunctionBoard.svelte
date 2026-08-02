@@ -260,7 +260,7 @@
 	.spent-val {
 		font-family: var(--font-display);
 		font-weight: 800;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		font-size: 0.95rem;
 	}
 	.of {
@@ -278,7 +278,7 @@
 	.remaining {
 		font-family: var(--font-mono);
 		font-size: 10px;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		font-weight: 700;
 	}
 	.remove-hint {
@@ -288,7 +288,7 @@
 		line-height: 1.35;
 	}
 	.remove-hint b {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.list {
 		display: flex;
@@ -347,7 +347,7 @@
 		gap: 6px;
 	}
 	.usd {
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		font-weight: 700;
 		font-family: var(--font-mono);
 		font-size: 13px;
@@ -389,7 +389,7 @@
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.acts {
 		display: flex;
@@ -424,7 +424,7 @@
 	}
 	.btn.plus:not(:disabled) {
 		border-color: color-mix(in srgb, var(--color-teal) 40%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.btn.clear {
 		width: auto;

@@ -181,7 +181,7 @@
 		font-weight: 800;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.legend {
 		font-family: var(--font-mono);
@@ -238,7 +238,7 @@
 	}
 	.rtotal {
 		font-weight: 700;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		font-variant-numeric: tabular-nums;
 	}
 	.rmove {
@@ -253,7 +253,7 @@
 	}
 	.rmove.add {
 		background: color-mix(in srgb, var(--color-teal) 25%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		border-color: color-mix(in srgb, var(--color-teal) 45%, transparent);
 	}
 	.rlead {
@@ -271,7 +271,7 @@
 		color: var(--color-red);
 	}
 	.rshare {
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		font-weight: 800;
 		margin-left: 4px;
 		text-transform: none;

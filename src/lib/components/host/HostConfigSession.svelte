@@ -57,7 +57,7 @@
 	<div class="rounded-xl border border-gold/30 p-4 space-y-3">
 		<div class="flex items-center justify-between gap-2">
 			<div>
-				<h3 class="font-display font-bold text-sm text-gold">Table wallet</h3>
+				<h3 class="font-display font-bold text-sm text-gold-ink">Table wallet</h3>
 				<p class="text-xs text-muted mt-1">Room pool ($M). Per-table cap = pool ÷ tables.</p>
 			</div>
 			<button
@@ -100,7 +100,7 @@
 				}}
 				class="flex-1 accent-teal"
 			/>
-			<span class="font-mono text-lg font-bold text-teal min-w-[2ch] text-right"
+			<span class="font-mono text-lg font-bold text-teal-ink min-w-[2ch] text-right"
 				>{host.tableCount}</span
 			>
 		</div>

@@ -478,7 +478,7 @@
 		font-size: 10px;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		font-weight: 700;
 	}
 	.design-cta {
@@ -486,7 +486,7 @@
 		margin-top: 10px;
 		font-size: 13px;
 		font-weight: 800;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		text-decoration: none;
 	}
 	.design-cta:hover {

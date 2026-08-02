@@ -307,7 +307,7 @@
 	}
 	.ghost:hover {
 		border-color: var(--color-teal);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.ghost.link {
 		display: inline-flex;
@@ -376,7 +376,7 @@
 		color: var(--color-muted);
 	}
 	.foot-hint a {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		text-decoration: none;
 		font-weight: 700;
 	}

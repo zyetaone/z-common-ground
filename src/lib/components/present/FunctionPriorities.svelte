@@ -355,7 +355,7 @@ import {
 		font-family: var(--font-mono);
 		font-size: 13px;
 		font-weight: 800;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.align-bar {
 		height: 4px;
@@ -485,12 +485,12 @@ import {
 	}
 	.method-tag.quant {
 		background: color-mix(in srgb, var(--color-teal) 14%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		border: 1px solid color-mix(in srgb, var(--color-teal) 35%, transparent);
 	}
 	.method-tag.mixed {
 		background: color-mix(in srgb, var(--color-gold) 14%, transparent);
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		border: 1px solid color-mix(in srgb, var(--color-gold) 35%, transparent);
 	}
 	.method-tag.qual {

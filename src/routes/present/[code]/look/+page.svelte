@@ -13,7 +13,7 @@
 	/>
 </svelte:head>
 
-<main class="page">
+<main class="page stage-dark">
 	<header class="top">
 		<a class="back" href="/present/{SESSION}">← Analysis</a>
 		<span class="tag">ZyetaI · Look</span>
@@ -65,7 +65,7 @@
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		padding: 4px 10px;
 		border-radius: 999px;
 		border: 1px solid color-mix(in srgb, var(--color-teal) 35%, transparent);
@@ -78,7 +78,7 @@
 		color: var(--color-muted);
 	}
 	.conn.on {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.wait {
 		padding: 48px;

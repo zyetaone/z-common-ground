@@ -255,7 +255,7 @@
 	}
 	.thumb.empty:hover:not(:disabled) {
 		border-color: var(--color-teal);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.thumb.empty:disabled {
 		opacity: 0.45;

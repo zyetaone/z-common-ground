@@ -264,7 +264,7 @@
 		line-height: 1.3;
 	}
 	.chip strong.teal {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.block {
 		margin-bottom: 16px;

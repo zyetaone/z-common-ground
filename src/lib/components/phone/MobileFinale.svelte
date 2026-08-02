@@ -100,7 +100,7 @@
 	}
 	.f-unit {
 		font-size: 14px;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		font-weight: 700;
 		font-family: var(--font-display);
 	}

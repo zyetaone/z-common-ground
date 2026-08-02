@@ -69,7 +69,7 @@
 					type="button"
 					disabled={session.busy}
 					onclick={archiveLivePhotos}
-					class="rounded-xl border border-line px-4 py-2 font-display text-xs font-bold text-muted hover:border-gold hover:text-gold disabled:opacity-40"
+					class="rounded-xl border border-line px-4 py-2 font-display text-xs font-bold text-muted hover:border-gold hover:text-gold-ink disabled:opacity-40"
 				>
 					{session.busy ? 'Archiving…' : 'Archive & clear live'}
 				</button>
@@ -83,7 +83,7 @@
 			onclick={() => (photoTab = 'live')}
 			class="px-3 py-1.5 text-[11px] font-bold border-b-2 -mb-px transition"
 			class:border-teal={photoTab === 'live'}
-			class:text-teal={photoTab === 'live'}
+			class:text-teal-ink={photoTab === 'live'}
 			class:border-transparent={photoTab !== 'live'}
 			class:text-muted={photoTab !== 'live'}
 		>
@@ -94,7 +94,7 @@
 			onclick={() => (photoTab = 'archive')}
 			class="px-3 py-1.5 text-[11px] font-bold border-b-2 -mb-px transition"
 			class:border-teal={photoTab === 'archive'}
-			class:text-teal={photoTab === 'archive'}
+			class:text-teal-ink={photoTab === 'archive'}
 			class:border-transparent={photoTab !== 'archive'}
 			class:text-muted={photoTab !== 'archive'}
 		>
@@ -169,7 +169,7 @@
 				<div class="space-y-2 rounded-xl border border-line/60 bg-bg/40 p-3">
 					<div class="flex items-center justify-between gap-2 flex-wrap">
 						<div class="min-w-0">
-							<h3 class="font-mono text-[11px] font-bold tracking-wide text-gold truncate" title={g.label}>
+							<h3 class="font-mono text-[11px] font-bold tracking-wide text-gold-ink truncate" title={g.label}>
 								{g.label}
 							</h3>
 							<p class="text-[10px] text-muted">

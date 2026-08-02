@@ -62,7 +62,7 @@
 				<span class="font-display font-bold text-sm">{get(seat, 'name') || p.name}</span>
 				<span class="font-mono text-[10px] text-muted">T{seat + 1}</span>
 				{#if rowDirty}
-					<span class="ml-auto rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold"
+					<span class="ml-auto rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-ink"
 						>Unsaved</span
 					>
 				{/if}

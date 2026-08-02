@@ -206,7 +206,7 @@
 		align-items: center;
 		gap: 8px;
 		font-size: 12px;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 		opacity: 0;
 		animation: cg-fade 0.55s ease 0.8s forwards;
 	}

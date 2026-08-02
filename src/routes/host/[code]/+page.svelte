@@ -122,9 +122,9 @@
 	{/if}
 
 	<header class="mb-8">
-		<p class="font-mono text-xs uppercase tracking-[0.3em] text-gold">Host control</p>
+		<p class="font-mono text-xs uppercase tracking-[0.3em] text-gold-ink">Host control</p>
 		<h1 class="font-display mt-2 text-3xl sm:text-4xl font-bold">
-			COMMON <span class="text-gold">GROUND</span>
+			COMMON <span class="text-gold-ink">GROUND</span>
 		</h1>
 		<p class="mt-2 text-sm text-muted max-w-xl">
 			Run tables, edit questions & board options, demo-play without people, manage photo archive.
@@ -134,7 +134,7 @@
 				<span class="font-mono text-sm sm:text-lg font-bold tracking-widest text-ink">LIVE</span>
 				<span
 					class="font-mono text-[10px] uppercase tracking-widest font-semibold"
-					class:text-teal={session.connected}
+					class:text-teal-ink={session.connected}
 					class:text-muted={!session.connected}
 				>
 					{session.connected ? '● Connected' : '○ Offline'}
@@ -143,7 +143,7 @@
 			<a
 				href="/present/{SESSION}"
 				target="_blank"
-				class="rounded-xl border border-gold/50 px-4 py-2 font-display text-sm font-bold text-gold hover:bg-gold/10"
+				class="rounded-xl border border-gold/50 px-4 py-2 font-display text-sm font-bold text-gold-ink hover:bg-gold/10"
 			>
 				Presenter →
 			</a>
@@ -171,7 +171,7 @@
 				<h2 class="mb-2 text-[11px] uppercase tracking-[0.26em] text-muted">Status</h2>
 				{#if st?.phase === 'round' && scenario}
 					<div class="text-sm">
-						<span class="font-mono text-gold font-bold">R{st.round + 1}</span>
+						<span class="font-mono text-gold-ink font-bold">R{st.round + 1}</span>
 						<span class="text-muted"> · {scenario.question}</span>
 					</div>
 					{#if scenario.hint}
@@ -197,7 +197,7 @@
 								class:bg-teal={cur}
 								class:text-bg={cur}
 								class:border-gold={[2, 3, 5].includes(r) && !cur}
-								class:text-gold={[2, 3, 5].includes(r) && !cur}
+								class:text-gold-ink={[2, 3, 5].includes(r) && !cur}
 								class:border-line={!cur && ![2, 3, 5].includes(r)}
 								class:text-muted={!cur && ![2, 3, 5].includes(r)}
 								class:opacity-50={past && !cur}>R{r}{[2, 3, 5].includes(r) ? '◉' : ''}</span
@@ -205,7 +205,7 @@
 						{/each}
 					</div>
 					<div class="text-right">
-						<div class="text-2xl font-bold text-teal">
+						<div class="text-2xl font-bold text-teal-ink">
 							{lockedCount}
 							<span class="text-base text-muted">/{st?.tables.length ?? 0}</span>
 						</div>
@@ -216,22 +216,22 @@
 
 			<!-- Solo demo -->
 			<section class="rounded-2xl border border-gold/35 bg-panel/40 p-5 space-y-3">
-				<h2 class="text-[11px] uppercase tracking-[0.26em] text-gold">Demo play (no people)</h2>
+				<h2 class="text-[11px] uppercase tracking-[0.26em] text-gold-ink">Demo play (no people)</h2>
 				<p class="text-xs text-muted leading-relaxed">
 					Fills every table with a <b class="text-ink">bias-weighted random board</b> for this round
 					(join + freeze + {captureRound ? 'seal' : 'save without seal'}). Use when you need analysis
 					or images without phones in the room.
 				</p>
-				<button
-					type="button"
+				<Button
+					variant="primary"
+					size="sm"
 					onclick={runEmulate}
 					disabled={session.busy || emulateBusy || !st}
-					class="rounded-xl bg-gold px-4 py-2.5 font-display text-xs font-bold text-[var(--color-on-gold)] hover:bg-gold/90 disabled:opacity-40"
 				>
 					{emulateBusy ? 'Emulating…' : 'Emulate all tables'}
-				</button>
+				</Button>
 				{#if emulateMsg}
-					<p class="text-xs" class:text-teal={!emulateMsg.includes('fail') && !emulateMsg.includes('need')} class:text-red={emulateMsg.includes('fail') || emulateMsg.includes('need')}>
+					<p class="text-xs" class:text-teal-ink={!emulateMsg.includes('fail') && !emulateMsg.includes('need')} class:text-red={emulateMsg.includes('fail') || emulateMsg.includes('need')}>
 						{emulateMsg}
 					</p>
 				{/if}
@@ -253,7 +253,7 @@
 							type="button"
 							onclick={sealAll}
 							disabled={session.busy || lockingAll || openCount === 0 || !captureRound}
-							class="rounded-lg border border-gold px-2.5 py-1 text-[10px] font-bold text-gold hover:bg-gold/10 disabled:opacity-40"
+							class="rounded-lg border border-gold px-2.5 py-1 text-[10px] font-bold text-gold-ink hover:bg-gold/10 disabled:opacity-40"
 							title={captureRound
 								? 'Seal all open tables for this round'
 								: 'Seals only work on capture rounds (R2 · R3 · R5)'}
@@ -264,7 +264,7 @@
 							type="button"
 							onclick={unsealAll}
 							disabled={session.busy || lockingAll || lockedCount === 0}
-							class="rounded-lg border border-teal px-2.5 py-1 text-[10px] font-bold text-teal hover:bg-teal/10 disabled:opacity-40"
+							class="rounded-lg border border-teal px-2.5 py-1 text-[10px] font-bold text-teal-ink hover:bg-teal/10 disabled:opacity-40"
 							title="Unseal all — reopen boards"
 						>
 							Unseal all
@@ -288,11 +288,11 @@
 									</div>
 									<div class="text-xs text-muted">
 										{formatUsd(boardTokenSum(t.board))} ·
-										<b class={t.lockedThisRound ? 'text-teal' : 'text-gold'}
+										<b class={t.lockedThisRound ? 'text-teal-ink' : 'text-gold-ink'}
 											>{t.lockedThisRound ? 'sealed' : 'open'}</b
 										>
 										{#if t.physicallyDone && !t.lockedThisRound}
-											· <span class="text-gold">frozen</span>
+											· <span class="text-gold-ink">frozen</span>
 										{/if}
 									</div>
 								</div>
@@ -310,7 +310,7 @@
 										onclick={() => session.unlockTable(t.id)}
 										disabled={session.busy}
 										title="Unseal — reopen this table’s board for edits"
-										class="rounded-lg border border-teal px-3 py-1.5 text-xs text-teal hover:bg-teal/10 disabled:opacity-40"
+										class="rounded-lg border border-teal px-3 py-1.5 text-xs text-teal-ink hover:bg-teal/10 disabled:opacity-40"
 										>Unseal</button
 									>
 								{:else}
@@ -321,7 +321,7 @@
 										title={captureRound
 											? 'Seal — capture current board for this round (host force-submit)'
 											: 'Seals only work on capture rounds (R2 · R3 · R5)'}
-										class="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold hover:bg-gold/10 disabled:opacity-40"
+										class="rounded-lg border border-gold px-3 py-1.5 text-xs text-gold-ink hover:bg-gold/10 disabled:opacity-40"
 										>Seal</button
 									>
 								{/if}
@@ -334,30 +334,25 @@
 			<section class="rounded-2xl border border-line bg-panel/40 p-5 space-y-3">
 				<h2 class="text-[11px] uppercase tracking-[0.26em] text-muted">Session data</h2>
 				<p class="text-xs text-muted">Export full room JSON for backup or offline analysis.</p>
-				<button
-					type="button"
-					onclick={exportSessionJSON}
-					disabled={!st}
-					class="rounded-xl border border-line px-4 py-2 font-display text-xs font-bold hover:border-gold disabled:opacity-30"
-				>
+				<Button variant="secondary" size="sm" onclick={exportSessionJSON} disabled={!st}>
 					Export JSON ↓
-				</button>
+				</Button>
 			</section>
 
 			<section class="rounded-2xl border border-red/30 bg-panel/40 p-5 space-y-3">
 				<h2 class="text-[11px] uppercase tracking-[0.26em] text-red">Reset session</h2>
 				<p class="text-xs text-muted">Wipe all boards and return to lobby. Archive photos are kept.</p>
-				<button
-					type="button"
+				<Button
+					variant="danger"
+					size="sm"
 					onclick={() => {
 						resetConfirm = '';
 						resetOpen = true;
 					}}
 					disabled={session.busy}
-					class="rounded-xl border border-red/50 bg-red/10 px-4 py-2 font-display text-xs font-bold text-red hover:bg-red/20 disabled:opacity-40"
 				>
 					Reset whole session
-				</button>
+				</Button>
 			</section>
 		</div>
 
@@ -392,7 +387,7 @@
 			/>
 		</label>
 		<div class="flex flex-wrap gap-2 justify-end">
-			<Button variant="outline" onclick={() => (resetOpen = false)}>Cancel</Button>
+			<Button variant="secondary" onclick={() => (resetOpen = false)}>Cancel</Button>
 			<Button
 				variant="danger"
 				disabled={session.busy || resetConfirm !== 'LIVE'}

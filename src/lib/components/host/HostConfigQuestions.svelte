@@ -50,7 +50,7 @@
 <p class="text-[11px] text-muted mb-4">
 	What players see each round on phone + presenter. Current:
 	{#if st?.phase === 'round'}
-		<span class="text-gold font-mono font-bold">R{(st.round ?? 0) + 1}</span>
+		<span class="text-gold-ink font-mono font-bold">R{(st.round ?? 0) + 1}</span>
 		— {rs[st.round]?.question ?? '…'}
 	{:else}
 		<span class="text-muted">{st?.phase ?? '…'}</span>
@@ -68,18 +68,18 @@
 			class:border-line={!rowDirty && !isCurrent}
 		>
 			<div class="flex items-center gap-2.5 flex-wrap">
-				<span class="font-mono font-bold text-sm text-gold">R{rl}</span>
+				<span class="font-mono font-bold text-sm text-gold-ink">R{rl}</span>
 				<span class="text-lg" aria-hidden="true">{get(round, 'emoji') || s.emoji}</span>
 				<span class="font-display font-bold text-sm min-w-0 truncate"
 					>{get(round, 'title') || s.title}</span
 				>
 				{#if isCurrent}
-					<span class="rounded-full bg-teal/20 px-2 py-0.5 text-[10px] font-bold text-teal"
+					<span class="rounded-full bg-teal/20 px-2 py-0.5 text-[10px] font-bold text-teal-ink"
 						>Live round</span
 					>
 				{/if}
 				{#if rowDirty}
-					<span class="ml-auto rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold"
+					<span class="ml-auto rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-bold text-gold-ink"
 						>Unsaved</span
 					>
 				{/if}
@@ -140,7 +140,7 @@
 			<button
 				type="button"
 				onclick={() => (advanced = { ...advanced, [round]: !advanced[round] })}
-				class="text-[10px] font-bold text-muted hover:text-gold"
+				class="text-[10px] font-bold text-muted hover:text-gold-ink"
 			>
 				{advanced[round] ? '▾ Hide rules' : '▸ Mode · move · model rules'}
 			</button>

@@ -73,7 +73,7 @@
 	/>
 </svelte:head>
 
-<main class="stage">
+<main class="stage stage-dark">
 	<header class="topbar">
 		<div class="tb-left">
 			<h1 class="brand">COMMON <span class="gold">GROUND</span></h1>
@@ -251,14 +251,14 @@
 		white-space: nowrap;
 	}
 	.gold {
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.conn {
 		font-size: 10px;
 		color: var(--color-muted);
 	}
 	.conn.on {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.tb-rungs {
 		display: flex;
@@ -303,7 +303,7 @@
 	}
 	.look,
 	.host {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.look:hover,
 	.host:hover {
@@ -434,13 +434,13 @@
 		font-weight: 800;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.sub-count {
 		font-family: var(--font-mono);
 		font-size: 11px;
 		font-weight: 800;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.sub-grid {
 		display: grid;
@@ -496,7 +496,7 @@
 		padding: 2px 6px;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--color-teal) 18%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		display: inline-block;
 		margin-bottom: 6px;
 	}

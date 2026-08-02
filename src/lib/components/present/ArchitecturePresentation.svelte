@@ -121,7 +121,7 @@
 		font-size: 10px;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.mandate {
 		margin: 4px 0 0;
@@ -138,7 +138,7 @@
 		padding: 4px 8px;
 		border-radius: 999px;
 		border: 1px solid color-mix(in srgb, var(--color-teal) 40%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.slide {
 		border-radius: 14px;

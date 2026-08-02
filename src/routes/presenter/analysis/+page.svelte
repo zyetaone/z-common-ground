@@ -45,7 +45,7 @@ const isRevealable = $derived(
 
 	function onKey(e: KeyboardEvent) {
 		const t = e.target;
-		if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+		if (t instanceof HTMLElement && t.closest('button, a, input, textarea, select')) return;
 		if (e.key === 'ArrowLeft' || e.key === 'b' || e.key === 'B') {
 			e.preventDefault();
 			present.prev();
@@ -198,7 +198,7 @@ const isRevealable = $derived(
 		font-weight: 700;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.tb-rungs {
 		display: flex;
@@ -278,7 +278,7 @@ const isRevealable = $derived(
 		margin: 0;
 	}
 	.empty-sub a {
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		font-weight: 700;
 		text-decoration: none;
 	}

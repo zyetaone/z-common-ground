@@ -252,6 +252,7 @@ body::before {
 	--color-bg-elevated: color-mix(in srgb, #ffffff 7%, #18221a);
 	--color-bg-overlay: color-mix(in srgb, #10160f 75%, transparent);
 	--color-teal-ink: #3fb6a2; /* 7:1 on dark panel — same token, theme-scoped */
+	--color-gold-ink: #d9b44a; /* ~7:1 on dark panel — same token, theme-scoped */
 	--color-zi-bg: color-mix(in srgb, var(--color-teal) 16%, #18221a);
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
 	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);

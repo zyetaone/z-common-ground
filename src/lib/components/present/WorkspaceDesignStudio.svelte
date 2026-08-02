@@ -308,7 +308,7 @@
 	.link {
 		font-size: 12px;
 		font-weight: 700;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		text-decoration: none;
 	}
 	.link:hover {
@@ -353,7 +353,7 @@
 	.chk.on {
 		opacity: 1;
 		border-color: color-mix(in srgb, var(--color-teal) 40%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		background: color-mix(in srgb, var(--color-teal) 10%, transparent);
 	}
 	.gen {
@@ -439,7 +439,7 @@
 		font-size: 9px;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 	}
 	.by {
 		font-family: var(--font-mono);
@@ -514,7 +514,7 @@
 		border-radius: 50%;
 		border: 1px solid color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
 		background: var(--color-panel);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		font-size: 11px;
 		font-weight: 800;
 		line-height: 1;
@@ -537,7 +537,7 @@
 		justify-content: center;
 		background: color-mix(in srgb, var(--color-teal) 6%, transparent);
 		border: 1px dashed color-mix(in srgb, var(--color-teal) 45%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		font-family: var(--font-mono);
 		font-size: 16px;
 		font-weight: 700;
@@ -567,7 +567,7 @@
 	.gen-inline {
 		border: 1px solid color-mix(in srgb, var(--color-teal) 45%, transparent);
 		background: color-mix(in srgb, var(--color-teal) 10%, transparent);
-		color: var(--color-teal);
+		color: var(--color-teal-ink);
 		border-radius: 10px;
 		padding: 8px 14px;
 		font-weight: 800;
