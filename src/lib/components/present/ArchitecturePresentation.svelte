@@ -16,12 +16,10 @@
 
 	const plan = $derived(architecturePresentation(room));
 	let slide = $state(0);
-	const active = $derived(plan.slides[Math.min(slide, Math.max(0, plan.slides.length - 1))]);
-
-	$effect(() => {
-		// keep index in range when plan rebuilds
-		if (slide >= plan.slides.length) slide = 0;
-	});
+	// Clamp on read, not by writing back in an $effect — writing state inside an
+	// effect that also reads it is the shape that caused effect_update_depth_exceeded.
+	const idx = $derived(Math.min(slide, Math.max(0, plan.slides.length - 1)));
+	const active = $derived(plan.slides[idx]);
 </script>
 
 <div class="ap" class:compact>
@@ -48,7 +46,7 @@
 			</div>
 		</div>
 		<div class="nav">
-			<button type="button" class="nb" disabled={slide <= 0} onclick={() => (slide = Math.max(0, slide - 1))}
+			<button type="button" class="nb" disabled={idx <= 0} onclick={() => (slide = Math.max(0, idx - 1))}
 				>←</button
 			>
 			<div class="dots">
@@ -56,7 +54,7 @@
 					<button
 						type="button"
 						class="dot"
-						class:on={i === slide}
+						class:on={i === idx}
 						style="--c:{s.color ?? 'var(--color-teal)'}"
 						onclick={() => (slide = i)}
 						aria-label={s.title}
@@ -66,8 +64,8 @@
 			<button
 				type="button"
 				class="nb"
-				disabled={slide >= plan.slides.length - 1}
-				onclick={() => (slide = Math.min(plan.slides.length - 1, slide + 1))}>→</button
+				disabled={idx >= plan.slides.length - 1}
+				onclick={() => (slide = Math.min(plan.slides.length - 1, idx + 1))}>→</button
 			>
 		</div>
 	{/if}

@@ -37,7 +37,9 @@
 	const generatedCount = $derived(slots.filter((s) => s.sheet).length);
 
 	let sheetIdx = $state(0);
-	const active = $derived(slots[Math.min(sheetIdx, slots.length - 1)]);
+	// Clamp on read, not by writing back in an $effect.
+	const si = $derived(Math.min(sheetIdx, Math.max(0, slots.length - 1)));
+	const active = $derived(slots[si]);
 
 	let expandOpen = $state(false);
 	let expandSrc = $state('');
@@ -47,10 +49,6 @@
 	let sheetBusy = $state<Record<string, boolean>>({});
 	/** True while the sequential set-generation loop runs. */
 	let running = $state(false);
-
-	$effect(() => {
-		if (sheetIdx >= slots.length) sheetIdx = 0;
-	});
 
 	/** Generate/regen a single sheet. */
 	async function genSheet(kind: WorkspaceDesignKind) {
@@ -200,8 +198,8 @@
 					<button
 						type="button"
 						class="nb"
-						disabled={sheetIdx <= 0}
-						onclick={() => (sheetIdx = Math.max(0, sheetIdx - 1))}>←</button
+						disabled={si <= 0}
+						onclick={() => (sheetIdx = Math.max(0, si - 1))}>←</button
 					>
 					<div class="thumbs">
 					{#each slots as s, i (s.kind)}
@@ -210,7 +208,7 @@
 								<button
 									type="button"
 									class="thumb"
-									class:on={i === sheetIdx}
+									class:on={i === si}
 									onclick={() => (sheetIdx = i)}
 									aria-label={s.label}
 								>
@@ -231,7 +229,7 @@
 							<button
 								type="button"
 								class="thumb pending"
-								class:on={i === sheetIdx}
+								class:on={i === si}
 								disabled={!ready || session.busy || running || !!sheetBusy[s.kind]}
 								onclick={() => genSheet(s.kind)}
 								title="Generate {s.label}"
@@ -245,8 +243,8 @@
 					<button
 						type="button"
 						class="nb"
-						disabled={sheetIdx >= slots.length - 1}
-						onclick={() => (sheetIdx = Math.min(slots.length - 1, sheetIdx + 1))}>→</button
+						disabled={si >= slots.length - 1}
+						onclick={() => (sheetIdx = Math.min(slots.length - 1, si + 1))}>→</button
 					>
 				</div>
 			{/if}

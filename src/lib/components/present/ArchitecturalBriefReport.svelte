@@ -34,14 +34,12 @@
 	const narrative = $derived(room.enhancedBrief ?? '');
 
 	let drawIdx = $state(0);
-	const activeDraw = $derived(drawings[Math.min(drawIdx, Math.max(0, drawings.length - 1))]);
+	// Clamp on read, not by writing back in an $effect.
+	const di = $derived(Math.min(drawIdx, Math.max(0, drawings.length - 1)));
+	const activeDraw = $derived(drawings[di]);
 
 	let editing = $state(false);
 	let draft = $state('');
-
-	$effect(() => {
-		if (drawIdx >= drawings.length) drawIdx = 0;
-	});
 
 	function startEdit() {
 		draft = narrative;
@@ -113,7 +111,7 @@
 		<section class="sec drawings">
 			<div class="sec-h">
 				<h2>02 · Concept references</h2>
-				<span class="count">{drawIdx + 1} / {drawings.length}</span>
+				<span class="count">{di + 1} / {drawings.length}</span>
 			</div>
 			<div class="draw-stage">
 				{#if activeDraw}
@@ -130,15 +128,15 @@
 				<button
 					type="button"
 					class="btn"
-					disabled={drawIdx <= 0}
-					onclick={() => (drawIdx = Math.max(0, drawIdx - 1))}>←</button
+					disabled={di <= 0}
+					onclick={() => (drawIdx = Math.max(0, di - 1))}>←</button
 				>
 				<div class="thumbs">
 					{#each drawings as d, i (d.url + i)}
 						<button
 							type="button"
 							class="thumb"
-							class:on={i === drawIdx}
+							class:on={i === di}
 							style="--c:{d.color}"
 							onclick={() => (drawIdx = i)}
 							aria-label={d.label}
@@ -150,8 +148,8 @@
 				<button
 					type="button"
 					class="btn"
-					disabled={drawIdx >= drawings.length - 1}
-					onclick={() => (drawIdx = Math.min(drawings.length - 1, drawIdx + 1))}>→</button
+					disabled={di >= drawings.length - 1}
+					onclick={() => (drawIdx = Math.min(drawings.length - 1, di + 1))}>→</button
 				>
 			</div>
 		</section>
