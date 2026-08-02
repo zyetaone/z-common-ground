@@ -859,6 +859,84 @@ export function badgeForTable(
 	if (total <= 0) {
 		return { hashtag, badge: 'No stake', badgePriority: null, badgeShare: 0 };
 	}
+	const name = (i: number) => names[i] ?? PRIORITIES[i] ?? '?';
+
+	// Observed play: the badge should name what the table actually did across
+	// the rounds, not just its biggest cumulative pile.
+	const byLabel = new Map((room.history ?? []).map((h) => [h.roundLabel, h]));
+	const r2 = byLabel.get(2);
+	const r3 = byLabel.get(3);
+	const later = byLabel.get(5) ?? byLabel.get(4);
+
+	const seatRow = (snap?: RoundSnapshot): Vec7 | null => {
+		const r = snap?.portrait?.[seat];
+		return r && sum(r as Vec7) > 0 ? (r as Vec7) : null;
+	};
+	/** Average per-function share of a priority across the room, in points. */
+	const roomAvgShare = (snap: RoundSnapshot, priority: number): number => {
+		let n = 0;
+		let acc = 0;
+		for (const fnRow of snap.portrait ?? []) {
+			const t = sum(fnRow as Vec7);
+			if (t <= 0) continue;
+			acc += ((fnRow[priority] ?? 0) / t) * 100;
+			n++;
+		}
+		return n > 0 ? acc / n : 0;
+	};
+
+	if (r2 && r3) {
+		const row2 = seatRow(r2);
+		const row3 = seatRow(r3);
+		if (row2 && row3) {
+			// Held the line: the table's share held or grew R2 → R3 while the
+			// room's average share for that priority fell under the cut.
+			const t2 = sum(row2);
+			const t3 = sum(row3);
+			let held: { priority: number; share: number } | null = null;
+			for (let i = 0; i < N_PRIORITIES; i++) {
+				const s2 = ((row2[i] ?? 0) / t2) * 100;
+				const s3 = ((row3[i] ?? 0) / t3) * 100;
+				if (s3 <= 0 || s3 < s2) continue;
+				if (roomAvgShare(r3, i) >= roomAvgShare(r2, i)) continue;
+				if (!held || s3 > held.share) held = { priority: i, share: s3 };
+			}
+			if (held) {
+				return {
+					hashtag,
+					badge: 'Held ' + name(held.priority),
+					badgePriority: held.priority,
+					badgeShare: Math.round(held.share)
+				};
+			}
+			// Reprioritised champion: largest R3 → R5 share gain (≥ 3pts, the
+			// same threshold roomRoundStory uses for reprioritised).
+			if (later && later.roundLabel > 3) {
+				const rowL = seatRow(later);
+				if (rowL) {
+					const tL = sum(rowL);
+					let champ: { priority: number; gain: number; share: number } | null = null;
+					for (let i = 0; i < N_PRIORITIES; i++) {
+						const s3 = ((row3[i] ?? 0) / t3) * 100;
+						const sL = ((rowL[i] ?? 0) / tL) * 100;
+						const gain = sL - s3;
+						if (gain < 3) continue;
+						if (!champ || gain > champ.gain) champ = { priority: i, gain, share: sL };
+					}
+					if (champ) {
+						return {
+							hashtag,
+							badge: 'Championed ' + name(champ.priority),
+							badgePriority: champ.priority,
+							badgeShare: Math.round(champ.share)
+						};
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback (no R3 history yet): top of the cumulative matrix.
 	let topPriority = 0;
 	let topTokens = 0;
 	for (let i = 0; i < row.length; i++) {
@@ -868,11 +946,10 @@ export function badgeForTable(
 			topPriority = i;
 		}
 	}
-	const topName = names[topPriority] ?? PRIORITIES[topPriority] ?? '?';
 	const share = Math.round((topTokens / total) * 100);
 	return {
 		hashtag,
-		badge: 'Held ' + topName,
+		badge: 'Held ' + name(topPriority),
 		badgePriority: topPriority,
 		badgeShare: share
 	};

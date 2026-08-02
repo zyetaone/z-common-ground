@@ -4,10 +4,9 @@
  */
 import {
 	N_SEATS,
-	R2_FULL_BUDGET,
-	R3_REMOVE_TARGET,
-	R5_RESTRUCTURE_CAP,
 	isCaptureRound,
+	r3RemoveTarget,
+	r5CapForWallet,
 	roomScenarios,
 	tableBountyTokens,
 	tableSeatIndex
@@ -18,11 +17,11 @@ import type { RoomState, TableState, Vec7 } from '../types';
 
 export { tableBountyTokens };
 
-/** Wallet ceiling for the current round (R5 restructure caps at $90M). */
+/** Wallet ceiling for the current round (R5 restructure caps at 90% of the wallet). */
 export function activeTableCap(room: RoomState): number {
 	const base = tableBountyTokens(room);
 	if (room.phase === 'round' && room.round + 1 === 5) {
-		return Math.min(base, R5_RESTRUCTURE_CAP);
+		return r5CapForWallet(base);
 	}
 	return base;
 }
@@ -168,9 +167,10 @@ export function applySubmitTable(
 		};
 	}
 
-	// Round targets (seal path only — physical facilitation mirrors these numbers)
+	// Round targets (seal path only — physical facilitation mirrors these numbers).
+	// Targets scale with the host-configured wallet, not the $100M default.
 	if (seal && roundLabel === 2) {
-		const need = Math.min(tableBountyTokens(room), R2_FULL_BUDGET);
+		const need = tableBountyTokens(room);
 		if (total !== need) {
 			return {
 				ok: false,
@@ -180,10 +180,11 @@ export function applySubmitTable(
 	}
 	if (seal && roundLabel === 3 && isRemoveRound(room)) {
 		const removed = standing - total;
-		if (removed < R3_REMOVE_TARGET) {
+		const target = r3RemoveTarget(standing);
+		if (removed < target) {
 			return {
 				ok: false,
-				error: `R3 requires removing $${R3_REMOVE_TARGET}M (you removed $${removed}M of $${standing}M). Cut more, then seal.`
+				error: `R3 requires removing $${target}M (you removed $${removed}M of $${standing}M). Cut more, then seal.`
 			};
 		}
 	}

@@ -353,17 +353,35 @@ export function roomPriorities(room?: { priorities?: string[] } | null): string[
 }
 
 /**
- * Budget arc (per table, $10M chips):
+ * Budget arc (per table, $10M chips), at the default $100M wallet:
  *   R1  place ~$30M (open)
  *   R2  reach full $100M — capture
  *   R3  remove $30M → ~$70M protected — capture
  *   R4  get back +$20M → ~$90M — hold
  *   R5  restructure up to $90M final — capture
+ * The constants below are the DEFAULT-wallet ($100M) values for display copy and
+ * fallbacks. Seal/cap checks must derive from the actual wallet via the helpers
+ * below, because roomBountyTokens is host-editable (wallet = floor(room/tables)).
  */
 export const R2_FULL_BUDGET = 100;
 export const R3_REMOVE_TARGET = 30;
 export const R4_ADD_BACK = 20;
 export const R5_RESTRUCTURE_CAP = 90;
+
+/** R3 seal: remove this fraction of the standing total (30% = $30M of $100M). */
+export const R3_REMOVE_FRACTION = 0.3;
+/** R5 restructure: cap the board at this fraction of the wallet (90% = $90M of $100M). */
+export const R5_CAP_FRACTION = 0.9;
+
+/** R3 seal target in tokens — must remove ≥ 30% of the standing total. */
+export function r3RemoveTarget(standing: number): number {
+	return Math.ceil(Math.max(0, standing) * R3_REMOVE_FRACTION);
+}
+
+/** R5 restructure cap in tokens — 90% of the per-table wallet. */
+export function r5CapForWallet(wallet: number): number {
+	return Math.min(wallet, Math.floor(wallet * R5_CAP_FRACTION));
+}
 
 /** Host/presenter + mobile — cumulative board; each round adds or removes. */
 export const SCENARIOS: Scenario[] = [

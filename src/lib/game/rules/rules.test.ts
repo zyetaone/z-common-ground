@@ -7,8 +7,10 @@ import {
 	DEFAULT_TABLE_COUNT,
 	N_PRIORITIES,
 	N_SEATS,
+	PRIORITIES,
 	ROUND_COUNT,
 	aggregate,
+	badgeForTable,
 	emptyMatrix,
 	personaBiasList,
 	recomputeTable,
@@ -18,8 +20,9 @@ import {
 	surpriseToken,
 	verdicts
 } from '$lib/game';
-import type { RoomState, RoundSnapshot, TableState, Vec7 } from '$lib/game/types';
+import type { Matrix7x7, RoomState, RoundSnapshot, TableState, Vec7 } from '$lib/game/types';
 import {
+	activeTableCap,
 	applyAdvance,
 	applyBoardDelta,
 	applyBoardSet,
@@ -424,5 +427,128 @@ describe('functionProfile — personality scan from choices', () => {
 		expect(p!.tags.length).toBeGreaterThan(0);
 		expect(p!.headline.length).toBeGreaterThan(10);
 		expect(p!.archetype.length).toBeGreaterThan(0);
+	});
+});
+
+describe('budget-scaled seal targets (host-editable room budget)', () => {
+	/** roomBountyTokens 210 → per-table wallet floor(210/7) = $30M. */
+	function smallRoom(round: number): RoomState {
+		return makeRoom({ phase: 'round', round, roomBountyTokens: 210 });
+	}
+
+	it('R2 seals at the reduced wallet ($30M), not the $100M default', () => {
+		const room = smallRoom(1);
+		stakeTable1(room, [20, 0, 0, 0, 0, 0, 0]);
+		const short = emptyMatrix();
+		short[0] = [20, 0, 0, 0, 0, 0, 0];
+		const miss = applySubmitTable(room, 1, short, { seal: true });
+		expect(miss.ok).toBe(false);
+		if (!miss.ok) expect(miss.error).toMatch(/full \$30M/i);
+
+		const full = emptyMatrix();
+		full[0] = [10, 10, 10, 0, 0, 0, 0];
+		const hit = applySubmitTable(room, 1, full, { seal: true });
+		expect(hit.ok).toBe(true);
+		expect(hit.sealed).toBe(true);
+	});
+
+	it('R3 seals at a 30% cut of the reduced standing ($9M of $30M)', () => {
+		const room = smallRoom(2);
+		stakeTable1(room, [10, 10, 10, 0, 0, 0, 0]); // standing $30M
+		const lightCut = emptyMatrix();
+		lightCut[0] = [10, 10, 2, 0, 0, 0, 0]; // removed $8M < ceil(30 × 0.3) = $9M
+		const miss = applySubmitTable(room, 1, lightCut, { seal: true });
+		expect(miss.ok).toBe(false);
+		if (!miss.ok) expect(miss.error).toMatch(/removing \$9M/i);
+
+		const fullCut = emptyMatrix();
+		fullCut[0] = [10, 10, 1, 0, 0, 0, 0]; // removed exactly $9M
+		const hit = applySubmitTable(room, 1, fullCut, { seal: true });
+		expect(hit.ok).toBe(true);
+		expect(hit.sealed).toBe(true);
+	});
+
+	it('R5 restructure cap scales to 90% of the wallet', () => {
+		expect(activeTableCap(makeRoom({ phase: 'round', round: 4 }))).toBe(90); // default $100M wallet
+		expect(activeTableCap(smallRoom(4))).toBe(27); // 90% of $30M
+
+		const room = smallRoom(4);
+		stakeTable1(room, [20, 0, 0, 0, 0, 0, 0]);
+		expect(applyBoardDelta(room, 1, 0, 1, 10)).toBe(false); // 30 > 27 cap
+		expect(applyBoardDelta(room, 1, 0, 1, 7)).toBe(true); // 27 = cap exactly
+	});
+});
+
+describe('badgeForTable — observed play from round history', () => {
+	function snapWithPortrait(roundLabel: number, rows: number[][]): RoundSnapshot {
+		const portrait = emptyMatrix() as Matrix7x7;
+		rows.forEach((row, seat) => {
+			if (row) portrait[seat] = row;
+		});
+		const matrix = Array(N_PRIORITIES).fill(0) as Vec7;
+		for (const row of portrait) for (let i = 0; i < N_PRIORITIES; i++) matrix[i] += row[i] ?? 0;
+		return {
+			round: roundLabel - 1,
+			roundLabel,
+			matrix,
+			portrait,
+			alignmentIndex: 50,
+			alignment: 0,
+			fault: 1,
+			blind: 6,
+			totalCoins: matrix.reduce((a, b) => a + b, 0)
+		};
+	}
+
+	it('names the priority the table held while the room cut it', () => {
+		// R2: everyone splits 50/50 between p0 and p1.
+		// R3: table 1 keeps p0 heavy; every other table cuts it hard.
+		const r2rows = Array.from({ length: 7 }, () => [50, 50, 0, 0, 0, 0, 0]);
+		const r3rows = Array.from({ length: 7 }, () => [10, 60, 0, 0, 0, 0, 0]);
+		r3rows[0] = [50, 20, 0, 0, 0, 0, 0]; // table 1: p0 share 50% → 71%
+		const room = makeRoom({
+			phase: 'reveal',
+			round: 4,
+			history: [snapWithPortrait(2, r2rows), snapWithPortrait(3, r3rows)]
+		});
+		stakeTable1(room, [50, 20, 0, 0, 0, 0, 0]);
+		recomputeTable(room.tables[0]);
+		const badge = badgeForTable(room, 1);
+		expect(badge.badge).toBe('Held ' + PRIORITIES[0]);
+		expect(badge.badgePriority).toBe(0);
+	});
+
+	it('names the priority the table championed when nothing was protected', () => {
+		// R3: the whole room (table 1 included) shifts toward p0, so no
+		// priority satisfies "held while the room cut it".
+		const r2rows = Array.from({ length: 7 }, () => [50, 50, 0, 0, 0, 0, 0]);
+		const r3rows = Array.from({ length: 7 }, () => [60, 10, 0, 0, 0, 0, 0]);
+		r3rows[0] = [50, 25, 0, 0, 0, 0, 0]; // p0 share grew — but the room's avg grew too
+		const r5rows = Array.from({ length: 7 }, () => [60, 10, 0, 0, 0, 0, 0]);
+		r5rows[0] = [10, 10, 80, 0, 0, 0, 0]; // table 1 rebuilt p2 hard
+		const room = makeRoom({
+			phase: 'finale',
+			round: 4,
+			history: [
+				snapWithPortrait(2, r2rows),
+				snapWithPortrait(3, r3rows),
+				snapWithPortrait(5, r5rows)
+			]
+		});
+		stakeTable1(room, [10, 10, 80, 0, 0, 0, 0]);
+		recomputeTable(room.tables[0]);
+		const badge = badgeForTable(room, 1);
+		expect(badge.badge).toBe('Championed ' + PRIORITIES[2]);
+		expect(badge.badgePriority).toBe(2);
+	});
+
+	it('falls back to the cumulative top priority before R3 history exists', () => {
+		const room = makeRoom({ phase: 'round', round: 1 });
+		stakeTable1(room, [40, 20, 20, 0, 0, 0, 0]);
+		recomputeTable(room.tables[0]);
+		const badge = badgeForTable(room, 1);
+		expect(badge.badge).toBe('Held ' + PRIORITIES[0]);
+		expect(badge.badgePriority).toBe(0);
+		expect(badge.badgeShare).toBe(50);
 	});
 });
