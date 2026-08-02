@@ -12,6 +12,9 @@ import {
 	emptyMatrix,
 	personaBiasList,
 	recomputeTable,
+	allocateWeightedChips,
+	functionProfile,
+	roomRoundStory,
 	surpriseToken,
 	verdicts
 } from '$lib/game';
@@ -129,10 +132,10 @@ describe('applyRetreat', () => {
 });
 
 describe('R3 remove rules', () => {
+	/** Standing $100M after R2 — R3 must cut $30M. */
 	function r3Room(): RoomState {
-		// round index 2 = R3 (0-based)
 		const room = makeRoom({ phase: 'round', round: 2 });
-		stakeTable1(room, [3, 2, 0, 0, 0, 0, 0]);
+		stakeTable1(room, [40, 20, 20, 10, 10, 0, 0]);
 		return room;
 	}
 
@@ -141,42 +144,58 @@ describe('R3 remove rules', () => {
 		expect(isRemoveRound(makeRoom({ phase: 'round', round: 1 }))).toBe(false);
 	});
 
+	it('isRemoveRound respects host scenario move override', () => {
+		const room = makeRoom({ phase: 'round', round: 1 }); // default R2 = add
+		room.scenarios = [];
+		room.scenarios[1] = {
+			round: 1,
+			roundLabel: 2,
+			title: 'R2 override',
+			emoji: 'x',
+			question: 'q',
+			hint: 'h',
+			mode: 'capture',
+			move: 'remove',
+			instruction: 'i'
+		};
+		expect(isRemoveRound(room)).toBe(true);
+	});
+
 	it('rejects positive delta on R3', () => {
 		const room = r3Room();
-		const ok = applyBoardDelta(room, 1, 0, 0, 1);
+		const ok = applyBoardDelta(room, 1, 0, 0, 10);
 		expect(ok).toBe(false);
-		expect(room.tables[0].board[0][0]).toBe(3);
+		expect(room.tables[0].board[0][0]).toBe(40);
 	});
 
 	it('allows subtract on R3', () => {
 		const room = r3Room();
-		const ok = applyBoardDelta(room, 1, 0, 0, -1);
+		const ok = applyBoardDelta(room, 1, 0, 0, -10);
 		expect(ok).toBe(true);
-		expect(room.tables[0].board[0][0]).toBe(2);
+		expect(room.tables[0].board[0][0]).toBe(30);
 	});
 
 	it('clamps boardSet above standing on R3', () => {
 		const room = r3Room();
-		const ok = applyBoardSet(room, 1, 0, 0, 9);
+		const ok = applyBoardSet(room, 1, 0, 0, 99);
 		expect(ok).toBe(true);
-		expect(room.tables[0].board[0][0]).toBe(3); // clamped
+		expect(room.tables[0].board[0][0]).toBe(40); // clamped to standing
 	});
 
-	it('submit rejects increases vs standing', () => {
+	it('submit clamps increases vs standing then requires $30M cut', () => {
 		const room = r3Room();
 		const board = emptyMatrix();
-		board[0] = [5, 2, 0, 0, 0, 0, 0]; // tried to add on pri 0
+		// tried to raise pri 0; clamp keeps 40; total still 100 → fail remove target
+		board[0] = [50, 20, 20, 10, 10, 0, 0];
 		const res = applySubmitTable(room, 1, board, { seal: true });
-		expect(res.ok).toBe(true);
-		// clamped to min(5,3)=3
-		expect(room.tables[0].board[0][0]).toBe(3);
+		expect(res.ok).toBe(false);
+		if (!res.ok) expect(res.error).toMatch(/removing \$30M/i);
 	});
 
-	it('submit over standing total fails if row somehow exceeds cap after clamp', () => {
+	it('submit seals when $30M removed (leave $70M)', () => {
 		const room = r3Room();
-		// valid decrease
 		const board = emptyMatrix();
-		board[0] = [1, 1, 0, 0, 0, 0, 0];
+		board[0] = [30, 20, 10, 10, 0, 0, 0]; // 70 left, removed 30
 		const res = applySubmitTable(room, 1, board, { seal: true });
 		expect(res.ok).toBe(true);
 		expect(res.sealed).toBe(true);
@@ -185,8 +204,29 @@ describe('R3 remove rules', () => {
 
 	it('rejects wrong function seat', () => {
 		const room = r3Room();
-		// table 1 function seat is 0; seat 3 is wrong
-		expect(applyBoardDelta(room, 1, 3, 0, -1)).toBe(false);
+		expect(applyBoardDelta(room, 1, 3, 0, -10)).toBe(false);
+	});
+});
+
+describe('R2 full budget seal', () => {
+	it('rejects seal when total is not $100M', () => {
+		const room = makeRoom({ phase: 'round', round: 1 });
+		stakeTable1(room, [30, 20, 0, 0, 0, 0, 0]);
+		const board = emptyMatrix();
+		board[0] = [30, 20, 0, 0, 0, 0, 0];
+		const res = applySubmitTable(room, 1, board, { seal: true });
+		expect(res.ok).toBe(false);
+		if (!res.ok) expect(res.error).toMatch(/full \$100M/i);
+	});
+
+	it('accepts seal at exactly $100M', () => {
+		const room = makeRoom({ phase: 'round', round: 1 });
+		stakeTable1(room, [40, 20, 20, 10, 10, 0, 0]);
+		const board = emptyMatrix();
+		board[0] = [40, 20, 20, 10, 10, 0, 0];
+		const res = applySubmitTable(room, 1, board, { seal: true });
+		expect(res.ok).toBe(true);
+		expect(res.sealed).toBe(true);
 	});
 });
 
@@ -293,5 +333,96 @@ describe('ground-up lenses', () => {
 			[0, 0, 0, 25, 25, 25, 25]
 		] as unknown as Vec7[];
 		expect(surpriseToken(offType, bias)).toEqual({ seat: 0, priority: 5 });
+	});
+});
+
+describe('roomRoundStory — assumed / protected / reprioritised', () => {
+	function snap(
+		roundLabel: number,
+		matrix: number[],
+		alignment: number,
+		cgi = 50
+	): RoundSnapshot {
+		return {
+			round: roundLabel - 1,
+			roundLabel,
+			matrix: matrix as Vec7,
+			portrait: emptyMatrix() as unknown as RoundSnapshot['portrait'],
+			alignmentIndex: cgi,
+			alignment,
+			fault: 1,
+			blind: 6,
+			totalCoins: matrix.reduce((a, b) => a + b, 0)
+		};
+	}
+
+	it('is empty until there is stake history', () => {
+		const room = makeRoom({ phase: 'lobby' });
+		const s = roomRoundStory(room);
+		expect(s.ready).toBe(false);
+		expect(s.assumed).toBeNull();
+		expect(s.protected).toEqual([]);
+	});
+
+	it('reads assumed from R2 lead and protected/cut from R2→R3 share shift', () => {
+		// R2: heavy on p0 (assumed) and p5
+		// R3: cut p5 hard, hold p0 (protected)
+		const r2 = [40, 10, 10, 10, 10, 40, 10];
+		const r3 = [35, 8, 8, 8, 8, 5, 8]; // total 80 — p0 held, p5 crushed
+		const room = makeRoom({
+			phase: 'round',
+			round: 3,
+			history: [
+				snap(2, r2, 0, 40),
+				snap(3, r3, 0, 55)
+			]
+		});
+		const s = roomRoundStory(room);
+		expect(s.ready).toBe(true);
+		expect(s.assumed?.round).toBe(2);
+		expect(s.assumed?.name).toBeTruthy();
+		expect(s.protected.some((p) => p.priority === 0)).toBe(true);
+		expect(s.cut.some((p) => p.priority === 5)).toBe(true);
+		expect(s.headline.length).toBeGreaterThan(10);
+	});
+
+	it('flags reprioritised gains from R3 → R5', () => {
+		const r2 = [30, 20, 10, 10, 10, 10, 10];
+		const r3 = [25, 15, 8, 8, 8, 8, 8];
+		const r5 = [15, 10, 8, 8, 8, 8, 40]; // p6 rebuilt hard
+		const room = makeRoom({
+			phase: 'reveal',
+			round: 4,
+			history: [snap(2, r2, 0, 40), snap(3, r3, 0, 50), snap(5, r5, 6, 62)]
+		});
+		const s = roomRoundStory(room);
+		expect(s.reprioritised.some((p) => p.priority === 6 && p.deltaPts > 0)).toBe(true);
+	});
+});
+
+describe('emulate allocateWeightedChips', () => {
+	it('sums exactly to target total', () => {
+		const row = allocateWeightedChips([3, 1, 0, 1, 2, 0, 1], 100, 42);
+		expect(row.reduce((a, b) => a + b, 0)).toBe(100);
+		expect(row.every((v) => v % 10 === 0)).toBe(true);
+	});
+});
+
+describe('functionProfile — personality scan from choices', () => {
+	it('scores conviction and prefers from the table mix', () => {
+		const room = makeRoom({ phase: 'round', round: 1 });
+		// Table 1 (Real Estate): heavy innovation + future
+		stakeTable1(room, [0, 0, 0, 10, 50, 10, 30]);
+		recomputeTable(room.tables[0], room.aggregate.matrix);
+		// need matrix on table — recomputeTable sets matrix from board
+		const p = functionProfile(room, 1);
+		expect(p).not.toBeNull();
+		expect(p!.total).toBe(100);
+		expect(p!.prefers[0]?.name).toBeTruthy();
+		expect(p!.traits.find((t) => t.id === 'sure')?.score).toBeGreaterThanOrEqual(40);
+		expect(p!.traits.find((t) => t.id === 'innovative')?.score).toBe(50);
+		expect(p!.tags.length).toBeGreaterThan(0);
+		expect(p!.headline.length).toBeGreaterThan(10);
+		expect(p!.archetype.length).toBeGreaterThan(0);
 	});
 });

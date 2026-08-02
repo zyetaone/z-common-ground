@@ -58,3 +58,39 @@ export async function saveRoom(db: D1Database | undefined, room: RoomState): Pro
 		console.error('[room-store] save failed', err instanceof Error ? err.message : err);
 	}
 }
+
+/**
+ * Conditional save — compare-and-swap on updated_at. Only writes when the D1
+ * row still matches `expectedUpdatedAt` (the version we synced before mutating).
+ * Returns true when the write won; false when another isolate wrote first.
+ * With no D1 binding there is nothing to race against — reports success.
+ */
+export async function saveRoomIfUnchanged(
+	db: D1Database | undefined,
+	room: RoomState,
+	expectedUpdatedAt: number
+): Promise<boolean> {
+	if (!db) return true;
+	try {
+		await ensureSchema(db);
+		const res = await db
+			.prepare(`UPDATE room SET data = ?, updated_at = ? WHERE id = ? AND updated_at = ?`)
+			.bind(JSON.stringify(room), room.updatedAt ?? Date.now(), ROOM_ID, expectedUpdatedAt)
+			.run();
+		if ((res.meta.changes ?? 0) > 0) return true;
+		// No row matched — either first save ever, or someone else wrote first.
+		const existing = await db
+			.prepare('SELECT updated_at FROM room WHERE id = ?')
+			.bind(ROOM_ID)
+			.first<{ updated_at: number }>();
+		if (existing) return false;
+		await db
+			.prepare('INSERT INTO room (id, data, updated_at) VALUES (?, ?, ?)')
+			.bind(ROOM_ID, JSON.stringify(room), room.updatedAt ?? Date.now())
+			.run();
+		return true;
+	} catch (err) {
+		console.error('[room-store] conditional save failed', err instanceof Error ? err.message : err);
+		return false;
+	}
+}

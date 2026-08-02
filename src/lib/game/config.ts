@@ -1,4 +1,4 @@
-import type { Persona, Scenario, Vec7 } from './types';
+import { PRIORITIES, type Persona, type Scenario, type Vec7 } from './types';
 
 export const PERSONAS: Persona[] = [
 	{
@@ -9,7 +9,8 @@ export const PERSONAS: Persona[] = [
 		bias: [0, 0, 1, 1, 0, 3, 2],
 		mission: 'Reduce footprint. Optimise portfolio.',
 		strength: 'Strong portfolio optimization & footprint efficiency.',
-		risk: 'May constrain growth or space flexibility.'
+		risk: 'May constrain growth or space flexibility.',
+		hashtag: '#FootprintShrinker'
 	},
 	{
 		seat: 1,
@@ -19,7 +20,8 @@ export const PERSONAS: Persona[] = [
 		bias: [3, 2, 1, 0, 0, 0, 0],
 		mission: 'Increase employee engagement. Optimise people.',
 		strength: 'Excellent employee proposition.',
-		risk: 'Limited financial justification.'
+		risk: 'Limited financial justification.',
+		hashtag: '#PeopleOptimizer'
 	},
 	{
 		seat: 2,
@@ -29,7 +31,8 @@ export const PERSONAS: Persona[] = [
 		bias: [1, 3, 1, 1, 1, 0, 1],
 		mission: 'Accelerate AI adoption. Optimise technology.',
 		strength: 'Highly future-focused.',
-		risk: 'Workplace experience may become overly technology-centric.'
+		risk: 'Workplace experience may become overly technology-centric.',
+		hashtag: '#AIAdopter'
 	},
 	{
 		seat: 3,
@@ -39,7 +42,8 @@ export const PERSONAS: Persona[] = [
 		bias: [1, 0, 0, 1, 0, 3, 1],
 		mission: 'Reduce operating cost by 20%. Optimise cost.',
 		strength: 'Strong commercial discipline.',
-		risk: 'Under-investment in people and innovation.'
+		risk: 'Under-investment in people and innovation.',
+		hashtag: '#CostDisciplinarian'
 	},
 	{
 		seat: 4,
@@ -49,7 +53,8 @@ export const PERSONAS: Persona[] = [
 		bias: [0, 0, 0, 2, 1, 2, 3],
 		mission: 'Improve resilience. Optimise resilience.',
 		strength: 'High operational resilience & speed.',
-		risk: 'Focus on immediate continuity may delay strategic transformation.'
+		risk: 'Focus on immediate continuity may delay strategic transformation.',
+		hashtag: '#ResilienceBuilder'
 	},
 	{
 		seat: 5,
@@ -59,7 +64,8 @@ export const PERSONAS: Persona[] = [
 		bias: [2, 1, 3, 0, 1, 0, 0],
 		mission: 'Strengthen employer brand. Optimise brand.',
 		strength: 'Strong employer brand & market positioning.',
-		risk: 'Emphasis on brand perception over functional efficiency.'
+		risk: 'Emphasis on brand perception over functional efficiency.',
+		hashtag: '#BrandBuilder'
 	},
 	{
 		seat: 6,
@@ -69,7 +75,8 @@ export const PERSONAS: Persona[] = [
 		bias: [2, 0, 0, 2, 2, 0, 2],
 		mission: 'Increase enterprise value. Optimise enterprise value.',
 		strength: 'Maximizes total enterprise value.',
-		risk: 'High-level focus may obscure department-level friction.'
+		risk: 'High-level focus may obscure department-level friction.',
+		hashtag: '#EnterpriseOptimizer'
 	}
 ];
 
@@ -90,6 +97,164 @@ export const PRIORITY_COLORS = [
 	'#e0554b',
 	'#6fae8f'
 ] as const;
+
+/**
+ * Design attributes when money lands on a priority (SSOT for brief + image prompts).
+ * Higher stake → these keywords dominate materials, mood, and program language.
+ * Index matches PRIORITIES[] / PRIORITY_COLORS[] (0=Talent, 6=Future Readiness).
+ */
+export const PRIORITY_DESIGN_ATTRS = [
+	{
+		// 0 · Talent — activated arrival, recruitment-grade amenities
+		keywords: [
+			'talent magnets',
+			'activated arrival experience',
+			'amenities — gym, recreation, food offerings',
+			'recruitment-grade finishes',
+			'high-performer focus'
+		],
+		materials: 'premium finishes, polished stone, refined timber, hospitality-grade upholstery',
+		mood: 'aspirational, sharp, opportunity-forward — the workplace sells itself at the door',
+		colorBias: 'cool sky accents, crisp whites, brand teal moments',
+		quietness: 'moderate — focused zones with soft conversation'
+	},
+	{
+		// 1 · Employee Experience — sunlight, biophilia, game/relax rooms
+		keywords: [
+			'wellness',
+			'ergonomics',
+			'human-centric',
+			'psychological safety',
+			'sunlight-filled spaces',
+			'biophilic design — plants, natural materials, daylight',
+			'mindfulness zones — massage pods, quiet zones, meditation',
+			'game rooms and relax rooms — meta, playful, social',
+			'activated employee journey'
+		],
+		materials: 'soft textiles, biophilic plants, warm timber, acoustic felt, natural stone',
+		mood: 'calm, restorative, caring, lightly playful',
+		colorBias: 'soft teals, sage, warm neutrals, sun-warmed cream',
+		quietness: 'high — quiet rooms, library tone, soft footfall'
+	},
+	{
+		// 2 · Employer Brand — logo, AV screens, EGD on walls
+		keywords: [
+			'brand showcase',
+			'arrival moment',
+			'client theatre',
+			'employer story',
+			'logo presence at every threshold',
+			'AV screens running company content',
+			'environmental graphics (EGD) — decals, wall wraps, brand moments',
+			'signature arrival experience'
+		],
+		materials: 'statement lighting, feature walls, curated furniture, branded wayfinding',
+		mood: 'expressive, hospitable, photogenic, recognisable',
+		colorBias: 'brand-forward jewel tones, gold accents, signature palette',
+		quietness: 'low–moderate — lively reception energy'
+	},
+	{
+		// 3 · Productivity — work settings, scrum rooms, pods
+		keywords: [
+			'focus density',
+			'workflow speed',
+			'deep work',
+			'execution',
+			'varied work settings — open desks, focus pods, collaboration rooms',
+			'scrum-friendly collaboration environments',
+			'meeting variety — huddle rooms, boardrooms, video rooms',
+			'rooms + pods mix',
+			'tech tools integrated into every workstation',
+			'property-efficient layouts'
+		],
+		materials: 'clean workstations, acoustic panels, matte surfaces, writable glass',
+		mood: 'efficient, uncluttered, purposeful, energetic when collaborative',
+		colorBias: 'muted golds, charcoal, cool grey',
+		quietness: 'high in focus bays; controlled collaboration edges'
+	},
+	{
+		// 4 · Innovation — War Room, Idea Hubs, Quiet Focus Zones
+		keywords: [
+			'prototyping',
+			'labs',
+			'agile pods',
+			'experimentation',
+			'War Room — high-intensity decision and response space',
+			'Idea Hubs — ideation lounges with writable everything',
+			'Quiet Focus Zones — deep work away from the lab noise',
+			'tech-integrated desks, screens everywhere, prototyping kits'
+		],
+		materials: 'writable surfaces, modular furniture, tech-integrated desks, exposed services',
+		mood: 'experimental, agile, high-creativity, interactive',
+		colorBias: 'periwinkle, electric accents on cream',
+		quietness: 'mixed — quiet focus + lively make zones'
+	},
+	{
+		// 5 · Cost / ROI
+		keywords: [
+			'commercial discipline',
+			'efficiency',
+			'lean footprint',
+			'multi-use spaces',
+			'value engineering',
+			'measured square-footage per role'
+		],
+		materials: 'durable composites, modular demountable walls, standardized fit-out',
+		mood: 'disciplined, clean, rational, adaptable',
+		colorBias: 'cool greys, steel blue, slate',
+		quietness: 'controlled — standardized acoustic dampening'
+	},
+	{
+		// 6 · Future Readiness
+		keywords: [
+			'AI-ready infrastructure',
+			'digital media walls',
+			'raised access floors',
+			'sensor-ready ceilings',
+			'flexible demountable partitions',
+			'overnight reconfigurability'
+		],
+		materials: 'smart glass, integrated LED displays, modular aluminum framing, cable-access flooring',
+		mood: 'forward-looking, adaptive, high-tech, seamless',
+		colorBias: 'cyan, deep indigo, clean white',
+		quietness: 'adaptive — acoustic dampening on demand'
+	}
+] as const;
+
+/**
+ * Index-matched with PRIORITIES[] (0=Talent, 1=Employee Experience, …, 6=Future Readiness).
+ *  These strings drive the brief's "where the money goes" narrative and the prompt
+ *  for the per-priority portion of the visual render.
+ */
+export const SPACE = [
+	'Talent-magnet arrival & amenity-rich amenities',
+	'Employee experience & wellness — sunlight, biophilia, mindfulness, game rooms',
+	'Employer brand showcase — logo, EGD, AV screens, signature arrival',
+	'Productivity — varied work settings, scrum rooms, pods, meeting variety',
+	'Innovation hubs — War Room, Idea Hubs, Quiet Focus Zones, prototyping',
+	'Cost-efficient multi-use rooms & lean footprint',
+	'Future floorplate — digital media, raised access floors, sensor-ready, AI-ready'
+];
+
+export const DESIGN_LONG = [
+	'Talent-magnet arrival, gym / recreation / food amenities, recruitment-grade finishes, hospitality moments.',
+	'Employee experience hubs, sunlight-filled spaces, biophilic plants, mindfulness pods, massage chairs, quiet zones, game rooms and relax rooms — meta, playful, social.',
+	'Employer brand showcase: signature logo presence at every threshold, AV screens running company content, environmental graphics (EGD) decals and wall wraps, signature arrival experience.',
+	'Productivity: varied work settings — open desks, focus pods, scrum-friendly collaboration rooms, meeting variety — huddle, boardroom, video rooms — pods everywhere, property-efficient layouts, integrated tech tools.',
+	'Innovation hubs: War Room for high-intensity decisions, Idea Hubs with writable everything, Quiet Focus Zones for deep work, prototyping labs with tech-integrated desks.',
+	'Cost / ROI: value-engineered multi-use rooms, standardised components for speed of fit-out, measured square-footage per role, lean footprint without chaos.',
+	'Future Readiness: AI-ready infrastructure, digital media as walls, functional spaces that reconfigure overnight, raised access floors with cabling underneath, sensor-ready ceilings, flexible demountable walls.'
+];
+
+export const DESIGN_SHORT = [
+	'Talent arrival & amenities',
+	'EE wellness & game rooms',
+	'Brand showcase & EGD',
+	'Varied work settings',
+	'Innovation hubs (War Room, Idea Hubs)',
+	'Lean footprint',
+	'Future floorplate (digital media, raised floors)'
+];
 
 /**
  * One physical table = one room function (not a full multi-function board).
@@ -115,6 +280,16 @@ export const DEFAULT_TABLE_COUNT = 7;
 export const DEFAULT_ROOM_BOUNTY_TOKENS = 700;
 export const DEFAULT_TABLE_BOUNTY_TOKENS = 100;
 
+/** Per-table wallet in tokens ($M) — room bounty split across tables. */
+export function tableBountyTokens(room: {
+	tables: unknown[];
+	roomBountyTokens?: number;
+}): number {
+	const n = Math.max(1, room.tables.length);
+	const fromRoom = Math.floor((room.roomBountyTokens || DEFAULT_ROOM_BOUNTY_TOKENS) / n);
+	return Math.max(1, fromRoom || DEFAULT_TABLE_BOUNTY_TOKENS);
+}
+
 /** Physical chip denomination — single $10M token. */
 export const CHIP_DENOMS = [
 	{ color: 'red', value: 10, hex: '#e0554b' }
@@ -124,37 +299,20 @@ export type ChipDenom = (typeof CHIP_DENOMS)[number];
 export const CHIP_VALUE = 10;
 export const EVOLUTION_ROUNDS = [2, 3, 5] as const;
 export const CAPTURE_ROUNDS = [2, 3, 5] as const;
-export const SPACE = [
-	'Employee experience hubs & wellness zones',
-	'Collaboration zones & agile project spaces',
-	'IT infrastructure, tech integration & AI labs',
-	'Commercial optimization & cost-efficient layouts',
-	'Operational resilience & workflow execution areas',
-	'Brand showcase & client experience suites',
-	'C-Suite strategic decision rooms & executive suites'
-];
 
-export const DESIGN_LONG = [
-	'Focus on human-centric design, wellness rooms, ergonomic workstations, and high-touch employee amenities.',
-	'Designed with flexible team pods, whiteboard walls, agile project spaces, and collaborative breakout zones.',
-	'High-density digital infrastructure, AI tech labs, smart sensors, and high-speed connectivity nodes.',
-	'Space-efficient workstation layouts, durable finishes, and optimized square footage to reduce overhead.',
-	'Resilient 24/7 operational hubs, secure server facilities, and high-reliability workflow staging areas.',
-	'High-impact brand reception, immersive client presentation suites, and external-facing experience zones.',
-	'Executive boardrooms, private strategic suites, and high-security leadership conference spaces.'
-];
 
-export const DESIGN_SHORT = [
-	'Employee wellness & experience',
-	'Agile team collaboration',
-	'AI & tech infrastructure',
-	'Cost-optimized layout',
-	'Resilient operational hubs',
-	'Brand experience suites',
-	'Executive leadership suites'
-];
-
-export function isCaptureRound(roundLabel1Based: number): boolean {
+/**
+ * Capture seal allowed for this 1-based round label.
+ * When `room` is provided, host scenario `mode === 'capture'` is authoritative.
+ */
+export function isCaptureRound(
+	roundLabel1Based: number,
+	room?: { scenarios?: Scenario[] } | null
+): boolean {
+	if (room != null) {
+		const s = roomScenarios(room)[roundLabel1Based - 1];
+		return s?.mode === 'capture';
+	}
 	return (CAPTURE_ROUNDS as readonly number[]).includes(roundLabel1Based);
 }
 
@@ -182,76 +340,108 @@ export function roomScenarios(room?: { scenarios?: Scenario[] } | null): Scenari
 	});
 }
 
+/**
+ * Host-editable board option labels (7 priorities). Empty slots fall back to PRIORITIES.
+ */
+export function roomPriorities(room?: { priorities?: string[] } | null): string[] {
+	if (!room?.priorities?.length) return [...PRIORITIES];
+	return PRIORITIES.map((def, i) => {
+		const over = room.priorities![i];
+		const t = typeof over === 'string' ? over.trim() : '';
+		return t || def;
+	});
+}
+
+/**
+ * Budget arc (per table, $10M chips):
+ *   R1  place ~$30M (open)
+ *   R2  reach full $100M — capture
+ *   R3  remove $30M → ~$70M protected — capture
+ *   R4  get back +$20M → ~$90M — hold
+ *   R5  restructure up to $90M final — capture
+ */
+export const R2_FULL_BUDGET = 100;
+export const R3_REMOVE_TARGET = 30;
+export const R4_ADD_BACK = 20;
+export const R5_RESTRUCTURE_CAP = 90;
+
 /** Host/presenter + mobile — cumulative board; each round adds or removes. */
 export const SCENARIOS: Scenario[] = [
 	{
 		round: 0,
 		roundLabel: 1,
-		title: 'R1 · The Year-One Test',
-		emoji: '🎯',
-		question: 'Which element do you build the year-one business case around?',
-		hint: 'Each table has $100M across 5 rounds. Start by allocating ~$30M — where would you invest first?',
+		title: 'R1 · Business Growth',
+		emoji: '📈',
+		question: 'The business plans to grow 30%. Where would you invest first?',
+		hint: 'First stake on the physical board (~$30M of your $100M wallet). No seal yet.',
 		mode: 'wait',
 		move: 'add',
-		instruction: 'R1 · ADD ~$30M · first stake',
-		modelRules: 'Boards are cumulative across all 5 rounds. Per-table cap = floor(roomBudget / tables). R1 has no freeze or capture — just place. All 7 priorities are open.',
-		actions: '1. Read your function mission and lens.\n2. Discuss with your table: where does the first ~$30M go?\n3. Place physical tokens on the board.\n4. Mirror on the digital board.\n5. Presenter advances when all tables are ready.',
-		experience: 'Your opening move. Each function brings a lens — Real Estate wants the floorplate, HR wants the people. This is not "what would your function buy alone" — it is "what opens the conversation." Your first $30M sets the tone for every round that follows.'
+		instruction: 'Where would you invest first?',
+		modelRules: 'Table wallet $100M. Place ~$30M. No seal yet.',
+		actions: 'Physical board first → freeze → match digital.',
+		experience:
+			'The opening lens — establishes your function’s declared priorities without pressure. What we measure: baseline bias / where your function places the *first* dollar.'
 	},
 	{
 		round: 1,
 		roundLabel: 2,
-		title: 'R2 · The Hollow Culture',
-		emoji: '➕',
-		question: 'Hybrid hollowed culture. What rebuilds cohesion?',
-		hint: 'Place all tokens on your physical board, then position the digital board to match. Cumulative — boards carry forward (~$100M total).',
+		title: 'R2 · AI Transformation',
+		emoji: '🤖',
+		question: 'AI changes how everyone works. What deserves greater investment?',
+		hint: 'Physical board = full $100M. Then freeze & match digital.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R2 · ADD ~$70M · cumulative · CAPTURE',
-		modelRules: 'Add only. Per-table cap applies. Cumulative with R1. This is a capture round — your position is frozen and sealed for analysis. Must match physical board to digital before submitting.',
-		actions: '1. Place remaining physical tokens to reach ~$100M total.\n2. Tap Freeze when your physical board is set.\n3. Match the digital board to exactly mirror your physical tokens.\n4. Submit to seal your board.\n5. Wait for the presenter to advance.',
-		experience: 'Hybrid work has hollowed the culture. People are in different places — literally and relationally. What rebuilds the connective tissue? This is the first round where the room sees its Common Ground Index — how much do these 7 functions actually agree? The score after R2 tells you whether the room is aligned or fractured, and the conversation that follows is often the most revealing of the session.'
+		instruction: 'What deserves greater investment?',
+		modelRules: 'Board total must be $100M to seal.',
+		actions: 'Physical full $100M → freeze → digital → seal.',
+		experience:
+			'Full stake — every function commits under the AI transformation lens. What we measure: CGI peak, lead, fault. The room converges on a leadership story.'
 	},
 	{
 		round: 2,
 		roundLabel: 3,
-		title: 'R3 · The Rival HQ',
-		emoji: '➖',
-		question: "A competitor's HQ is poaching talent. What do you take off the table?",
-		hint: 'After removing tokens physically, update the digital board to match. What stays is PROTECTED.',
+		title: 'R3 · Cost pressure: Breaking News',
+		emoji: '✂️',
+		question:
+			'Breaking News — the AI CEO interrupts. The Board reduces your budget from $100M to $70M. Remove 30 tokens. This forces real trade-offs.',
+		hint: 'Remove $30M on the physical board. What stays is protected.',
 		mode: 'capture',
 		move: 'remove',
-		instruction: 'R3 · REMOVE ~$30M · protect what remains',
-		modelRules: 'Remove only. Cannot add tokens — cap is your standing total from R2. Must freeze before editing. Cumulative — what stays is protected for the rest of the game. Capture round.',
-		actions: '1. Remove ~$30M worth of physical tokens from your board.\n2. Tap Freeze when your physical board is set.\n3. Match the digital board to your physical removals.\n4. Submit to seal.\n5. What stays is PROTECTED — think carefully.',
-		experience: 'A competitor opened across the street and talent is walking. This is the hardest round — forcing every function to reveal what they would cut. The priorities that survive R3 are the ones your table is willing to protect under pressure. Watch closely: this round surfaces the room\'s fault line. Where functions disagree about what to cut, you have found the real divide. The presenter will call it out.'
+		instruction: 'Remove 30 tokens.',
+		modelRules: 'Remove only. Cut $30M to seal. Remainder protected.',
+		actions: 'Physical remove $30M → freeze → digital → seal.',
+		experience:
+			'What you protect under pressure. What we measure: the *protected* and *contested* lists — which priorities each function refused to give up, and which priorities divided the room.'
 	},
 	{
 		round: 3,
 		roundLabel: 4,
-		title: 'R4 · The Ghost Office',
-		emoji: '➕',
-		question: 'Half-empty Mon/Fri. What justifies the footprint?',
-		hint: 'Add tokens to your physical board, then mirror on digital. Hold for final capture in R5.',
+		title: 'R4 · Talent Crisis',
+		emoji: '🌟',
+		question: 'Your best employees are leaving. You recover 20 tokens. Where do you reinvest?',
+		hint: 'Add $20M back on the physical board. Hold for R5.',
 		mode: 'hold',
 		move: 'add',
-		instruction: 'R4 · ADD ~$20M · HOLD for R5',
-		modelRules: 'Add only. Per-table cap applies. Hold round — save without sealing. Cumulative with R3. No freeze required. Your position carries into R5 for the final capture.',
-		actions: '1. Add ~$20M in physical tokens.\n2. Mirror on the digital board.\n3. Save your board — no seal, position holds.\n4. You get one more chance to adjust in R5.',
-		experience: 'Monday and Friday are ghost towns. The footprint is half-used but the lease is long. What actually justifies the space? This is the pragmatism round — functions who over-indexed on real estate in early rounds may shift. The room gets one more nudge before the final bet. Use this round to close the gap between what you said and what you actually need.'
+		instruction: 'Recover 20 tokens.',
+		modelRules: 'Add ~$20M. Save without seal.',
+		actions: 'Physical +$20M → freeze → digital → save.',
+		experience:
+			'Capital returns after the cut. What we measure: the *reprioritisation* — which priorities regained weight, and which stayed cut.'
 	},
 	{
 		round: 4,
 		roundLabel: 5,
-		title: 'R5 · The Five-Year Bet',
-		emoji: '➕',
-		question: 'AI is embedded. What must the workplace double down on?',
-		hint: 'Restructure tokens on your physical board first, then match digital. Final cumulative position — reallocate based on everything learned.',
+		title: 'R5 · Final Recommendation',
+		emoji: '🎯',
+		question:
+			'Your department submits ONE investment strategy to the Executive Committee. Where do you double down?',
+		hint: 'Restructure the physical board to a final $90M mix.',
 		mode: 'capture',
 		move: 'add',
-		instruction: 'R5 · RESTRUCTURE ~$90M · FINAL CAPTURE',
-		modelRules: 'Add only. Per-table cap applies. Capture round — final position is sealed. Cumulative across all rounds. Must freeze before editing. This is the last round — no more changes.',
-		actions: '1. Restructure tokens on your physical board — reallocate based on everything learned.\n2. Tap Freeze when your board is final.\n3. Match the digital board.\n4. Submit to seal.\n5. This is the room\'s definitive answer.',
-		experience: 'AI is embedded. Five years out, work looks different. This is the room\'s final answer — where does capital land when the technology is settled and everything you learned across four rounds is on the table? The Common Ground Index after R5 is what this room actually believes. Everything before was rehearsal. The presenter will now reveal the room\'s lead priority, its fault line, its blind spot, and — if someone surprised everyone — who broke type.'
+		instruction: 'Submit your final recommendation.',
+		modelRules: 'Final board ≤ $90M. Last seal.',
+		actions: 'Physical restructure to $90M → freeze → digital → seal.',
+		experience:
+			'The synthesis. What we measure: the final mix — where each function doubles down after seeing the room’s strategy.'
 	}
 ];

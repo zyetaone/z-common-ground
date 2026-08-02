@@ -4,3 +4,5 @@ export { default as MobileRender } from './MobileRender.svelte';
 export { default as MobileHeader } from './MobileHeader.svelte';
 export { default as MobileFinale } from './MobileFinale.svelte';
 export { default as MobileSealed } from './MobileSealed.svelte';
+export { default as MobileWaitStage } from './MobileWaitStage.svelte';
+export { default as MobileBoardForm } from './MobileBoardForm.svelte';

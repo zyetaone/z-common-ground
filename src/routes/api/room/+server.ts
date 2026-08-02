@@ -1,18 +1,21 @@
 import { json } from '@sveltejs/kit';
 import { withLiveRoom, readLiveRoom } from '$lib/server/live';
 import { SESSION, store } from '$lib/server/store';
+import { idempotentJson } from '$lib/server/with-idempotency';
 import type { RequestHandler } from './$types';
 
 /** Idempotent — always the single LIVE session. */
-export const POST: RequestHandler = async ({ request }) => {
-	const body = (await request.json().catch(() => ({}))) as {
+export const POST: RequestHandler = async (event) => {
+	const body = (await event.request.json().catch(() => ({}))) as {
 		tableCount?: number;
 		reset?: boolean;
 	};
-	const room = await withLiveRoom(() =>
-		body.reset ? store.reset(body.tableCount) : store.ensure(body.tableCount)
-	);
-	return json({ code: SESSION, tables: room.tables.length, room });
+	return idempotentJson(event, async () => {
+		const room = await withLiveRoom(() =>
+			body.reset ? store.reset(body.tableCount) : store.ensure(body.tableCount)
+		);
+		return { code: SESSION, tables: room.tables.length, room };
+	});
 };
 
 export const GET: RequestHandler = async () => {

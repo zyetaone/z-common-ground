@@ -36,6 +36,39 @@ export interface TableState {
 	imageUrl?: string;
 }
 
+/** Host photo archive entry — live URLs move here when cleared. */
+export interface ArchivedImage {
+	url: string;
+	label: string;
+	/** room = finale; table = per-function render */
+	kind: 'room' | 'table';
+	tableId?: number;
+	archivedAt: number;
+	/** YYYY-MM-DD session day (SSOT for host archive grouping). */
+	sessionDate: string;
+	/**
+	 * One archive batch (e.g. LIVE-2026-07-31-143022).
+	 * Same id = same “Archive & clear” action. Sort/group by this when present.
+	 */
+	sessionId?: string;
+}
+
+/** Architectural sheet generated from brief + concept reference images. */
+export type WorkspaceDesignKind =
+	| 'collage'
+	| 'plan'
+	| 'section'
+	| 'elevation'
+	| 'concept';
+
+export interface WorkspaceDesignSheet {
+	kind: WorkspaceDesignKind;
+	label: string;
+	url: string;
+	/** Prompt used (for regen / audit). */
+	prompt?: string;
+}
+
 export interface Aggregate {
 	matrix: Vec7;
 	reach: Vec7;
@@ -84,16 +117,36 @@ export interface RoomState {
 	roomBountyTokens: number;
 	/** floor(roomBountyTokens / tables) — max per table. */
 	tableBountyTokens: number;
+	/** Primary Common Ground room concept (latest / selected). */
 	finaleImageUrl?: string;
-	/** Openable brief (numbers skeleton or Llama narrative). */
+	/**
+	 * Palette of Common Ground room concept variants (Look page +/−).
+	 * Feeds workspace design refs. Includes finaleImageUrl when set.
+	 */
+	roomConceptUrls?: string[];
+	/**
+	 * Cleared AI photos land here so host can still save/download them.
+	 * Survives clear-photos and session reset (capped in store).
+	 */
+	imageArchive?: ArchivedImage[];
+	/**
+	 * Architectural workspace designs generated from brief + reference drawings.
+	 * Plans, sections, elevations, central collage — after "Generate workspace design".
+	 */
+	workspaceDesigns?: WorkspaceDesignSheet[];
+	/** Openable brief (numbers skeleton or RapidI narrative). */
+	briefSource?: 'numbers' | 'rapidi' | 'manual';
 	enhancedBrief?: string;
-	/** How enhancedBrief was produced. */
-	briefSource?: 'numbers' | 'llama';
 	updatedAt: number;
 	/** Host-editable runtime overrides for scenarios (R1–R5). Falls back to config.ts defaults. */
 	scenarios?: Scenario[];
 	/** Host-editable runtime overrides for personas. Falls back to config.ts defaults. */
 	personas?: Persona[];
+	/**
+	 * Host-editable priority labels (length 7). Board options + analysis names.
+	 * Falls back to PRIORITIES when missing/empty slot.
+	 */
+	priorities?: string[];
 }
 
 export interface Persona {
@@ -105,6 +158,8 @@ export interface Persona {
 	mission: string;
 	strength?: string;
 	risk?: string;
+	/** Single-word brand hashtag for the persona. Format: #PascalCase, ≤18 chars (excl. #). */
+	hashtag?: string;
 }
 
 /**
@@ -146,8 +201,7 @@ export interface Scenario {
 
 /**
  * Board cells store VALUE in $M (base unit = $1,000,000).
- * Physical chips: 🔴 $10M · 🔵 $5M · 🟢 $2M (Option D — 6 red + 4 blue + 10 green = $100M/table).
- * Per-table wallet = $100M (value 100); room = $700M (value 700).
- * Each function spends their $100M budget to find Common Ground across the room.
+ * Physical chip is a single $10M denomination (CHIP_VALUE). Table wallet $100M; room $700M.
+ * Budget arc: R2 full 100 → R3 remove 30 → R4 +20 → R5 restructure cap 90 (see config).
  */
 export const TOKEN_VALUE_USD = 1_000_000;

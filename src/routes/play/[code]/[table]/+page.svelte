@@ -1,27 +1,31 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { onMount, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import {
-		FunctionBoard,
+		MobileBoardForm,
 		MobileFinale,
 		MobileHeader,
 		MobileRender,
-		MobileSealed
+		MobileSealed,
+		MobileWaitStage
 	} from '$lib/components/phone';
 	import {
-		CHIP_VALUE,
+		R2_FULL_BUDGET,
+		R3_REMOVE_TARGET,
+		R4_ADD_BACK,
+		R5_RESTRUCTURE_CAP,
 		emptyMatrix,
-		formatUsdFull,
+		formatUsd,
 		isCaptureRound,
 		ROUND_COUNT,
-		SCENARIOS,
+		roomPriorities,
 		roomScenarios,
 		tablePersona,
 		tableSeatIndex,
 		zeros
 	} from '$lib/game';
 	import type { Matrix7x7, Vec7 } from '$lib/game/types';
-	import { play, session } from '$lib/state';
+	import { session } from '$lib/state';
 
 	type Tab = 'board' | 'render';
 
@@ -36,7 +40,7 @@
 			session.round,
 			tableId,
 			table?.lockedThisRound ? 1 : 0,
-		table?.physicallyDone ? 1 : 0
+			table?.physicallyDone ? 1 : 0
 		].join(':')
 	);
 	const phase = $derived(session.phase);
@@ -45,9 +49,10 @@
 	const roundCount = $derived(session.room?.roundCount ?? ROUND_COUNT);
 	const rs = $derived(roomScenarios(session.room));
 	const scenario = $derived(rs[Math.min(round, rs.length - 1)] ?? rs[0]);
+	const priorityLabels = $derived(roomPriorities(session.room));
 	const serverRow = $derived((table?.board?.[seat] ?? zeros()) as Vec7);
 	const submitted = $derived(!!table?.lockedThisRound);
-	const canCapture = $derived(phase === 'round' && isCaptureRound(roundLabel));
+	const canCapture = $derived(phase === 'round' && isCaptureRound(roundLabel, session.room));
 	const canEditPhase = $derived(phase === 'round' && !submitted);
 	const editable = $derived(canEditPhase && !!table);
 	const showQuestion = $derived(phase === 'lobby' || phase === 'round');
@@ -58,6 +63,7 @@
 	let baseline = $state<Vec7>(zeros());
 	let seeded = $state(false);
 	let submitting = $state(false);
+	let submitError = $state('');
 	let lastSyncKey = $state('');
 	let tab = $state<Tab>('board');
 
@@ -66,13 +72,22 @@
 	const counts = $derived(editable && seeded ? draft : serverRow);
 	const totalTokens = $derived(counts.reduce((a, b) => a + b, 0));
 	const standingCap = $derived(baseline.reduce((a, b) => a + b, 0));
+	const baseWallet = $derived(session.room?.tableBountyTokens ?? R2_FULL_BUDGET);
 	const tableCap = $derived(
-		removeOnly ? Math.max(standingCap, totalTokens) : (session.room?.tableBountyTokens ?? 100)
+		removeOnly
+			? Math.max(standingCap, totalTokens)
+			: roundLabel === 5
+				? Math.min(baseWallet, R5_RESTRUCTURE_CAP)
+				: baseWallet
 	);
 	const overCap = $derived(totalTokens > tableCap);
-
-	/** Whether input is disabled (phase is not 'round' or table is locked) */
-	const inputDisabled = $derived(phase !== 'round' || submitted);
+	const removedTokens = $derived(Math.max(0, standingCap - totalTokens));
+	const r2Ready = $derived(
+		!canCapture || roundLabel !== 2 || totalTokens === Math.min(baseWallet, R2_FULL_BUDGET)
+	);
+	const r3Ready = $derived(
+		!canCapture || roundLabel !== 3 || !removeOnly || removedTokens >= R3_REMOVE_TARGET
+	);
 
 	function reseedFromServer() {
 		const t = session.tables.find((x) => x.id === tableId);
@@ -93,14 +108,7 @@
 		return m;
 	}
 
-	onMount(() => {
-		const id = Number(page.params.table);
-		if (id >= 1 && id <= 7) play.pickTable(id);
-	});
-
 	$effect(() => {
-		// Track only roomSyncKey — all other reads (lastSyncKey, seeded) are
-		// untracked so writes to them inside this effect don't re-trigger it.
 		const key = roomSyncKey;
 		const room = session.room;
 		const t = session.tables.find((x) => x.id === tableId);
@@ -108,17 +116,11 @@
 
 		const locked = !!t.lockedThisRound;
 		const ph = room.phase;
-
-		// --- untracked reads: these are written below, so don't track them ---
 		const prev = untrack(() => lastSyncKey);
 		const isSeeded = untrack(() => seeded);
 		const prevPhase = prev ? prev.split(':')[1] : null;
 
-		if (
-			prevPhase &&
-			prevPhase !== ph &&
-			(ph === 'reveal' || ph === 'finale')
-		) {
+		if (prevPhase && prevPhase !== ph && (ph === 'reveal' || ph === 'finale')) {
 			tab = 'board';
 		}
 
@@ -134,7 +136,6 @@
 		}
 	});
 
-	/** Single $10M chip delta. */
 	function delta(priority: number, d: number) {
 		if (!editable || submitting || !d) return;
 		if (removeOnly && d > 0) return;
@@ -172,11 +173,23 @@
 
 	async function onSubmit(e: Event) {
 		e.preventDefault();
-		if (!editable || submitting || totalTokens <= 0 || overCap || !canCapture) return;
+		if (!editable || submitting || overCap || !canCapture) return;
+		if (roundLabel === 2 && totalTokens !== Math.min(baseWallet, R2_FULL_BUDGET)) {
+			submitError = `R2 needs the full ${formatUsd(Math.min(baseWallet, R2_FULL_BUDGET))} budget.`;
+			return;
+		}
+		if (roundLabel === 3 && removeOnly && removedTokens < R3_REMOVE_TARGET) {
+			submitError = `R3 needs ${formatUsd(R3_REMOVE_TARGET)} removed (you’ve cut ${formatUsd(removedTokens)}).`;
+			return;
+		}
+		if (!removeOnly && totalTokens <= 0) return;
 		submitting = true;
+		submitError = '';
 		try {
 			await session.submitTable(tableId, boardFromRow(draft), { seal: true });
 			seeded = false;
+		} catch (err) {
+			submitError = err instanceof Error ? err.message : 'Submit failed';
 		} finally {
 			submitting = false;
 		}
@@ -198,9 +211,27 @@
 		try {
 			await session.tablePhysicallyDone(tableId);
 		} catch {
-			// Revert on failure — poll will resync
+			/* poll will resync */
 		}
 	}
+
+	// Physical board first — freeze when the round total is on the table
+	const freezeHeading = $derived(
+		roundLabel === 1
+			? `Physical board · first stake`
+			: roundLabel === 2
+				? `Physical board · full ${formatUsd(R2_FULL_BUDGET)}`
+				: roundLabel === 3
+					? `Physical board · remove ${formatUsd(R3_REMOVE_TARGET)}`
+					: roundLabel === 4
+						? `Physical board · +${formatUsd(R4_ADD_BACK)}`
+						: roundLabel === 5
+							? `Physical board · restructure ${formatUsd(R5_RESTRUCTURE_CAP)}`
+							: `Physical board · R${roundLabel}`
+	);
+	const freezeSub = $derived(
+		'What does your physical board reflect? Freeze when that round is complete — then match digital.'
+	);
 </script>
 
 <svelte:head>
@@ -221,15 +252,9 @@
 	/>
 
 	{#if !session.room}
-		<div class="wait-msg">
-			<p class="wait-dot"></p>
-			<p class="wait-text">Connecting to session…</p>
-		</div>
+		<MobileWaitStage showDot text="Connecting to session…" />
 	{:else if !table || tableId < 1 || tableId > 7}
-		<div class="wait-msg">
-			<p class="wait-icon">📱</p>
-			<p class="wait-text">Scan the QR for your function table (1–7).</p>
-		</div>
+		<MobileWaitStage icon="📱" heading="Wrong table link" sub="Scan the QR for your function table (1–7)." />
 	{:else if tab === 'render'}
 		<MobileRender room={session.room} {tableId} {counts} />
 		{#if isFinale}
@@ -242,130 +267,94 @@
 			{persona}
 			{totalTokens}
 			{counts}
+			labels={priorityLabels}
 			onRender={() => (tab = 'render')}
 		/>
 	{:else if submitted}
-		<MobileSealed
-			{roundLabel}
-			{totalTokens}
-			{counts}
-			color={persona.color}
-		/>
+		<MobileWaitStage sealed>
+			<MobileSealed
+				{roundLabel}
+				{totalTokens}
+				{counts}
+				color={persona.color}
+				labels={priorityLabels}
+			/>
+		</MobileWaitStage>
 	{:else if phase === 'lobby'}
 		{#if !table?.joined}
-			<div class="wait-msg">
-				<span class="wait-dot"></span>
-				<div>
-					<p class="wait-heading">Lobby</p>
-					<p class="wait-sub">Tap to join — let the presenter know your table is ready.</p>
-				</div>
-			</div>
-			<button
-				type="button"
-				class="join-btn"
-				disabled={session.busy}
-				onclick={async () => {
+			<MobileWaitStage
+				showDot
+				heading="Lobby"
+				sub="Tap to join — let the presenter know your table is ready."
+				actionLabel="Enter Lobby"
+				actionBusy={session.busy}
+				onaction={async () => {
 					await session.joinTable(tableId);
 				}}
-			>
-				Enter Lobby
-			</button>
+			/>
 		{:else}
-			<div class="wait-msg joined">
-				<span class="wait-icon">✅</span>
-				<div>
-					<p class="wait-heading">Joined</p>
-					<p class="wait-sub">Waiting for presenter to start Round 1…</p>
-				</div>
-			</div>
+			<MobileWaitStage
+				joined
+				icon="✅"
+				heading="Joined"
+				sub="Waiting for presenter to start Round 1…"
+			/>
 		{/if}
 	{:else if phase === 'round' && !canCapture}
 		{#if !physicallyDone}
-			<div class="wait-msg">
-				<span class="wait-icon">🎯</span>
-				<div>
-					<p class="wait-heading">R{roundLabel} · Add tokens to physical board</p>
-					<p class="wait-sub">
-						{#if roundLabel === 1}
-							Allocate ~$30M tokens across priorities.
-						{:else}
-							Add ~$20M more. Cumulative position carries forward.
-						{/if}
-					</p>
-				</div>
-			</div>
-			<button type="button" class="join-btn" disabled={session.busy} onclick={onFreeze}>
-				{session.busy ? 'Freezing…' : 'Freeze'}
-			</button>
-		{:else}
-			<div class="wait-msg joined">
-				<span class="wait-icon">✅</span>
-				<div>
-					<p class="wait-heading">Board frozen</p>
-					<p class="wait-sub">Waiting for presenter to start next round…</p>
-				</div>
-			</div>
-		{/if}
-		{:else if phase === 'round' && !physicallyDone}
-			<div class="wait-msg">
-				<span class="wait-icon">🎯</span>
-				<div>
-					<p class="wait-heading">R{roundLabel} · Add tokens to physical board</p>
-					<p class="wait-sub">Place tokens on the physical board first, then freeze.</p>
-				</div>
-			</div>
-			<button type="button" class="join-btn" disabled={session.busy} onclick={onFreeze}>
-				{session.busy ? 'Freezing…' : 'Freeze'}
-			</button>
-		{:else if phase === 'round'}
-		<form class="board-form" onsubmit={onSubmit}>
-			<FunctionBoard
-				{counts}
-				color={persona.color}
-				{editable}
-				busy={submitting}
-				{move}
-				capTokens={tableCap}
-				baseline={removeOnly ? baseline : null}
-				onDelta={delta}
-				onClear={clear}
+			<MobileWaitStage
+				icon="🎯"
+				heading={freezeHeading}
+				sub={freezeSub}
+				actionLabel={session.busy ? 'Freezing…' : 'Freeze'}
+				actionBusy={session.busy}
+				onaction={onFreeze}
 			/>
-
-			{#if editable}
-				{#if canCapture}
-					<button
-						type="submit"
-						class="submit"
-						disabled={submitting || (removeOnly ? false : totalTokens <= 0) || overCap}
-					>
-						{submitting
-							? 'Locking in…'
-							: removeOnly
-								? `Capture R3 · protected ${formatUsdFull(totalTokens)}`
-								: totalTokens <= 0
-									? 'Add $10M+ tokens to unlock'
-									: `Lock in — final for R${roundLabel} · ${formatUsdFull(totalTokens)}`}
-					</button>
-				{:else}
-					<button
-						type="button"
-						class="submit save"
-						disabled={submitting || totalTokens <= 0 || overCap}
-						onclick={onSave}
-					>
-						{submitting ? 'Saving…' : `Save & continue · ${formatUsdFull(totalTokens)}`}
-					</button>
-					{#if totalTokens <= 0}
-						<p class="hint-cap">Place ${CHIP_VALUE}M tokens on the board first.</p>
-					{/if}
-				{/if}
-			{/if}
-		</form>
+		{:else}
+			<MobileWaitStage
+				joined
+				icon="✅"
+				heading="Board frozen"
+				sub="Waiting for presenter to continue…"
+			/>
+		{/if}
+	{:else if phase === 'round' && !physicallyDone}
+		<MobileWaitStage
+			icon="🎯"
+			heading={freezeHeading}
+			sub={freezeSub}
+			actionLabel={session.busy ? 'Freezing…' : 'Freeze'}
+			actionBusy={session.busy}
+			onaction={onFreeze}
+		/>
+	{:else if phase === 'round'}
+		<MobileBoardForm
+			{counts}
+			color={persona.color}
+			{editable}
+			busy={submitting}
+			{move}
+			capTokens={tableCap}
+			baseline={removeOnly ? baseline : null}
+			{roundLabel}
+			{removeOnly}
+			{r2Ready}
+			{r3Ready}
+			{overCap}
+			{totalTokens}
+			{removedTokens}
+			{tableCap}
+			{baseWallet}
+			{submitError}
+			{canCapture}
+			labels={priorityLabels}
+			onDelta={delta}
+			onClear={clear}
+			{onSubmit}
+			{onSave}
+		/>
 	{:else}
-		<div class="wait-msg">
-			<span class="wait-dot"></span>
-			<p class="wait-text">Kindly wait for the next round.</p>
-		</div>
+		<MobileWaitStage showDot text="Waiting for the next round…" />
 	{/if}
 </main>
 
@@ -373,75 +362,11 @@
 	.shell {
 		max-width: 560px;
 		margin: 0 auto;
-		padding-bottom: 32px;
+		min-height: 100dvh;
+		padding-bottom: calc(24px + env(safe-area-inset-bottom));
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
-	}
-	/* ── Waiting state ── */
-	.wait-msg {
-		margin: 28px 12px;
-		padding: 20px 16px;
-		border-radius: 16px;
-		border: 1px solid var(--color-line);
-		background: var(--color-panel);
-		display: flex;
-		align-items: center;
-		gap: 14px;
-	}
-	.wait-dot {
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-		background: var(--color-gold);
-		animation: pulse 1.4s ease infinite;
-		flex-shrink: 0;
-	}
-	.wait-icon {
-		font-size: 24px;
-		flex-shrink: 0;
-	}
-	.wait-heading {
-		font-family: var(--font-display);
-		font-weight: 800;
-		font-size: 1.1rem;
-		margin: 0;
-	}
-	.wait-sub {
-		margin: 4px 0 0;
-		font-size: 13px;
-		color: var(--color-muted);
-		line-height: 1.4;
-	}
-	.wait-text {
-		font-size: 13px;
-		color: var(--color-muted);
-		margin: 0;
-	}
-	.join-btn {
-		display: block;
-		width: calc(100% - 24px);
-		margin: 8px 12px 0;
-		padding: 16px;
-		border: none;
-		border-radius: 14px;
-		background: var(--color-teal);
-		color: var(--color-on-teal);
-		font-family: var(--font-display);
-		font-weight: 800;
-		font-size: 1.1rem;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	.join-btn:disabled {
-		opacity: 0.4;
-	}
-	.wait-msg.joined {
-		border-color: color-mix(in srgb, var(--color-teal) 45%, var(--color-line));
-		background: color-mix(in srgb, var(--color-teal) 6%, var(--color-panel));
-	}
-	@keyframes pulse {
-		50% { opacity: 0.35; }
 	}
 	.finale-nav {
 		display: flex;
@@ -460,45 +385,5 @@
 		font-size: 13px;
 		cursor: pointer;
 		touch-action: manipulation;
-	}
-	.board-form {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		padding: 4px 12px 0;
-	}
-	.submit {
-		border: none;
-		border-radius: 14px;
-		padding: 16px;
-		font-family: var(--font-display);
-		font-weight: 800;
-		font-size: 1.05rem;
-		background: var(--color-teal);
-		color: var(--color-on-teal);
-		cursor: pointer;
-		position: sticky;
-		bottom: calc(8px + env(safe-area-inset-bottom));
-		z-index: 10;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-		touch-action: manipulation;
-	}
-	.submit:disabled {
-		opacity: 0.4;
-		box-shadow: none;
-	}
-	.submit.save {
-		background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-		backdrop-filter: blur(6px);
-		border: 1px solid var(--color-gold);
-		color: var(--color-gold);
-		box-shadow: none;
-	}
-	.hint-cap {
-		margin: 0;
-		text-align: center;
-		font-size: 11px;
-		color: var(--color-muted);
-		line-height: 1.35;
 	}
 </style>

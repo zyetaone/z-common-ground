@@ -1,172 +1,182 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
 	import PortraitMatrix from '$lib/components/analytics/PortraitMatrix.svelte';
-	import { formatUsd, boardTokenSum, tablePersona } from '$lib/game';
+	import { priorityMix, roomInsights, roomPriorities } from '$lib/game';
 
-	/** Screen 1 — Combined Board Heatmap Matrix dominates; compact live strip above. */
+	/**
+	 * Screen 1 — Seat Matrix.
+	 * The 7×7 portrait matrix: rows = personas, columns = priorities.
+	 * Each cell shows $M wagered. Cell colour = priority colour (so the
+	 * column colour also reads as "which priorities got the most love").
+	 * The two takeaway chips below are the room's lead and divide — the
+	 * only derived numbers a presenter needs to read aloud.
+	 */
 	let { room }: { room: RoomState } = $props();
 
-	const stake = $derived(room.aggregate.totalCoins);
-	const bounty = $derived(room.roomBountyTokens ?? 700);
-	const tableCap = $derived(
-		room.tableBountyTokens ?? Math.floor(bounty / Math.max(1, room.tables.length))
-	);
-	const remaining = $derived(Math.max(0, bounty - stake));
-	const pct = $derived(bounty > 0 ? Math.min(100, Math.round((stake / bounty) * 100)) : 0);
-	const overRoom = $derived(stake > bounty);
-	const roundLabel = $derived(
-		room.phase === 'round' || room.phase === 'lobby' ? room.round + 1 : room.roundCount
-	);
-	// Alignment lives on screen 2 (the ring) — screen 1 is the board + money only.
+	const labels = $derived(roomPriorities(room));
+	const i = $derived(roomInsights(room));
+	const ring = $derived(Math.min(100, Math.max(0, i.index)));
+	const sealed = $derived(room.tables.filter((t) => t.lockedThisRound).length);
+	const tables = $derived(room.tables.length);
 </script>
 
-<div class="glance">
-	<header class="strip">
-		<div class="core">
-			<div class="stat">
-				<span class="lab">Round</span>
-				<span class="val gold">
-					{#if room.phase === 'round'}
-						R{roundLabel}<span class="sm">/{room.roundCount}</span>
-					{:else}
-						<span class="sm">{room.phase}</span>
-					{/if}
-				</span>
-			</div>
-			<div class="stat">
-				<span class="lab">Stake</span>
-				<span class="val gold">{formatUsd(stake)}</span>
-			</div>
-			<div class="stat">
-				<span class="lab">Budget</span>
-				<span class="val" class:over={overRoom}>{formatUsd(bounty)}</span>
-				<span class="sub">{formatUsd(remaining)} left · {pct}%</span>
-			</div>
+<div class="see">
+	{#if !i.hasData}
+		<p class="empty">Waiting for priorities…</p>
+	{:else}
+		<header class="hdr">
+			<span class="hdr-title">SEAT MATRIX · ROOM AT A GLANCE</span>
+			<span class="hdr-sub">7 personas · 7 priorities · one $100M wallet each</span>
+		</header>
+
+		<div class="board">
+			<PortraitMatrix {room} />
 		</div>
 
-		<div class="bar-track" title="{stake} / {bounty}">
-			<div class="bar-fill" class:over={overRoom} style="width:{pct}%"></div>
-		</div>
-
-		<div class="tables">
-			{#each room.tables as t (t.id)}
-				{@const n = boardTokenSum(t.board)}
-				{@const fn = tablePersona(t.id)}
-				<span
-					class="chip"
-					class:on={t.lockedThisRound}
-					class:over={n > tableCap}
-					title="{fn.name} · ${n}M / ${tableCap}M"
-					style="--fn:{fn.color}"
-				>
-					T{t.id} <b>${n}M</b>
-				</span>
-			{/each}
-		</div>
-	</header>
-
-	<div class="portrait">
-		<PortraitMatrix {room} />
-	</div>
+		<footer class="bar" aria-label="Room summary">
+			<div class="metric">
+				<span class="m-label">Common Ground</span>
+				<span class="m-num">{ring}</span>
+				<span class="m-u">/100</span>
+				<span class="m-verdict">{i.verdict}</span>
+			</div>
+			<div class="metric">
+				<span class="m-label">Lead</span>
+				<span class="m-val">{i.lead}</span>
+			</div>
+			<div class="metric">
+				<span class="m-label">Divide</span>
+				<span class="m-val">{i.fault}</span>
+			</div>
+			<div class="metric">
+				<span class="m-label">Overlooked</span>
+				<span class="m-val">{i.blind}</span>
+			</div>
+			<div class="dots" aria-label="{sealed} of {tables} sealed">
+				{#each Array(tables) as _, j (j)}
+					<span
+						class="dot"
+						class:on={j < sealed}
+						style="--fn:{i.tables[j]?.color ?? 'var(--color-muted)'}"
+					></span>
+				{/each}
+			</div>
+		</footer>
+	{/if}
 </div>
 
 <style>
-	.glance {
+	.see {
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 12px;
 		height: 100%;
 		min-height: 0;
-		overflow: auto;
+		padding: 0 4px;
 	}
-	.strip {
-		border-radius: 16px;
-		border: 1px solid var(--color-line);
-		background: var(--color-panel);
-		padding: 12px 14px;
-	}
-	.core {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 16px 22px;
-		align-items: flex-end;
-		margin-bottom: 10px;
-	}
-	.stat {
-		display: flex;
-		flex-direction: column;
-		line-height: 1.1;
-	}
-	.lab {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.16em;
-		text-transform: uppercase;
+	.empty {
+		margin: auto;
+		font-size: 14px;
 		color: var(--color-muted);
-		margin-bottom: 3px;
+		padding: 48px 16px;
 	}
-	.val {
-		font-family: var(--font-display);
-		font-weight: 800;
-		font-size: 1.4rem;
-	}
-	.val.gold {
-		color: var(--color-gold);
-	}
-	.val.over {
-		color: var(--color-red);
-	}
-	.val .sm {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--color-muted);
-	}
-	.sub {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--color-muted);
-		margin-top: 2px;
-	}
-	.bar-track {
-		height: 6px;
-		border-radius: 99px;
-		background: rgba(255, 255, 255, 0.06);
-		overflow: hidden;
-		margin-bottom: 10px;
-	}
-	.bar-fill {
-		height: 100%;
-		border-radius: 99px;
-		background: var(--color-teal);
-		transition: width 0.3s ease;
-	}
-	.bar-fill.over {
-		background: var(--color-red);
-	}
-	.tables {
+	.hdr {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
+		justify-content: space-between;
+		align-items: baseline;
+		flex-shrink: 0;
 	}
-	.chip {
+	.hdr-title {
 		font-family: var(--font-mono);
 		font-size: 11px;
-		padding: 3px 8px;
-		border-radius: 8px;
-		border: 1px solid var(--color-line);
-		color: var(--color-muted);
-		background: rgba(0, 0, 0, 0.2);
-	}
-	.chip.on {
-		border-color: var(--fn);
-		color: var(--color-ink);
-		background: color-mix(in srgb, var(--fn) 15%, transparent);
-	}
-	.chip.over {
-		border-color: var(--color-red);
-		color: var(--color-red);
-	}
-	.chip b {
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
 		color: var(--color-gold);
+	}
+	.hdr-sub {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+	}
+	.board {
+		flex: 1;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.board :global(.pm) {
+		flex: 1;
+		min-height: 0;
+		height: 100%;
+	}
+	.bar {
+		display: flex;
+		align-items: center;
+		gap: 12px 18px;
+		padding: 8px 14px;
+		min-height: 48px;
+		border-radius: 12px;
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+		flex-shrink: 0;
+		flex-wrap: wrap;
+	}
+	.metric {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 5px;
+	}
+	.m-label {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+	.m-num {
+		font-family: var(--font-display);
+		font-size: 1.5rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: var(--color-ink);
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+	.m-u {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-muted);
+	}
+	.m-verdict {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-teal);
+	}
+	.m-val {
+		font-family: var(--font-display);
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--color-ink);
+	}
+	.dots {
+		display: inline-flex;
+		gap: 4px;
+		margin-left: auto;
+	}
+	.dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: color-mix(in srgb, var(--fn, var(--color-muted)) 25%, transparent);
+		border: 1px solid color-mix(in srgb, var(--fn, var(--color-line)) 40%, transparent);
+	}
+	.dot.on {
+		background: var(--fn);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fn) 25%, transparent);
 	}
 </style>

@@ -6,6 +6,7 @@ export {
 	type RetreatResult
 } from './phase';
 export {
+	activeTableCap,
 	applyBoardDelta,
 	applyBoardSet,
 	applySubmitTable,

@@ -3,8 +3,8 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import QrCode from '$lib/components/QrCode.svelte';
-	import { PERSONAS, tablePersona } from '$lib/game';
-	import { play, SESSION, session } from '$lib/state';
+	import { roomPersonas, tablePersona } from '$lib/game';
+	import { SESSION, session } from '$lib/state';
 
 	let origin = $state('');
 
@@ -17,13 +17,11 @@
 		origin = window.location.origin;
 		const fromQuery = Number(page.url.searchParams.get('table'));
 		if (fromQuery >= 1 && fromQuery <= 7) {
-			play.pickTable(fromQuery);
 			goto(`/play/${SESSION}/${fromQuery}`, { replaceState: true });
 		}
 	});
 
 	function openTable(id: number) {
-		play.pickTable(id);
 		goto(`/play/${SESSION}/${id}`);
 	}
 </script>
@@ -35,15 +33,13 @@
 
 <main class="shell">
 	<header>
-		<p class="kicker">Common Ground · LIVE</p>
-		<h1>7 tables · 7 functions</h1>
-		<p class="sub">
-			Each physical table is one function. Scan that table’s QR — or open it below for a tech check.
-		</p>
+		<p class="kicker">Tech check</p>
+		<h1>7 tables</h1>
+		<p class="sub">Open a table board — live play uses the printed QR.</p>
 	</header>
 
 	<div class="cards">
-		{#each PERSONAS as p, i (p.seat)}
+		{#each roomPersonas(session.room) as p, i (p.seat)}
 			{@const id = i + 1}
 			{@const persona = tablePersona(id, session.room)}
 			{@const url = origin ? `${origin}/play/${SESSION}/${id}` : `/play/${SESSION}/${id}`}

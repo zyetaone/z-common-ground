@@ -1,8 +1,16 @@
 <script lang="ts">
 	import { scale } from 'svelte/transition';
-	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd, formatUsdFull } from '$lib/game';
+	import {
+		CHIP_DENOMS,
+		CHIP_VALUE,
+		PRIORITIES,
+		R3_REMOVE_TARGET,
+		formatUsd,
+		formatUsdFull
+	} from '$lib/game';
 	import type { RoundMove, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
+	import { countUp } from '$lib/actions/count-up';
 
 	const ZEROS: Vec7 = [0, 0, 0, 0, 0, 0, 0];
 
@@ -16,6 +24,8 @@
 		/** Table wallet cap in $M value (default $100M). R3 = current standing. */
 		capTokens = 100,
 		baseline = null,
+		/** Host-overridable board option labels (defaults to PRIORITIES). */
+		labels = PRIORITIES as unknown as string[],
 		onDelta,
 		onClear
 	}: {
@@ -26,6 +36,7 @@
 		move?: RoundMove;
 		capTokens?: number;
 		baseline?: Vec7 | null;
+		labels?: string[];
 		onDelta: (priority: number, delta: number) => void | Promise<void>;
 		onClear?: (priority: number) => void | Promise<void>;
 	} = $props();
@@ -36,24 +47,25 @@
 	const removed = $derived(Math.max(0, baseTotal - total));
 	const remaining = $derived(Math.max(0, capTokens - total));
 	const chipColor = $derived(CHIP_DENOMS[0].hex);
+	const chipSize = 24;
+	const rowLabels = $derived(
+		PRIORITIES.map((def, i) => labels[i]?.trim() || def)
+	);
 
-	// ── Chip pile animation ──
 	/** Unique-keyed chip slots per priority for Svelte enter/exit transitions. */
 	const chipSlots = $derived(
-		PRIORITIES.map((_, p) => {
+		rowLabels.map((_, p) => {
 			const n = Math.min(Math.floor((counts[p] ?? 0) / CHIP_VALUE), 8);
 			return Array.from({ length: n }, (_, i) => i);
 		})
 	);
 
-	// ── Row flash on change ──
-	// prevCounts + flashReady are plain vars — never $state so they don't re-trigger the effect.
+	// Row flash on change — prevCounts is plain so it doesn't re-trigger the effect.
 	let flashRow = $state<Record<number, boolean>>({});
 	let _prevCounts: Vec7 = [...ZEROS] as Vec7;
 	let _flashReady = false;
 
 	$effect(() => {
-		// Only `counts` is tracked; the rest runs inside untrack to avoid write-read cycles.
 		const cur = counts;
 		if (!_flashReady) {
 			_flashReady = true;
@@ -61,7 +73,7 @@
 			return;
 		}
 		const next: Record<number, boolean> = {};
-		for (let p = 0; p < PRIORITIES.length; p++) {
+		for (let p = 0; p < rowLabels.length; p++) {
 			if (cur[p] !== (_prevCounts[p] ?? 0)) {
 				next[p] = true;
 			}
@@ -78,7 +90,7 @@
 		if (removeOnly && d > 0) return;
 		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 			try {
-				navigator.vibrate(10);
+				navigator.vibrate(d > 0 ? 8 : [5, 30, 5]);
 			} catch {
 				/* ignore */
 			}
@@ -88,31 +100,30 @@
 </script>
 
 <div class="seat-board" class:uneditable={!editable} class:remove={removeOnly} style="--seat:{color}">
-	<!-- Spent bar — hidden until something is placed -->
 	{#if total > 0}
-		<div class="spend-line">
+		<div class="spend-line" aria-live="polite">
 			<span class="spent-label">Spent</span>
-			<span class="spent-val">{formatUsdFull(total)}</span>
+			<span class="spent-val t-tabular" use:countUp={total}>{formatUsdFull(total)}</span>
 			<span class="of">of</span>
-			<span class="cap-val">{formatUsdFull(capTokens)}</span>
+			<span class="cap-val t-tabular">{formatUsdFull(capTokens)}</span>
 			{#if remaining > 0 && !removeOnly}
 				<span class="dot-sep">·</span>
-				<span class="remaining">{formatUsd(remaining)} left</span>
+				<span class="remaining t-tabular">{formatUsd(remaining)} left</span>
 			{/if}
 		</div>
 	{/if}
 
 	{#if removeOnly}
 		<p class="remove-hint">
-			Remove <b>${CHIP_VALUE}M</b> chips. What stays is <b>protected</b>
+			Remove <b>{formatUsd(R3_REMOVE_TARGET)}</b> total. What stays is <b>protected</b>
 			{#if removed > 0}
-				· cut {formatUsd(removed)}
+				· cut {formatUsd(removed)} so far
 			{/if}
 		</p>
 	{/if}
 
 	<div class="list">
-		{#each PRIORITIES as name, p (name)}
+		{#each rowLabels as name, p (p)}
 			{@const v = counts[p] ?? 0}
 			{@const base = baseline ? (baseline[p] ?? v) : v}
 			{@const cut = removeOnly ? Math.max(0, base - v) : 0}
@@ -123,30 +134,38 @@
 				class:cut={cut > 0}
 				class:protected={removeOnly && v > 0 && cut === 0}
 				class:flash={flashRow[p]}
+				role="group"
+				aria-label="{name} priority, {v === 0 ? 'no chips placed' : formatUsdFull(v) + ' placed'}"
 			>
 				<div class="info">
 					<div class="name">{name}</div>
 					<div class="val">
 						{#if v > 0}
-							<span class="usd">{formatUsdFull(v)}</span>
+							<span class="usd t-tabular">{formatUsdFull(v)}</span>
 							{#if chipCount > 0}
-								<span class="chips">
+								<span
+									class="chips"
+									role="status"
+									aria-label="{chipCount} chips placed, {formatUsd(CHIP_VALUE)} each"
+								>
 									{#each chipSlots[p] as slot (slot)}
 										<span
 											class="chip-slot"
-											in:scale={{ duration: 180, start: 0.35 }}
-											out:scale={{ duration: 120, start: 0.35 }}
+											in:scale={{ duration: 220, start: 0.35, delay: Math.min(slot, 5) * 24 }}
+											out:scale={{ duration: 120, start: 0.5 }}
 										>
-											<Chip hex={chipColor} size={16} />
+											<Chip hex={chipColor} size={chipSize} />
 										</span>
 									{/each}
 									{#if chipCount > 8}
-										<span class="chip-over" in:scale={{ duration: 150, start: 0.5 }}>+{chipCount - 8}</span>
+										<span class="chip-over" in:scale={{ duration: 150, start: 0.5 }}
+											>+{chipCount - 8}</span
+										>
 									{/if}
 								</span>
 							{/if}
 							{#if removeOnly && cut > 0}
-								<span class="cut-tag">-{formatUsd(cut)}</span>
+								<span class="cut-tag">−{formatUsd(cut)}</span>
 							{:else if removeOnly}
 								<span class="prot-tag">protected</span>
 							{/if}
@@ -164,22 +183,20 @@
 								type="button"
 								class="btn minus"
 								disabled={busy || v < CHIP_VALUE}
-								aria-label="Remove ${CHIP_VALUE}M from {name}"
-								onpointerup={(e) => {
-									e.preventDefault();
+								aria-label="Remove {formatUsd(CHIP_VALUE)} from {name}"
+								onclick={() => {
 									if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
 								}}
 							>
-								-
+								−
 							</button>
 						{/if}
 						<button
 							type="button"
 							class="btn plus"
 							disabled={busy || removeOnly || remaining < CHIP_VALUE}
-							aria-label="Add ${CHIP_VALUE}M to {name}"
-							onpointerup={(e) => {
-								e.preventDefault();
+							aria-label="Add {formatUsd(CHIP_VALUE)} to {name}"
+							onclick={() => {
 								if (!busy && !removeOnly && remaining >= CHIP_VALUE) tap(p, CHIP_VALUE);
 							}}
 						>
@@ -190,12 +207,13 @@
 								type="button"
 								class="btn clear"
 								disabled={busy}
-								onpointerup={(e) => {
-									e.preventDefault();
+								aria-label="Clear all {formatUsd(CHIP_VALUE)} chips from {name}"
+								title="Clear"
+								onclick={() => {
 									if (!busy) onClear(p);
 								}}
 							>
-								Clr
+								✕
 							</button>
 						{/if}
 					</div>
@@ -218,7 +236,6 @@
 	.seat-board.uneditable {
 		opacity: 0.92;
 	}
-	/* ── Spent / remaining line ── */
 	.spend-line {
 		display: flex;
 		align-items: baseline;
@@ -226,7 +243,7 @@
 		margin-bottom: 10px;
 		padding: 8px 12px;
 		border-radius: 10px;
-		background: rgba(0, 0, 0, 0.22);
+		background: var(--color-bg-elevated);
 		border: 1px solid var(--color-line);
 		font-size: 12px;
 	}
@@ -261,7 +278,6 @@
 		color: var(--color-teal);
 		font-weight: 700;
 	}
-	/* ── Remove hint ── */
 	.remove-hint {
 		margin: 0 0 10px;
 		font-size: 12px;
@@ -271,7 +287,6 @@
 	.remove-hint b {
 		color: var(--color-teal);
 	}
-	/* ── Priority rows ── */
 	.list {
 		display: flex;
 		flex-direction: column;
@@ -285,8 +300,11 @@
 		padding: 10px 12px;
 		border-radius: 12px;
 		border: 1px solid var(--color-line);
-		background: rgba(0, 0, 0, 0.18);
-		transition: border-color 0.15s, box-shadow 0.15s;
+		background: var(--color-bg-elevated);
+		transition:
+			border-color var(--dur-fast) var(--ease-out-quart),
+			box-shadow var(--dur-fast) var(--ease-out-quart),
+			background-color var(--dur-fast) var(--ease-out-quart);
 	}
 	.row.filled {
 		border-color: color-mix(in srgb, var(--seat) 40%, transparent);
@@ -297,21 +315,11 @@
 	.row.cut {
 		border-color: color-mix(in srgb, var(--color-red) 35%, transparent);
 	}
-	/* ── Chip-flash animation ── */
+	/* Flash via class + transition (rest state is seat-aware for filled rows) */
 	.row.flash {
-		animation: chip-flash 0.4s ease-out;
-	}
-	@keyframes chip-flash {
-		0% {
-			border-color: var(--color-gold);
-			box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
-			background: color-mix(in srgb, var(--color-gold) 8%, transparent);
-		}
-		100% {
-			border-color: inherit;
-			box-shadow: none;
-			background: rgba(0, 0, 0, 0.18);
-		}
+		border-color: var(--color-gold) !important;
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-gold) 25%, transparent);
+		background: color-mix(in srgb, var(--color-gold) 8%, var(--color-panel)) !important;
 	}
 	.info {
 		min-width: 0;
@@ -321,6 +329,10 @@
 		font-weight: 700;
 		font-size: 13px;
 		font-family: var(--font-display);
+		letter-spacing: -0.01em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.val {
 		font-size: 11px;
@@ -337,18 +349,20 @@
 		font-family: var(--font-mono);
 		font-size: 13px;
 	}
-	/* ── Chip pile ── */
 	.chips {
 		display: flex;
 		align-items: center;
+		min-height: 28px;
 	}
 	.chip-slot {
-		margin-left: -5px;
+		margin-left: -6px;
 		display: inline-flex;
+		filter: drop-shadow(0 2px 3px color-mix(in srgb, var(--color-ink) 18%, transparent));
 	}
 	.chip-slot:first-child {
 		margin-left: 0;
 	}
+
 	.chip-over {
 		font-family: var(--font-mono);
 		font-size: 9px;
@@ -374,7 +388,6 @@
 		text-transform: uppercase;
 		color: var(--color-teal);
 	}
-	/* ── Buttons ── */
 	.acts {
 		display: flex;
 		align-items: center;
@@ -389,17 +402,18 @@
 		background: transparent;
 		color: var(--color-ink);
 		font-weight: 800;
-		font-size: 16px;
+		font-size: 18px;
 		cursor: pointer;
 		padding: 0;
 		touch-action: manipulation;
-		transition: transform 0.1s ease;
+		transition: transform var(--dur-fast) var(--ease-out-quart);
 	}
 	.btn:disabled {
 		opacity: 0.3;
+		cursor: default;
 	}
 	.btn:not(:disabled):active {
-		transform: scale(0.88);
+		transform: scale(0.92);
 	}
 	.btn.minus:not(:disabled) {
 		border-color: color-mix(in srgb, var(--color-red) 40%, transparent);
@@ -413,7 +427,15 @@
 		width: auto;
 		min-width: 44px;
 		padding: 0 10px;
-		font-size: 10px;
-		font-family: var(--font-mono);
+		font-size: 14px;
+		line-height: 1;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.btn:not(:disabled):active {
+			transform: none;
+		}
+		.row.flash {
+			transition: none;
+		}
 	}
 </style>

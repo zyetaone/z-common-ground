@@ -9,29 +9,48 @@
 		persona,
 		totalTokens,
 		counts,
+		labels,
 		onRender
 	}: {
 		persona: Persona;
 		totalTokens: number;
 		counts: Vec7;
+		labels?: string[];
 		onRender: () => void;
 	} = $props();
 
 	const chipColor = $derived(CHIP_DENOMS[0].hex);
 	const chipCount = $derived(Math.floor(totalTokens / CHIP_VALUE));
+	const top = $derived.by(() => {
+		let best = 0;
+		let idx = 0;
+		for (let i = 0; i < counts.length; i++) {
+			if ((counts[i] ?? 0) > best) {
+				best = counts[i] ?? 0;
+				idx = i;
+			}
+		}
+		const names = labels?.length ? labels : [];
+		const name = names[idx] || `Priority ${idx + 1}`;
+		const share = totalTokens > 0 ? Math.round((best / totalTokens) * 100) : 0;
+		return { name, share, best };
+	});
 </script>
 
 <div class="finale">
 	<section class="f-card">
 		<div class="kicker">{persona.name}</div>
 		<div class="f-hero">
-			<span class="f-big">{totalTokens}</span>
-			<span class="f-unit">{formatUsdFull(totalTokens)}</span>
+			<span class="f-big">{top.share}%</span>
+			<span class="f-unit">on {top.name}</span>
 		</div>
+		<p class="f-sub">Your mix · wallet {formatUsdFull(totalTokens)}</p>
 		{#if chipCount > 0}
 			<div class="f-chips">
 				{#each { length: Math.min(chipCount, 12) } as _, i}
-					<Chip hex={chipColor} size={20} />
+					<span class="f-chip" style="animation-delay:{i * 40}ms">
+						<Chip hex={chipColor} size={20} />
+					</span>
 				{/each}
 				{#if chipCount > 12}
 					<span class="chip-over">+{chipCount - 12}</span>
@@ -41,7 +60,7 @@
 	</section>
 
 	<section class="f-card">
-		<ConvictionBars bets={counts} color={persona.color} />
+		<ConvictionBars bets={counts} color={persona.color} {labels} />
 	</section>
 
 	<button type="button" class="qbtn primary" onclick={onRender}>Generate image →</button>
@@ -80,21 +99,41 @@
 		line-height: 1;
 	}
 	.f-unit {
-		font-size: 12px;
+		font-size: 14px;
 		color: var(--color-gold);
+		font-weight: 700;
+		font-family: var(--font-display);
+	}
+	.f-sub {
+		margin: 6px 0 0;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-muted);
 	}
 	.f-chips {
 		display: flex;
 		align-items: center;
 		gap: 0;
-		margin-top: 8px;
+		margin-top: 10px;
 		flex-wrap: wrap;
 	}
-	.f-chips :global(svg) {
+	.f-chip {
+		display: inline-flex;
 		margin-left: -6px;
+		animation: chip-in 0.4s var(--ease-out-quart, ease) both;
 	}
-	.f-chips :global(svg:first-child) {
+	.f-chip:first-child {
 		margin-left: 0;
+	}
+	@keyframes chip-in {
+		from {
+			transform: translateY(-8px) scale(0.3);
+			opacity: 0;
+		}
+		to {
+			transform: none;
+			opacity: 1;
+		}
 	}
 	.chip-over {
 		font-family: var(--font-mono);

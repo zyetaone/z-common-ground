@@ -1,32 +1,73 @@
 @import 'tailwindcss';
 
-/* ── Common Ground — classic green felt · serif · minimal ──────────── */
+/* ── Common Ground — boardroom · modern · minimal ──────────────────── */
 @theme {
-	--color-bg: #FDF8ED;
-	--color-bg2: #FDF8ED;
-	--color-panel: #FDF8ED;
-	--color-ink: #111A14;
-	--color-muted: #5A6A5E;
-	--color-line: #C8BFA0;
-	--color-gold: #B8932E;
-	--color-teal: #1F8B78;
-	--color-red: #C9403A;
-	--color-on-gold: #FFFFFF;
-	--color-on-teal: #FFFFFF;
+	--color-bg: #fdf8ed;
+	--color-bg2: #f7efdd;
+	--color-panel: #fefaf1;
+	--color-ink: #111a14;
+	--color-muted: #5a6a5e;
+	--color-line: #c8bfa0;
+	--color-gold: #b8932e;
+	--color-teal: #1f8b78;
+	--color-red: #c9403a;
+	--color-on-gold: #ffffff;
+	--color-on-teal: #ffffff;
 
-	/* seven seat colours */
-	--color-seat0: #e0a458;
-	--color-seat1: #3fb6a2;
-	--color-seat2: #7e8ce0;
-	--color-seat3: #e574b0;
-	--color-seat4: #5aa9e6;
-	--color-seat5: #c9a227;
-	--color-seat6: #e0665a;
+	/* ZyetaI brand surface */
+	--color-zi: var(--color-teal);
+	--color-zi-accent: var(--color-gold);
+	--color-zi-bg: color-mix(in srgb, var(--color-teal) 8%, var(--color-panel));
+	--color-zi-border: color-mix(in srgb, var(--color-teal) 35%, var(--color-line));
+	--shadow-zi: 0 0 0 1px color-mix(in srgb, var(--color-teal) 22%, transparent),
+		0 4px 18px color-mix(in srgb, var(--color-teal) 12%, transparent);
 
-	--font-display: 'Playfair Display', Georgia, serif;
-	--font-sans: 'Lora', Georgia, serif;
-	--font-mono: 'Space Mono', ui-monospace, monospace;
-	--font-serif: Georgia, 'Times New Roman', serif;
+	/* Semantic tokens */
+	--color-fg: var(--color-ink);
+	--color-fg-muted: var(--color-muted);
+	--color-bg-elevated: color-mix(in srgb, #ffffff 55%, var(--color-panel));
+	--color-bg-overlay: color-mix(in srgb, var(--color-bg) 75%, transparent);
+	--color-action: var(--color-teal);
+	--color-action-hover: color-mix(in srgb, var(--color-teal) 88%, black);
+	--color-emphasis: var(--color-gold);
+	--color-danger: var(--color-red);
+	--color-success: color-mix(in srgb, var(--color-teal) 70%, white);
+	--color-border: var(--color-line);
+	--color-border-strong: color-mix(in srgb, var(--color-line) 60%, var(--color-ink));
+
+	/* Persona seat colours — matches PERSONAS[] order */
+	--color-seat0: #e0a458; /* Real Estate */
+	--color-seat1: #e0665a; /* HR */
+	--color-seat2: #3fb6a2; /* IT */
+	--color-seat3: #5aa9e6; /* Finance */
+	--color-seat4: #7e8ce0; /* Operations */
+	--color-seat5: #e574b0; /* Marketing */
+	--color-seat6: #c9a227; /* C-Suite */
+
+	--font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+	--font-sans: 'Lora', Georgia, 'Times New Roman', serif;
+	--font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+	--font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+
+	/* Motion */
+	--ease-out-quart: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-in-out-quart: cubic-bezier(0.83, 0, 0.17, 1);
+	--dur-instant: 100ms;
+	--dur-fast: 180ms;
+	--dur-base: 280ms;
+	--dur-slow: 480ms;
+	--dur-stage: 800ms;
+	--dur-stagger: 40ms;
+
+	/* Elevation */
+	--shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-ink) 6%, transparent);
+	--shadow-md: 0 4px 12px color-mix(in srgb, var(--color-ink) 8%, transparent);
+	--shadow-lg: 0 12px 32px color-mix(in srgb, var(--color-ink) 12%, transparent);
+	--shadow-glow: 0 0 24px color-mix(in srgb, var(--color-gold) 35%, transparent);
+
+	/* Radius — two steps only: small control, large panel */
+	--radius-sm: 10px;
+	--radius-lg: 16px;
 }
 
 :root {
@@ -34,18 +75,44 @@
 }
 
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-	outline: 2px solid var(--color-gold);
-	outline-offset: 2px;
+	outline: 2px solid var(--color-emphasis);
+	outline-offset: 3px;
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-emphasis) 25%, transparent);
 	border-radius: 4px;
 }
 
 html,
 body {
 	min-height: 100%;
-	background: var(--color-bg) fixed;
 	color: var(--color-ink);
 	font-family: var(--font-sans);
+	font-optical-sizing: auto;
+	font-feature-settings: 'tnum' 1, 'cv11' 1;
 	-webkit-font-smoothing: antialiased;
+}
+
+body {
+	background:
+		radial-gradient(120% 90% at 50% 0%, #fffaf0 0%, transparent 55%),
+		linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg2) 62%, #f2e8d0 100%);
+	background-attachment: fixed;
+	/* stacking context so the grid pseudo sits above the gradient, below content */
+	isolation: isolate;
+}
+
+/* Radial vanishing grid — barely-there drafting texture, dissolves outward */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-image:
+		linear-gradient(to right, color-mix(in srgb, var(--color-ink) 5%, transparent) 1px, transparent 1px),
+		linear-gradient(to bottom, color-mix(in srgb, var(--color-ink) 5%, transparent) 1px, transparent 1px);
+	background-size: 44px 44px;
+	-webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 38%, black 0%, transparent 76%);
+	mask-image: radial-gradient(ellipse 85% 70% at 50% 38%, black 0%, transparent 76%);
 }
 
 .font-display {
@@ -58,6 +125,135 @@ body {
 	font-family: var(--font-serif);
 }
 
+/* Type roles — use by meaning, not size */
+.t-display {
+	font-family: var(--font-display);
+	font-weight: 800;
+	letter-spacing: -0.025em;
+	line-height: 1.05;
+	font-optical-sizing: auto;
+}
+.t-head {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: -0.015em;
+	line-height: 1.2;
+}
+.t-body {
+	font-family: var(--font-sans);
+	font-weight: 400;
+	line-height: 1.5;
+}
+.t-caption {
+	font-family: var(--font-sans);
+	font-weight: 500;
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--color-muted);
+	letter-spacing: 0.04em;
+}
+.t-mono {
+	font-family: var(--font-mono);
+	font-weight: 500;
+	font-feature-settings: 'tnum' 1;
+}
+.t-tabular {
+	font-variant-numeric: tabular-nums;
+}
+
+/* Shared analysis chrome — avoid per-panel kicker/empty CSS */
+.cg-kicker {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--color-gold);
+	font-weight: 700;
+}
+.cg-empty {
+	display: grid;
+	place-items: center;
+	min-height: 120px;
+	padding: 24px 16px;
+	color: var(--color-muted);
+	font-size: 14px;
+	border: 1px dashed var(--color-line);
+	border-radius: 12px;
+	text-align: center;
+}
+.cg-empty-inline {
+	color: var(--color-muted);
+	font-size: 14px;
+}
+
+.stagger > * {
+	opacity: 0;
+	transform: translateY(8px);
+	animation: rise var(--dur-slow) var(--ease-out-quart) both;
+	animation-delay: calc(var(--i, 0) * var(--dur-stagger));
+}
+@keyframes rise {
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* View Transitions (Chrome/Edge) */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: var(--dur-base);
+	animation-timing-function: var(--ease-out-quart);
+}
+
+/* Stage mode — dark presenter surface (projector / 30-ft readability).
+   Apply to the top-level element of a presenter route. Token overrides only;
+   components keep working because they read the same variables. */
+.stage-dark {
+	--color-bg: #10160f;
+	--color-bg2: #0c110a;
+	--color-panel: #18221a;
+	--color-ink: #f3ecd8;
+	--color-fg: #f3ecd8;
+	--color-muted: #9aa88f;
+	--color-fg-muted: #9aa88f;
+	--color-line: #3a4534;
+	--color-border: #3a4534;
+	--color-border-strong: color-mix(in srgb, #3a4534 60%, #f3ecd8);
+	--color-bg-elevated: color-mix(in srgb, #ffffff 7%, #18221a);
+	--color-bg-overlay: color-mix(in srgb, #10160f 75%, transparent);
+	--color-zi-bg: color-mix(in srgb, var(--color-teal) 16%, #18221a);
+	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+	--shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+	color: var(--color-ink);
+	color-scheme: dark;
+	isolation: isolate;
+	position: relative;
+}
+
+/* Doubled class — beats scoped page rules that reset `background` */
+.stage-dark.stage-dark {
+	background:
+		radial-gradient(130% 90% at 50% 0%, #1c2a1e 0%, transparent 60%),
+		linear-gradient(180deg, #10160f 0%, #0c110a 70%, #080b07 100%);
+}
+
+/* Same vanishing grid, stage variant — cream lines on dark */
+.stage-dark::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	background-image:
+		linear-gradient(to right, color-mix(in srgb, #f3ecd8 5%, transparent) 1px, transparent 1px),
+		linear-gradient(to bottom, color-mix(in srgb, #f3ecd8 5%, transparent) 1px, transparent 1px);
+	background-size: 44px 44px;
+	-webkit-mask-image: radial-gradient(ellipse 85% 72% at 50% 40%, black 0%, transparent 74%);
+	mask-image: radial-gradient(ellipse 85% 72% at 50% 40%, black 0%, transparent 74%);
+}
+
 @media (prefers-reduced-motion: reduce) {
 	*,
 	*::before,
@@ -65,5 +261,11 @@ body {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+	.stagger > * {
+		opacity: 1;
+		transform: none;
+		animation: none;
 	}
 }

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import BoardSheet from '$lib/components/BoardSheet.svelte';
-	import { N_SEATS, SEATS } from '$lib/game';
+	import { roomPersonas } from '$lib/game';
+	import { session } from '$lib/state';
 
 	const roomCode = (page.url.searchParams.get('room') || 'LIVE').toUpperCase();
+	const personas = $derived(roomPersonas(session.room));
 
 	function print() {
 		window.print();
@@ -24,10 +26,10 @@
 </div>
 
 <div class="boards">
-	{#each Array(N_SEATS) as _, s (s)}
+	{#each personas as p, s (s)}
 		<section class="board-card">
-			<div class="caption">Table {s + 1} · {SEATS[s]}</div>
-			<BoardSheet seat={s} {roomCode} tableId={s + 1} />
+			<div class="caption">Table {s + 1} · {p.name}</div>
+			<BoardSheet seat={s} {roomCode} tableId={s + 1} room={session.room} />
 		</section>
 	{/each}
 </div>

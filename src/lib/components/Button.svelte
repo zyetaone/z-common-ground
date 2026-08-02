@@ -24,14 +24,16 @@
 	} = $props();
 
 	const base =
-		'inline-flex items-center justify-center gap-1.5 rounded-xl font-display font-bold transition disabled:opacity-40 disabled:cursor-default';
+		'inline-flex items-center justify-center gap-1.5 rounded-xl font-display font-bold transition disabled:opacity-40 disabled:cursor-default active:scale-[0.97]';
 	const sizes = {
-		sm: 'px-3 py-1.5 text-xs',
-		md: 'px-5 py-2.5 text-sm',
-		lg: 'px-6 py-4 text-base'
+		sm: 'px-3 py-1.5 text-xs min-h-9',
+		md: 'px-5 py-2.5 text-sm min-h-11',
+		lg: 'px-6 py-4 text-base min-h-12'
 	};
 	const variants = {
-		primary: 'bg-gold text-[var(--color-on-gold)] hover:bg-gold/90',
+		/* primary = confirm / live / submit (teal action) */
+		primary: 'bg-teal text-[var(--color-on-teal)] hover:bg-teal/90',
+		/* secondary = emphasis / deck nav (gold) */
 		secondary: 'border border-gold/50 text-gold hover:bg-gold/10',
 		teal: 'bg-teal text-[var(--color-on-teal)] hover:bg-teal/90',
 		outline: 'border border-line text-ink hover:border-gold',

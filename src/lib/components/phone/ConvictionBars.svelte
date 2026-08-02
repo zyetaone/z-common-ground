@@ -6,21 +6,24 @@
 	/** POC-style post-submit conviction strip. */
 	let {
 		bets,
-		color = '#37b6a2'
+		color = '#37b6a2',
+		labels = PRIORITIES as unknown as string[]
 	}: {
 		bets: Vec7;
 		color?: string;
+		labels?: string[];
 	} = $props();
 
 	const max = $derived(Math.max(1, ...bets));
 	const total = $derived(bets.reduce((a, b) => a + b, 0));
 	const chipColor = $derived(CHIP_DENOMS[0].hex);
+	const rowLabels = $derived(PRIORITIES.map((def, i) => labels[i]?.trim() || def));
 </script>
 
 <div class="mini" style="--seat:{color}">
 	<p class="cap">Your conviction · <span>{formatUsdFull(total)}</span></p>
 	<div class="bars">
-		{#each PRIORITIES as p, i (p)}
+		{#each rowLabels as p, i (i)}
 			{@const v = bets[i] ?? 0}
 			{@const chipCount = Math.floor(v / CHIP_VALUE)}
 			<div class="row" class:empty={v === 0}>
@@ -84,7 +87,7 @@
 	.track {
 		height: 8px;
 		border-radius: 4px;
-		background: rgba(255, 255, 255, 0.06);
+		background: color-mix(in srgb, var(--color-ink) 8%, transparent);
 		overflow: hidden;
 	}
 	.fill {

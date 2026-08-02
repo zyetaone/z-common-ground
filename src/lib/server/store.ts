@@ -16,16 +16,49 @@ import {
 	applySubmitTable,
 	buildEnhancedBrief,
 	emptyMatrix,
+	PERSONAS,
 	personaBiasList,
 	recomputeTable,
+	roomPersonas,
 	tableBountyTokens,
-	upsertHistory
+	upsertHistory,
+	collectLiveAsArchive,
+	mergeArchive
 } from '$lib/game';
-import type { Persona, RoomState, Scenario, TableState } from '$lib/game/types';
-import { loadRoom, saveRoom } from './room-store';
+import {
+	PRIORITIES,
+	type Persona,
+	type RoomState,
+	type Scenario,
+	type TableState,
+	type WorkspaceDesignSheet
+} from '$lib/game/types';
+import { loadRoom, saveRoom, saveRoomIfUnchanged } from './room-store';
 
 /** One hosted session only — no multi-room codes. */
 export const SESSION = 'LIVE';
+const ARCHIVE_MAX = 48;
+
+function pushArchive(room: RoomState, entries: ReturnType<typeof collectLiveAsArchive>) {
+	if (entries.length === 0) return;
+	room.imageArchive = mergeArchive(room.imageArchive, entries, ARCHIVE_MAX);
+}
+
+function stripLiveImages(room: RoomState) {
+	room.finaleImageUrl = undefined;
+	room.roomConceptUrls = undefined;
+	room.workspaceDesigns = undefined;
+	for (const t of room.tables) t.imageUrl = undefined;
+}
+
+const ROOM_CONCEPT_CAP = 8;
+
+function pushRoomConcept(room: RoomState, url: string) {
+	const prev = room.roomConceptUrls ?? [];
+	const next = [url, ...prev.filter((u) => u !== url)].slice(0, ROOM_CONCEPT_CAP);
+	room.roomConceptUrls = next;
+	room.finaleImageUrl = url;
+}
 
 function emptyTable(id: number): TableState {
 	const t: TableState = {
@@ -43,9 +76,17 @@ function emptyTable(id: number): TableState {
 	return t;
 }
 
+/** Monotonic timestamp — never issues the same ms twice, so the state
+ *  endpoint's ETag can't collide for two mutations in one millisecond. */
+function bump(room: RoomState) {
+	room.updatedAt = Math.max(Date.now(), room.updatedAt + 1);
+}
+
 function recompute(room: RoomState) {
 	for (const t of room.tables) recomputeTable(t);
-	room.aggregate = aggregate(room.tables, personaBiasList());
+	// Host persona overrides (bias/name) feed scoring + surprise
+	const biases = roomPersonas(room).map((p) => p.bias);
+	room.aggregate = aggregate(room.tables, biases);
 	for (const t of room.tables) recomputeTable(t, room.aggregate.matrix);
 	room.lockedThisRound = room.tables.filter((t) => t.lockedThisRound).length;
 	room.expectedLocks = room.tables.length;
@@ -53,18 +94,18 @@ function recompute(room: RoomState) {
 	room.roundCount = ROUND_COUNT;
 	if (room.round >= ROUND_COUNT) room.round = ROUND_COUNT - 1;
 	room.analysisOpen = analysisOpen(room);
-	const nextBrief = buildEnhancedBrief(room.aggregate);
+	const nextBrief = buildEnhancedBrief(room.aggregate, room);
 	if (!nextBrief) {
 		room.enhancedBrief = undefined;
 		room.briefSource = undefined;
-	} else if (room.briefSource !== 'llama') {
+	} else if (room.briefSource !== 'rapidi' && room.briefSource !== 'manual') {
 		room.enhancedBrief = nextBrief;
 		room.briefSource = 'numbers';
 	}
 	if (room.phase !== 'finale' || room.history.length > 0) {
 		upsertHistory(room);
 	}
-	room.updatedAt = Date.now();
+	bump(room);
 }
 
 function makeRoom(tableCount = DEFAULT_TABLE_COUNT): RoomState {
@@ -120,16 +161,31 @@ class Store {
 		if (this.room) await saveRoom(db, this.room);
 	}
 
+	/**
+	 * Compare-and-swap persist — only writes when D1 still holds
+	 * `expectedUpdatedAt`. Returns false when another isolate wrote first;
+	 * caller re-syncs and retries (or 409s).
+	 */
+	async persistIfUnchanged(db: D1Database | undefined, expectedUpdatedAt: number): Promise<boolean> {
+		if (!this.room) return true;
+		return saveRoomIfUnchanged(db, this.room, expectedUpdatedAt);
+	}
+
 	/** Idempotent: always the one LIVE session. */
 	ensure(tableCount = DEFAULT_TABLE_COUNT): RoomState {
 		if (!this.room) this.room = makeRoom(tableCount);
 		return this.room;
 	}
 
-	/** Reset the one session (host "new session"). */
+	/** Reset the one session (host "new session"). Archives live photos first. */
 	reset(tableCount?: number): RoomState {
 		const n = tableCount ?? this.room?.tables.length ?? DEFAULT_TABLE_COUNT;
+		const carry = [
+			...collectLiveAsArchive(this.room),
+			...(this.room?.imageArchive ?? [])
+		];
 		this.room = makeRoom(n);
+		pushArchive(this.room, carry);
 		return this.room;
 	}
 
@@ -287,28 +343,91 @@ class Store {
 
 	setFinaleImage(_code: string, url: string): RoomState {
 		const room = this.ensure();
-		room.finaleImageUrl = url;
-		room.updatedAt = Date.now();
+		pushRoomConcept(room, url);
+		bump(room);
 		return room;
 	}
 
-	/** Host updates a single persona (by seat index 0..6). */
+	/** Select primary room concept from palette (no new generate). */
+	selectRoomConcept(_code: string, url: string): RoomState {
+		const room = this.ensure();
+		const list = room.roomConceptUrls ?? [];
+		if (!list.includes(url) && room.finaleImageUrl !== url) return room;
+		room.finaleImageUrl = url;
+		// Keep selected first in palette order for UI
+		room.roomConceptUrls = [url, ...list.filter((u) => u !== url)];
+		bump(room);
+		return room;
+	}
+
+	/** Remove one Common Ground concept from the palette. */
+	removeRoomConcept(_code: string, url: string): RoomState {
+		const room = this.ensure();
+		const list = (room.roomConceptUrls ?? []).filter((u) => u !== url);
+		// Also drop if only on finale
+		if (room.finaleImageUrl === url) {
+			room.finaleImageUrl = list[0];
+		}
+		room.roomConceptUrls = list.length ? list : undefined;
+		if (!room.finaleImageUrl && list[0]) room.finaleImageUrl = list[0];
+		bump(room);
+		return room;
+	}
+
+	/** Host updates a single persona (by seat index 0..6). Merges onto defaults. */
 	setPersona(_code: string, seat: number, patch: Partial<Persona>): RoomState {
 		const room = this.ensure();
 		if (!room.personas) room.personas = [];
 		if (seat < 0 || seat >= N_SEATS) return room;
-		room.personas[seat] = { ...(room.personas[seat] ?? {}), ...patch, seat };
-		room.updatedAt = Date.now();
+		const base = PERSONAS[seat];
+		const prev = room.personas[seat] ?? {};
+		room.personas[seat] = { ...base, ...prev, ...patch, seat };
+		// Recompute so analysis (names/colors/bias) picks up overrides
+		recompute(room);
 		return room;
 	}
 
-	/** Host updates a single scenario (by round index 0..4). */
+	/** Host updates a single scenario (by round index 0..4). Merges onto defaults. */
 	setScenario(_code: string, round: number, patch: Partial<Scenario>): RoomState {
 		const room = this.ensure();
 		if (!room.scenarios) room.scenarios = [];
 		if (round < 0 || round >= ROUND_COUNT) return room;
-		room.scenarios[round] = { ...(room.scenarios[round] ?? {}), ...patch, round, roundLabel: round + 1 };
-		room.updatedAt = Date.now();
+		const base = SCENARIOS[round];
+		const prev = room.scenarios[round] ?? {};
+		room.scenarios[round] = {
+			...base,
+			...prev,
+			...patch,
+			round,
+			roundLabel: round + 1
+		};
+		// Mode/move affect capture + remove rules; bump via recompute for live consumers
+		recompute(room);
+		return room;
+	}
+
+	/**
+	 * Host renames the 7 board options (priority labels). Persists to D1;
+	 * analysis + phones poll the new names.
+	 */
+	setPriorities(_code: string, labels: string[]): RoomState {
+		const room = this.ensure();
+		if (!Array.isArray(labels) || labels.length !== N_PRIORITIES) return room;
+		room.priorities = labels.map((l, i) => {
+			const t = String(l ?? '').trim();
+			return t || PRIORITIES[i];
+		});
+		recompute(room);
+		return room;
+	}
+
+	/** Clear host persona / scenario / priority overrides → config defaults. */
+	resetGameConfig(_code: string): RoomState {
+		const room = this.ensure();
+		room.personas = undefined;
+		room.scenarios = undefined;
+		room.priorities = undefined;
+		recompute(room);
 		return room;
 	}
 
@@ -327,25 +446,57 @@ class Store {
 		const table = room.tables.find((t) => t.id === tableId);
 		if (table) {
 			table.imageUrl = url;
-			room.updatedAt = Date.now();
+			bump(room);
 		}
 		return room;
 	}
 
-	setEnhancedBrief(
-		_code: string,
-		brief: string,
-		source: 'numbers' | 'llama' = 'numbers'
-	): RoomState {
+	/**
+	 * Host “Clear photos”: archive live AI images, then strip them from the live room
+	 * so phones/presenter start clean. Archive stays available on host.
+	 */
+	archiveGeneratedImages(_code: string): RoomState {
 		const room = this.ensure();
-		if (!brief.trim()) {
-			room.enhancedBrief = undefined;
-			room.briefSource = undefined;
-		} else {
-			room.enhancedBrief = brief;
-			room.briefSource = source;
-		}
-		room.updatedAt = Date.now();
+		pushArchive(room, collectLiveAsArchive(room));
+		stripLiveImages(room);
+		bump(room);
+		return room;
+	}
+
+setEnhancedBrief(
+	_code: string,
+	brief: string,
+	source: 'numbers' | 'rapidi' | 'manual' = 'numbers'
+): RoomState {
+	const room = this.ensure();
+	if (!brief.trim()) {
+		room.enhancedBrief = undefined;
+		room.briefSource = undefined;
+	} else {
+		room.enhancedBrief = brief;
+		// 'manual' edits store the literal so the UI can badge the source distinctly,
+		// but for downstream consumers it's the same as 'rapidi' (a curated narrative).
+		room.briefSource = source;
+	}
+	bump(room);
+	return room;
+}
+
+	/** Architectural workspace sheets (collage / plan / section / elevation). */
+	setWorkspaceDesigns(_code: string, sheets: WorkspaceDesignSheet[]): RoomState {
+		const room = this.ensure();
+		room.workspaceDesigns = sheets.length ? sheets : undefined;
+		bump(room);
+		return room;
+	}
+
+	/** Insert or replace one design sheet by kind — keeps the other sheets. */
+	upsertWorkspaceDesign(_code: string, sheet: WorkspaceDesignSheet): RoomState {
+		const room = this.ensure();
+		const list = (room.workspaceDesigns ?? []).filter((s) => s.kind !== sheet.kind);
+		list.push(sheet);
+		room.workspaceDesigns = list;
+		bump(room);
 		return room;
 	}
 }

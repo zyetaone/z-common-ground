@@ -1,9 +1,10 @@
 <script lang="ts">
 	import QrCode from '$lib/components/QrCode.svelte';
-	import { PERSONAS, tablePersona } from '$lib/game';
-	import { SESSION } from '$lib/state';
+	import { roomPersonas, tablePersona } from '$lib/game';
+	import { SESSION, session } from '$lib/state';
 
 	const origin = $derived(typeof window !== 'undefined' ? window.location.origin : '');
+	const personas = $derived(roomPersonas(session.room));
 </script>
 
 <svelte:head>
@@ -44,9 +45,9 @@
 	</ol>
 
 	<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 print:grid-cols-2">
-		{#each PERSONAS as p, i (p.seat)}
+		{#each personas as p, i (p.seat)}
 			{@const id = i + 1}
-			{@const persona = tablePersona(id)}
+			{@const persona = tablePersona(id, session.room)}
 			{@const url = origin ? `${origin}/play/${SESSION}/${id}` : `/play/${SESSION}/${id}`}
 			<article
 				class="flex flex-col items-center gap-3 rounded-2xl border border-line bg-panel/30 p-6 print:break-inside-avoid print:border-black/15 print:bg-white print:text-black"

@@ -37,7 +37,7 @@
 				{#if phase === 'lobby'}
 					Lobby
 				{:else}
-					R{roundLabel}
+					R{roundLabel}/{roundCount}
 				{/if}
 			</span>
 			<span class="badge-question">
@@ -48,38 +48,30 @@
 				{/if}
 			</span>
 		</div>
-		{#if scenario?.hint && phase === 'round' && scenario?.mode === 'capture'}
-			<p class="budget-hint">{scenario.hint}</p>
-		{/if}
-		{#if scenario && (scenario.modelRules || scenario.actions || scenario.experience)}
-			<details class="round-details">
-				<summary class="details-summary">Round details</summary>
-				<div class="details-body">
-					{#if scenario.modelRules}
-						<div class="detail-block">
-							<h4 class="detail-label">Rules</h4>
-							<p class="detail-text">{scenario.modelRules}</p>
-						</div>
-					{/if}
-					{#if scenario.actions}
-						<div class="detail-block">
-							<h4 class="detail-label">Steps</h4>
-							<p class="detail-text actions">{scenario.actions}</p>
-						</div>
-					{/if}
-					{#if scenario.experience}
-						<div class="detail-block">
-							<h4 class="detail-label">Why this matters</h4>
-							<p class="detail-text">{scenario.experience}</p>
-						</div>
-					{/if}
-				</div>
-			</details>
+		{#if phase === 'round' && scenario}
+			{@const moveLabel =
+				scenario.move === 'remove'
+					? 'Remove'
+					: scenario.roundLabel === 5
+						? 'Restructure'
+						: 'Add'}
+			<p class="instruction">{moveLabel}</p>
+			{#if scenario.hint}
+				<p class="budget-hint">{scenario.hint}</p>
+			{/if}
+			{#if scenario.modelRules}
+				<p class="model-rules">{scenario.modelRules}</p>
+			{/if}
+		{:else if persona.mission && phase === 'lobby'}
+			<p class="mission"><span class="mission-k">Lens</span> {persona.mission}</p>
+			{#if persona.hashtag}
+				<p class="persona-hashtag" data-testid="mobile-persona-hashtag">{persona.hashtag}</p>
+			{/if}
 		{/if}
 	{:else if isFinale}
 		<div class="qcompact finale">
 			<span class="badge-tag">Final</span>
-			<span class="badge-question">Cumulative results</span>
+			<span class="badge-question">We found common ground — your cumulative results</span>
 		</div>
 	{/if}
 </section>
@@ -162,60 +154,64 @@
 	}
 	.badge-question {
 		font-family: var(--font-display);
-		font-weight: 600;
-		font-size: 14px;
+		font-weight: 700;
+		font-size: 16px;
 		line-height: 1.3;
 		color: var(--color-ink);
 		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		flex: 1;
 	}
+	.instruction {
+		margin: 6px 0 0;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-teal);
+		line-height: 1.35;
+	}
+	.mission {
+		margin: 6px 0 0;
+		font-size: 12px;
+		color: var(--color-muted);
+		line-height: 1.4;
+		font-weight: 500;
+	}
+	.mission-k {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-teal);
+		margin-right: 6px;
+	}
+	.persona-hashtag {
+		margin: 2px 0 0;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: var(--color-gold);
+	}
 	.budget-hint {
 		margin: 4px 0 0;
-		font-size: 11px;
+		font-size: 12px;
 		color: var(--color-gold);
 		line-height: 1.4;
 		font-weight: 600;
 	}
-	.round-details {
-		margin-top: 6px;
-		border: 1px solid color-mix(in srgb, var(--color-line) 60%, transparent);
-		border-radius: 12px;
-		overflow: hidden;
-	}
-	.details-summary {
-		padding: 6px 10px;
-		font-size: 11px;
-		font-weight: 700;
-		color: var(--color-muted);
-		cursor: pointer;
-		user-select: none;
-	}
-	.details-body {
-		padding: 0 10px 10px;
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-	.detail-label {
+	.model-rules {
+		margin: 3px 0 0;
+		font-family: var(--font-mono);
 		font-size: 10px;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--color-teal);
-		margin: 0 0 2px;
-	}
-	.detail-text {
-		font-size: 11px;
-		line-height: 1.5;
-		color: var(--color-ink);
-		margin: 0;
-		white-space: pre-line;
-	}
-	.detail-text.actions {
-		padding-left: 4px;
+		letter-spacing: 0.04em;
+		color: var(--color-muted);
+		line-height: 1.35;
 	}
 </style>

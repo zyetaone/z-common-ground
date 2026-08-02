@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	// One modal primitive built on native <dialog>: focus-trap, Escape, inert
-	// background and top-layer stacking come free from showModal(). Replaces the
-	// hand-rolled fixed-overlay modals.
+	// Native <dialog>: focus-trap, Escape, inert background, top-layer stacking.
 	let {
 		open = $bindable(false),
 		label = 'Dialog',
@@ -26,12 +24,10 @@
 		else if (!open && dialog.open) dialog.close();
 	});
 
-	// Native close (Escape / backdrop / .close()) → sync state back.
 	function onClose() {
 		open = false;
 		onclose?.();
 	}
-	// Click on the backdrop (the dialog element itself, outside .panel) closes.
 	function onClick(e: MouseEvent) {
 		if (e.target === dialog) open = false;
 	}
@@ -54,12 +50,41 @@
 		color: var(--color-ink);
 		overflow: visible;
 	}
+	dialog[open] {
+		animation: dialog-in var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1))
+			both;
+	}
 	dialog::backdrop {
 		background: rgba(0, 0, 0, 0.85);
 		backdrop-filter: blur(10px);
+		animation: backdrop-in var(--dur-base, 280ms) ease both;
 	}
 	.panel {
 		max-height: inherit;
 		overflow: auto;
+	}
+	@keyframes dialog-in {
+		from {
+			opacity: 0;
+			transform: scale(0.96);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+	@keyframes backdrop-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		dialog[open],
+		dialog::backdrop {
+			animation: none;
+		}
 	}
 </style>

@@ -1,14 +1,16 @@
-import { json } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
+import { idempotentJson } from '$lib/server/with-idempotency';
 import type { RequestHandler } from './$types';
 
 /** Host changes number of tables (1..7). */
-export const POST: RequestHandler = async ({ request }) => {
-	const body = (await request.json().catch(() => ({}))) as { count?: number };
-	if (body.count == null || body.count < 1 || body.count > 7) {
-		return json({ ok: false, error: 'Invalid table count (1..7)' }, { status: 400 });
-	}
-	const room = await withLiveRoom(() => store.setTableCount('', body.count!));
-	return json({ ok: true, room });
+export const POST: RequestHandler = async (event) => {
+	const body = (await event.request.json().catch(() => ({}))) as { count?: number };
+	const count = body.count;
+	if (count == null || count < 1 || count > 7) error(400, 'Invalid table count (1..7)');
+	return idempotentJson(event, async () => {
+		const room = await withLiveRoom(() => store.setTableCount('', count));
+		return { ok: true, room };
+	});
 };

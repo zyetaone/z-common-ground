@@ -1,0 +1,264 @@
+<script lang="ts">
+	import type { RoomState } from '$lib/game/types';
+	import { formatUsd, priorityMix, roomInsights, roomPriorities } from '$lib/game';
+
+/**
+ * Screen 2 — Priority Breakdown.
+ * 7 priorities ranked by share of room stake, each row shows:
+ *   - rank, colour dot, name
+ *   - horizontal bar (% of room)
+ *   - $ amount (formatted with formatUsd)
+ *   - % of room
+ *   - reach (how many of the 7 functions backed it)
+ *
+ * The math: $M amounts are absolute; % is share of the *room total* at the
+ * current phase. So "13% of $700M = $91M" — the percentage and dollar are
+ * consistent because the bar IS the share.
+ */
+	let { room }: { room: RoomState } = $props();
+
+	const labels = $derived(roomPriorities(room));
+	const mix = $derived(priorityMix(room.aggregate.matrix, labels));
+	const i = $derived(roomInsights(room));
+	const reachMap = $derived(room.aggregate.reach);
+	const totalCoins = $derived(room.aggregate.totalCoins);
+</script>
+
+<div class="pb">
+	<header class="hdr">
+		<span class="hdr-title">PRIORITY BREAKDOWN</span>
+		<span class="hdr-sub">
+			Total room stake · {formatUsd(totalCoins)} · ranked by share of room
+		</span>
+	</header>
+
+	<header class="legend" aria-label="Column legend">
+		<span class="lg-rank">#</span>
+		<span class="lg-name">Priority</span>
+		<span class="lg-bar">Share of room</span>
+		<span class="lg-amt">$ wagered</span>
+		<span class="lg-pct">%</span>
+		<span class="lg-reach">Backed by</span>
+	</header>
+
+	<section class="list" role="list" aria-label="Priorities ranked by share of room stake">
+		{#each mix as m, rank (m.priority)}
+			{@const reach = reachMap[m.priority] ?? 0}
+			<div
+				class="row"
+				class:lead={rank === 0}
+				class:blind={m.name === i.blind}
+			>
+				<span class="rank" class:lead={rank === 0}>{rank + 1}</span>
+				<span class="pdot" style="background:{m.color}"></span>
+				<span class="pname">{m.name}</span>
+				<div class="pbar-track" aria-label="{m.name} {m.pct}% of room">
+					<div
+						class="pbar-fill"
+						style="width:{m.pct}%; background:{m.color}"
+					></div>
+				</div>
+				<span class="pamt">{formatUsd(m.tokens)}</span>
+				<span class="ppct" style="color:{m.color}">{m.pct}%</span>
+				<span class="preach" aria-label="backed by {reach} of 7 functions">
+					<span class="reach-dots">
+						{#each Array(7) as _, d (d)}
+							<span
+								class="reach-dot"
+								class:on={d < reach}
+								style="--fn:{m.color}"
+							></span>
+						{/each}
+					</span>
+					<span class="reach-num">{reach}/7</span>
+				</span>
+			</div>
+		{/each}
+	</section>
+
+	<footer class="sum" aria-label="Total verification">
+		<span class="sum-lbl">All 7 sum to</span>
+		<span class="sum-pct">{mix.reduce((s, m) => s + m.pct, 0)}%</span>
+		<span class="sum-eq">≈</span>
+		<span class="sum-amt">{formatUsd(totalCoins)}</span>
+		<span class="sum-note">= 100% of room stake</span>
+	</footer>
+</div>
+
+<style>
+	.pb {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		height: 100%;
+		min-height: 0;
+		padding: 4px 4px 12px;
+	}
+	.hdr {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+	.hdr-title {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 800;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-gold);
+	}
+	.hdr-sub {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+	}
+	.legend {
+		display: grid;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 80px 44px 88px;
+		align-items: center;
+		gap: 10px;
+		padding: 0 12px;
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+	.list {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		overflow: auto;
+		min-height: 0;
+	}
+	.row {
+		display: grid;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 80px 44px 88px;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 12px;
+		border-radius: 10px;
+		background: var(--color-panel);
+		border: 1px solid var(--color-line);
+	}
+	.row.lead {
+		border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-line));
+		background: color-mix(in srgb, var(--color-gold) 6%, var(--color-panel));
+	}
+	.row.blind {
+		border-color: color-mix(in srgb, var(--color-red) 35%, var(--color-line));
+		background: color-mix(in srgb, var(--color-red) 5%, var(--color-panel));
+	}
+	.rank {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 800;
+		color: var(--color-muted);
+		text-align: center;
+		font-variant-numeric: tabular-nums;
+	}
+	.rank.lead {
+		color: var(--color-gold);
+	}
+	.pdot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.pname {
+		font-family: var(--font-display);
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--color-ink);
+		text-transform: capitalize;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.pbar-track {
+		position: relative;
+		height: 16px;
+		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.pbar-fill {
+		height: 100%;
+		min-width: 1px;
+		transition: width var(--dur-base, 280ms) var(--ease-out-quart, ease);
+	}
+	.pamt {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--color-ink);
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.ppct {
+		font-family: var(--font-mono);
+		font-size: 13px;
+		font-weight: 800;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.preach {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.reach-dots {
+		display: inline-flex;
+		gap: 2px;
+	}
+	.reach-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: color-mix(in srgb, var(--fn) 25%, transparent);
+		border: 1px solid color-mix(in srgb, var(--fn) 40%, transparent);
+	}
+	.reach-dot.on {
+		background: var(--fn);
+	}
+	.reach-num {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 700;
+		color: var(--color-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	.sum {
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
+		padding: 8px 14px;
+		border-radius: 10px;
+		background: color-mix(in srgb, var(--color-panel) 80%, transparent);
+		border: 1px solid var(--color-line);
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+		letter-spacing: 0.04em;
+	}
+	.sum-lbl {
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+	.sum-pct,
+	.sum-amt {
+		font-size: 13px;
+		font-weight: 800;
+		color: var(--color-ink);
+		font-variant-numeric: tabular-nums;
+	}
+	.sum-eq {
+		color: var(--color-muted);
+	}
+	.sum-note {
+		opacity: 0.7;
+	}
+</style>

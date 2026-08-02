@@ -35,7 +35,7 @@ export function applyAdvance(room: RoomState): AdvanceResult {
 	} else if (room.phase === 'round') {
 		const leavingLabel = room.round + 1;
 		upsertHistory(room);
-		captured = isCaptureRound(leavingLabel);
+		captured = isCaptureRound(leavingLabel, room);
 		reopenBoards(room);
 		boardsOpened = true;
 		if (room.round < ROUND_COUNT - 1) {

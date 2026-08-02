@@ -4,7 +4,7 @@
 
 ## Start here — the 5-minute reading path
 
-This doc is **~310 KB, 23 top-level sections, 126 sub-sections, 148 gotchas across 5 numbering systems (main 1–32, A1–A18 architecture, U1–U18 UX flow, F1–F9 polish, F1–F16 failure modes)**. The user has built it incrementally across many passes. **You don't need to read all of it.** Read these, in this order, for a working understanding of the codebase:
+This doc is **~310 KB, 24 top-level sections, 129 sub-sections, 156 gotchas across 6 numbering systems (main 1–32, A1–A18 architecture, U1–U18 UX flow, F1–F9 polish, F1–F16 failure modes, S1–S8 strategy disclosure)**. The user has built it incrementally across many passes.
 
 | # | Section | Why | Time |
 |---|---|---|---|
@@ -23,9 +23,9 @@ After the first 25 minutes, **read by need, not in order**. The doc's other top-
 |---|---|
 | **presenter / host / phone UI** (most common) | [UX deep review](#ux-deep-review--flows-gamification-analysis-surface) → [UI/UX system design](#uiux-system-design-fonts-motion-gamification-svelte-5) → [Mobile page state machine](#mobile-page-state-machine) → [Presenter page state machine](#presenter-page-state-machine) → [**FunctionBoard deep review**](#functionboard-deep-review--the-chip-tap-ux) (if touching the chip-tap interaction). |
 | **function-board refactor / chip-tap polish** | [FunctionBoard refactored — the drop-in](#functionboard-refactored--the-drop-in) — the full ~330-line drop-in component. |
-| **AI / Llama / fal prompts** | [AI integration](#ai-integration-review--recommendations) → the *Prompts as data, not code* subsection → the *Wiring & shrunken plumbing* code blocks. |
+| **AI /  RapidI / fal prompts** | [AI integration](#ai-integration-review--recommendations) → the *Prompts as data, not code* subsection → the *Wiring & shrunken plumbing* code blocks. |
 | **server / store / D1 / idempotency** | [Server: store + endpoints](#server-store--endpoints) → [Architecture & idempotency](#architecture--idempotency-the-runtime-contract). |
-| **scoring / analysis / CGI hero / chord diagram** | [Domain: game rules, scoring, brief](#domain-game-rules-scoring-brief) → [Analysis: the Common Ground story](#analysis-the-common-ground-story). |
+| **scoring / analysis / CGI hero / chord diagram / strategy disclosure** | [Domain: game rules, scoring, brief](#domain-game-rules-scoring-brief) → [Analysis: the Common Ground story](#analysis-the-common-ground-story) → [**Strategy disclosure + per-round constraints**](#strategy-disclosure--per-round-constraints--the-strategy-of-addition-or-protection) (data flow A–G, **Visual flow** mock-ups, the *protected* / *contested* lists). |
 | **adding a new endpoint** | [API design constraints](#api-design-constraints) (in *Server: store + endpoints*) → the *Idempotency-Key pattern* in [Architecture & idempotency](#e-idempotency-end-to-end--the-contract). |
 | **something is broken in production at 11pm** | [Failure modes & ops runbook](#failure-modes--ops-runbook) — F1–F16 with the runbook-on-a-card. |
 | **what's planned, in what order, by when** | [Master plan](#master-plan--12-weeks-11-milestones-1-release) — 12 weeks, 11 milestones, 1 release. |
@@ -59,7 +59,7 @@ The presenter deck is the proof of a single thesis: **the room converges on a le
    - `fault` = the priority with the **greatest variance** across functions (skipping the lead) — the real divide
    - `blind` = the least-funded priority — what the room collectively overlooked
 4. **Surprise** — `surpriseToken(fns, bias)` flags a function that put ≥25% of its money on an *off-type* (low-bias) priority. `undefined` when nobody broke type — that's an honest "no surprise" outcome, not a failure.
-5. **Narrate** — Llama 3.3 turns the numbers into an executive brief; fal renders a 16:9 visualisation that *exponentially* weights floorplate/materials/focal moments by the % mix.
+5. **Narrate** — RapidI turns the numbers into an executive brief; fal renders a 16:9 visualisation that *exponentially* weights floorplate/materials/focal moments by the % mix.
 6. **Celebrate** — phones export a 1200×630 LinkedIn frame with `#WeFoundCommonGround` + their function lens.
 
 ### What's in the app
@@ -67,13 +67,13 @@ The presenter deck is the proof of a single thesis: **the room converges on a le
 - **One session only.** `SESSION = 'LIVE'` in `src/lib/server/store.ts` and re-exported from `src/lib/state/session.svelte.ts`. Every `+server.ts` ignores the route's `[code]` parameter. No multi-room routing — the `[code]` segments are vestigial.
 - **One room, 7 function tables, 5 rounds.** Physical boards + per-table QRs (printed from `/present/LIVE/qrs`) → `/play/LIVE/{tableId}` → `FunctionBoard` (cumulative place/remove $10M tokens across 7 priorities).
 - **5 rounds** (`ROUND_COUNT=5`). Capture seal on **R2 · R3 · R5**; R3 is **remove-only** (`move: 'remove'`); R1 (`mode: 'wait'`) and R4 (`mode: 'hold'`) save without sealing. See `SCENARIOS` in `src/lib/game/config.ts`.
-- **Presenter deck = 5 screens**, in this exact order (from `SCREENS[]` in `src/routes/present/[code]/+page.svelte`):
-  1. **Combined Board Heatmap** — `RoomGlance` (strip + `PortraitMatrix`)
-  2. **Room Insights & Alignment** — `RoomInsights` (ring · lead/fault/blind · journey)
-  3. **Priority Constellation** — `PriorityConstellation` (room tokens stacked by function)
-  4. **Trade-offs & Table Personas** — `WinnersLosers`
-  5. **Future Workspace & AI Brief** — `FutureWorkspace` = `FutureBrief` + `FutureRoomGen` + `FutureTableGrid`
-  - Plus a presenter-only **extra analysis modal** (toggled with `E` / `e`) that shows `ReachIntensityQuadrant` and `Headlines` — explicitly **not** in the 5-screen counter (`TOTAL = 5`).
+- **Presenter deck = 5 screens**, in this exact order (from `DECK_SCREENS` in `src/lib/game/brief.ts`; `present.svelte.ts` derives `TOTAL = DECK_SCREENS.length`):
+  1. **Seat Matrix** — `RoomGlance` (strip + `PortraitMatrix`)
+  2. **Priority Breakdown** — `PriorityBreakdown`
+  3. **How the room evolved** — `RoundInsights`
+  4. **What each function did** — `PrioritiesSummary`
+  5. **Per function** — `FunctionPriorities`
+  - Concept renders and the architectural set live on their own routes: `/present/LIVE/look` and `/present/LIVE/design`. `FutureWorkspace` (the ZyetaI design studio) is reachable from there, not from the 5-screen counter.
 - **7 personas, one table per persona** (`PERSONAS[]` in `src/lib/game/config.ts`; `tableId` 1–7 maps to seat index `tableId - 1` via `tableSeatIndex`). Current source order (this is the binding truth; README is stale):
   1. **Real Estate** (`#E0A458`, lens *"Optimise portfolio & reduce footprint"*)
   2. **HR** (`#E0665A`, *"Optimise people & employee engagement"*)
@@ -163,7 +163,7 @@ Update `src/app.html` if you want a different rel (`<link rel="icon" type="image
                 /api/room/*  /api/ai/*  (SvelteKit +server.ts)
                           │
                           ▼
-   live.ts  (withLiveRoom / readLiveRoom — D1 sync-before / mutate / persist-after)
+   live.ts  (withLiveRoom: per-isolate mutex → sync → mutate → CAS persist; 409 after 3 tries)
                           │
                           ▼
    store.ts  (singleton Store, in-process; D1 is authoritative)
@@ -171,7 +171,7 @@ Update `src/app.html` if you want a different rel (`<link rel="icon" type="image
                           ▼
    game/rules/*  (phase FSM, board rules — mutate room in place)
    game/scoring.ts (aggregate, CGI, verdicts, insights, winners/losers)
-   game/brief.ts   (mix, %-weighted fal prompt, llama facts, spatial program)
+   game/brief.ts   (mix, %-weighted fal prompt, rapidi facts, spatial program)
 ```
 
 - The Worker holds an in-process `Store` singleton; D1 is the cross-colo authority. `withLiveRoom(fn)` = `store.sync(db)` → `fn()` → `store.persist(db)`. Last-write-wins on the JSON blob (`INSERT … ON CONFLICT(id) DO UPDATE`).
@@ -186,18 +186,19 @@ Update `src/app.html` if you want a different rel (`<link rel="icon" type="image
 | Path | Purpose |
 |---|---|
 | `src/lib/game/` | Pure domain (`$lib/game` barrel: `types`, `config`, `scoring`, `brief`, `money`, `rules`). `index.ts` re-exports from each. `types.ts` defines `PRIORITIES`, `TableState`, `Aggregate`, `RoundSnapshot`, `RoomState`, `Persona`, `Scenario`, `Phase`, `RoundMove`, `RoundMode`. `config.ts` holds `PERSONAS`, `PRIORITY_COLORS`, `ROUND_COUNT=5`, `EVOLUTION_ROUNDS = CAPTURE_ROUNDS = [2,3,5]`, `DEFAULT_TABLE_COUNT=7`, `DEFAULT_ROOM_BOUNTY_TOKENS=700`, `DEFAULT_TABLE_BOUNTY_TOKENS=100`, `CHIP_DENOMS`, `CHIP_VALUE=10`, `SPACE`, `DESIGN_LONG`, `DESIGN_SHORT`, `SCENARIOS`. `rules/` is `phase.ts` (FSM) + `board.ts` (mutations). |
-| `src/lib/state/` | Global runes (`$lib/state` barrel). `session.svelte.ts` (LIVE room + poll + mutations + AI actions; `SESSION` export), `play.svelte.ts` (persisted `tableId` under `cg-play-LIVE`), `present.svelte.ts` (deck index, `TOTAL = 5`), `host.svelte.ts` (form drafts, `syncOnce` / `resync`). |
-| `src/lib/server/` | Worker-only. `store.ts` (singleton Store; exports `SESSION = 'LIVE'`, `store`, `currentScenario`), `room-store.ts` (D1 row `LIVE` JSON blob, `ensureSchema` is per-isolate), `live.ts` (request-scoped D1 binding, `withLiveRoom`, `readLiveRoom`), `ai/llama.ts` + `ai/fal.ts` (thin wrappers over `ai/prompts/`), `ai/prompts/` (the brand voice, renderers, and registry — see [AI integration]). |
-| `src/lib/components/phone/` | Mobile gameplay (barrel `phone/index.ts`): `FunctionBoard.svelte` (cumulative add/remove, cap, chip pile + row flash), `MobileHeader`, `MobileSealed`, `MobileFinale`, `MobileRender` (selfie + LinkedIn frame), `ConvictionBars`. |
-| `src/lib/actions/` | Svelte 5 `use:*` attachments: `ripple.ts` (Material-style click ripple on every button), `confetti.ts` (chip scatter on `MobileSealed` mount), `countUp.ts` (280ms `$` animation for every formatted amount), **`chipDrop.ts`** (the chip flying from button to pile — single biggest visible win on the phone), **`longPress.ts`** (rapid-fire after a 320ms hold), **`audio.ts`** (1ms audio tick on every chip tap), **`haptic.ts`** (the `[8]` add / `[5, 30, 5]` remove pattern). New directory; total ~250 lines across 7 files. |
-| `src/lib/components/present/` | Analysis deck (barrel `present/index.ts`): `RoomGlance`, `RoomInsights`, `WinnersLosers`, `FutureWorkspace` + co-located `future.svelte.ts` (UI-only state), `FutureBrief`, `FutureRoomGen`, `FutureTableGrid`, `StageNav`. The barrel exports `futureUi` from `future.svelte.ts`. |
-| `src/lib/components/analytics/` | Reusable visualisations (barrel `analytics/index.ts`): `PortraitMatrix`, `PriorityConstellation`, `ReachIntensityQuadrant`, `Headlines`. |
-| `src/lib/components/` (root) | Primitives: `Button` (renders `<a>` when `href` given, else `<button>`), `Chip` (SVG poker chip), `Modal` (native `<dialog>` w/ `$bindable` `open`), `QrCode` (mounted async, `qrcode.toDataURL` with green-on-cream), `Icon` (inline SVG, 5 glyphs: `search` · `hourglass` · `building` · `broadcast` · `camera`), `BoardSheet` (printable SVG with QR), `RoundQuestion`, `ExpandImage`, `ZyetaI` (attribution). |
-| `src/lib/client/` | Browser-only helpers (no Svelte). `linkedin-frame.ts` (1200×630 canvas composite, `linkedInShareText`, `openLinkedInShare`, `downloadLinkedInFrame`), `present-labels.ts` (advance/retreat labels). **`index.ts` is a deprecated re-export of `$lib/state` — do not add new consumers.** |
+| `src/lib/state/` | Global runes (`$lib/state` barrel). `session.svelte.ts` (LIVE room + poll + mutations + AI actions; `SESSION` export), `present.svelte.ts` (deck index, `TOTAL = DECK_SCREENS.length`), `host.svelte.ts` (form drafts, `syncOnce` / `resync`). (`play.svelte.ts` was deleted — table comes from the URL.) |
+| `src/lib/server/` | Worker-only. `store.ts` (singleton Store; exports `SESSION = 'LIVE'`, `store`, `currentScenario`), `room-store.ts` (D1 row `LIVE` JSON blob, `ensureSchema` is per-isolate), `live.ts` (request-scoped D1 binding, `withLiveRoom`, `readLiveRoom`), `ai/rapidi.ts` + `ai/fal.ts` (thin wrappers over `ai/prompts/`), `ai/prompts/` (the brand voice, renderers, and registry — see [AI integration]). |
+| `src/lib/components/phone/` | Mobile gameplay (barrel `phone/index.ts`): `FunctionBoard.svelte` (cumulative add/remove, cap, chip pile + row flash), `MobileHeader`, `MobileBoardForm`, `MobileWaitStage`, `MobileSealed`, `MobileFinale`, `MobileRender` (selfie + LinkedIn frame), `ConvictionBars`. |
+| `src/lib/actions/` | Svelte 5 `use:*` attachments. **Shipped:** `confetti.ts` (chip scatter on seal), `count-up.ts` (animated `$` amounts). The `ripple` / `chipDrop` / `longPress` / `audio` / `haptic` actions described later in this doc are **proposed, not built**. |
+| `src/lib/components/present/` | Analysis deck (barrel `present/index.ts`): `RoomGlance`, `PriorityBreakdown`, `RoundInsights`, `PrioritiesSummary`, `FunctionPriorities`, `StageNav`, plus the concept/design surfaces `FutureWorkspace`, `WorkspaceDesignStudio`, `ArchitecturalBriefReport`, `ArchitecturePresentation`, `ConceptLayoutSheet`, `FunctionProfileSheet`, `ZyetaIGenerating`. Co-located `future.svelte.ts` (UI-only state) is exported as `futureUi`. |
+| `src/lib/components/host/` | Host console panels: `HostGameConfig.svelte` (persona/scenario editor), `HostPhotos.svelte` (generated-image gallery). |
+| `src/lib/components/analytics/` | Reusable visualisations (barrel `analytics/index.ts`): `PortraitMatrix` only. `PriorityConstellation`, `ReachIntensityQuadrant`, and `Headlines` were deleted — later sections of this doc that reference them are stale plan text. |
+| `src/lib/components/` (root) | Primitives: `Button` (renders `<a>` when `href` given, else `<button>`), `Chip` (SVG poker chip), `Modal` (native `<dialog>` w/ `$bindable` `open`), `QrCode` (mounted async, `qrcode.toDataURL` with green-on-cream), `Icon` (inline SVG), `BoardSheet` (printable SVG with QR), `ExpandImage`, `ZyetaI` (attribution). |
+| `src/lib/client/` | Browser-only helpers (no Svelte). `linkedin-frame.ts` (1200×630 canvas composite, `linkedInShareText`, `openLinkedInShare`, `downloadLinkedInFrame`), `present-labels.ts` (advance/retreat labels). (The deprecated `index.ts` re-export of `$lib/state` has been removed — import from `$lib/state`.) |
 | `src/lib/index.ts` | Thin barrel: re-exports `game/types.js`, `game/config.js`, `game/scoring.js`. **Not** a general `$lib` entry. |
-| `src/lib/assets/` | `favicon.svg` (currently the **default Svelte logo** — replace per [Branding] above). |
+| `src/lib/assets/` | `favicon.svg` — the `CG` monogram brand mark (the default Svelte logo has been replaced). |
 | `src/routes/` | Pages. `+layout.svelte` calls `session.boot()`; no `+page.ts`/`+page.server.ts` exist. |
-| `src/routes/api/` | HTTP surface. `room/[code]/...` and `ai/{brief,finale,table-render}` — `[code]` is decorative. |
+| `src/routes/api/` | HTTP surface. `room/[code]/...` and `ai/{brief,brief-edit,compose-brief,room-concept,table-render,workspace-design}` — `[code]` is decorative. (`ai/finale` was split into `ai/room-concept` + `ai/compose-brief`.) |
 
 ## Routes
 
@@ -236,7 +237,7 @@ The AI surface is small but does the heavy lifting at the finale. **All prompt t
 
 | File | What it does | Model | Prompt |
 |---|---|---|---|
-| `src/lib/server/ai/llama.ts` (calls `PROMPTS.brief`) → `src/routes/api/ai/brief/+server.ts`, `src/routes/api/ai/finale/+server.ts` | Executive brief narrative. System + dynamic user prompt with priority mix, lead/fault/blind, surprise, journey, verdict. | Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (3.1-8b was deprecated 2026-05-30). | `prompts/brief.system.json` + `prompts/brief.user.ts` renderer. |
+| `src/lib/server/ai/rapidi.ts` (calls `PROMPTS.brief`) → `src/routes/api/ai/brief/+server.ts`, `src/routes/api/ai/finale/+server.ts` | Executive brief narrative. System + dynamic user prompt with priority mix, lead/fault/blind, surprise, journey, verdict. **Proposed expansion (Phase 8)**: also appends 2 lines of strategy context — `Strategy: {roomStrategy}. Protected: {names}. Contested: {name}.` — driven by `strategySignature(room)` from [Strategy disclosure]. The renderer projects `protected` (per-seat array) into a deduped priority-name list. | Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (3.1-8b (deprecated) was deprecated 2026-05-30). | `prompts/brief.system.json` + `prompts/brief.user.ts` renderer. |
 | `src/lib/server/ai/fal.ts` (calls `PROMPTS.roomRender`) → `src/routes/api/ai/finale/+server.ts` | Room render — the visual floorplan. Prompt is %-weighted on `priorityMix(matrix)`; "warm materials · cinematic natural light · 16:9 · no text/logos". | `fal-ai/nano-banana-2`, `num_images: 1`, `aspect_ratio: '16:9'`, `resolution: '1K'`, `output_format: 'webp'`. | `prompts/image.finale.json` + `prompts/image.finale.ts` renderer. |
 | `src/lib/server/ai/fal.ts` (calls `PROMPTS.tableRender`) → `src/routes/api/ai/table-render/+server.ts` | Per-function render — what one function's bets look like as a workplace. | Same as above. | `prompts/image.table.json` + `prompts/image.table.ts` renderer. |
 
@@ -244,12 +245,13 @@ The AI surface is small but does the heavy lifting at the finale. **All prompt t
 
 **Failure modes that fall back gracefully:**
 
-- Llama `null` → `buildEnhancedBrief` (numbers-only skeleton).
-- Llama returns `<= 40 chars` → treated as `null`, fall back.
-- Llama throws → caught, `console.error`, fall back.
+-  RapidI `null` → `buildEnhancedBrief` (numbers-only skeleton).
+-  RapidI returns `<= 40 chars` → treated as `null`, fall back.
+-  RapidI throws → caught, `console.error`, fall back.
 - fal returns `null` url → `{ url: null, error: 'no_key' | 'failed' }` → UI shows the typed message in `futureUi.err` or per-table `tableErr`.
 - Missing `FAL_API_KEY` / `FAL_KEY` → `generateImage` returns `no_key`; brief still works.
-- No `AI` binding → Llama `null`; brief falls back.
+- No `AI` binding →  RapidI `null`; brief falls back.
+- **`room.strategy` undefined (R1, R2, pre-reveal)** → strategy signature isn't computed until ≥1 capture round. The brief user-message renderer must handle this: omit the strategy lines (don't emit empty `Strategy: .`) and continue with the existing mix/lead/fault/blind/surprise/journey/verdict facts. **The brief never blocks on strategy being present.**
 
 ### Prompts as data, not code (the bigger fix)
 
@@ -257,11 +259,11 @@ Right now the prompt text lives in three different shapes:
 
 | Place | Form | Who can edit it? |
 |---|---|---|
-| `src/lib/server/ai/llama.ts:22` | the `SYSTEM` template literal | only TS-reading engineers |
+| `src/lib/server/ai/rapidi.ts:22` | the `SYSTEM` template literal | only TS-reading engineers |
 | `src/lib/game/brief.ts:51` `finalePrompt(matrix)` | template literal with `%`-interpolation | only TS-reading engineers |
 | `src/lib/game/brief.ts:81` `tableFunctionPrompt(name, bets)` | template literal with `%`-interpolation | only TS-reading engineers |
-| `src/lib/game/brief.ts:139` `briefFactsForLlm(agg)` | the user-message text for Llama | only TS-reading engineers |
-| `LLAMA_MODEL` in `llama.ts:9` | string const | only TS-reading engineers |
+| `src/lib/game/brief.ts:139` `briefFactsForRapidi(agg)` | the user-message text for  RapidI | only TS-reading engineers |
+| `LLAMA_MODEL` in `rapidi.ts:9` | string const | only TS-reading engineers |
 
 That's a smell. **Prompts are brand, not behaviour** — they belong next to each other in a `prompts/` folder, in a form a non-engineer (a brand writer, a domain expert, a designer) can read and edit without opening a `.ts` file. They also need a place to live so a future A/B test or a `/admin/prompts` UI can mutate them at runtime.
 
@@ -372,7 +374,7 @@ export interface ImagePrompt<M, I> {
 }
 ```
 
-(The full `src/lib/server/ai/prompts/registry.ts`, `brief.user.ts`, `image.finale.ts`, `image.table.ts`, and the post-refactor `llama.ts` / `fal.ts` sketches are in the next subsection below — the JSON is the design contract; the TS is the wiring.)
+(The full `src/lib/server/ai/prompts/registry.ts`, `brief.user.ts`, `image.finale.ts`, `image.table.ts`, and the post-refactor `rapidi.ts` / `fal.ts` sketches are in the next subsection below — the JSON is the design contract; the TS is the wiring.)
 
 ### Wiring & shrunken plumbing (the actual refactor)
 
@@ -438,7 +440,7 @@ export function promptHash(p: PromptMeta, system: string): string {
 }
 ```
 
-`src/lib/server/ai/prompts/brief.user.ts` — the renderer; the JSON file is the slot/header text only. **Delete `briefFactsForLlm` and `finalePrompt`/`tableFunctionPrompt` from `src/lib/game/brief.ts` once this is in** — those move out of `game/` into `server/ai/prompts/` because they cross the AI boundary, not the domain boundary.
+`src/lib/server/ai/prompts/brief.user.ts` — the renderer; the JSON file is the slot/header text only. **Delete `briefFactsForRapidi` and `finalePrompt`/`tableFunctionPrompt` from `src/lib/game/brief.ts` once this is in** — those move out of `game/` into `server/ai/prompts/` because they cross the AI boundary, not the domain boundary.
 
 ```ts
 import { PERSONAS, PRIORITIES } from '$lib/game/config';
@@ -565,7 +567,7 @@ export function renderFinalePrompt(matrix: number[]): string {
 
 `src/lib/server/ai/prompts/image.table.ts` is the same shape with `functionName` + `bets`. **The "two-token template" is a 20-line `String#replace` — no `eval`, no `new Function`.** The linter (see lint script below) refuses anything that isn't a key from the section keys.
 
-`src/lib/server/ai/llama.ts` collapses to:
+`src/lib/server/ai/rapidi.ts` collapses to:
 
 ```ts
 import { PROMPTS, type BriefFacts } from './prompts';
@@ -574,7 +576,7 @@ export type AiBinding = {
                         temperature?: number; max_tokens?: number; top_p?: number })
     => Promise<{ response?: string } | string>;
 };
-export async function generateBriefWithLlama(
+export async function generateBriefWithRapidi(
   ai: AiBinding | undefined,
   facts: BriefFacts | null
 ): Promise<string | null> {
@@ -590,7 +592,7 @@ export async function generateBriefWithLlama(
     const text = typeof out === 'string' ? out : (out?.response ?? '');
     return text.trim().length > 40 ? text.trim() : null;
   } catch (err) {
-    console.error('[llama] brief failed:', err instanceof Error ? err.message : err);
+    console.error('[rapidi] brief failed:', err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -624,11 +626,11 @@ export async function generateImage(apiKey: string | undefined, prompt: string):
 import { promptHash, PROMPTS } from '$lib/server/ai/prompts';
 // …
 const facts = buildBriefFacts(room);
-const llama = await generateBriefWithLlama(ai, facts);
-const brief = llama ?? factsBrief;
+const rapidi = await generateBriefWithRapidi(ai, facts);
+const brief = rapidi ?? factsBrief;
 const prompt = PROMPTS.roomRender.render(room.aggregate.matrix);
 // … persist, return json({
-//     url, imageError, prompt, brief, briefSource, llama,
+//     url, imageError, prompt, brief, briefSource, rapidi,
 //     promptHash: promptHash(PROMPTS.brief.meta, PROMPTS.brief.system),
 //     room: store.snapshot()
 //   })
@@ -729,7 +731,7 @@ for (const [name, p] of Object.entries({ finale, table })) {
 }
 // 4. Word count cap.
 if (briefSystem.sections.role.length + briefSystem.sections.voice.length > 1200) {
-  issues.push('brief.system role+voice over 1200 chars — risk of Llama ignoring the tail');
+  issues.push('brief.system role+voice over 1200 chars — risk of  RapidI ignoring the tail');
 }
 
 if (issues.length) {
@@ -759,8 +761,8 @@ Wire it up in `package.json`:
 
 | Endpoint | Body | Response | Side effects |
 |---|---|---|---|
-| `POST /api/ai/brief` | `{ code }` | `{ brief, briefSource: 'llama' \| 'numbers', llama: boolean, room }` | persists `enhancedBrief` / `briefSource` |
-| `POST /api/ai/finale` | `{ code }` | `{ url \| null, imageError?, prompt, brief, briefSource, llama, room }` | persists brief + `finaleImageUrl` |
+| `POST /api/ai/brief` | `{ code }` | `{ brief, briefSource: 'rapidi' \| 'numbers', rapidi: boolean, room }` | persists `enhancedBrief` / `briefSource` |
+| `POST /api/ai/finale` | `{ code }` | `{ url \| null, imageError?, prompt, brief, briefSource, rapidi, room }` | persists brief + `finaleImageUrl` |
 | `POST /api/ai/table-render` | `{ tableId: 1..7 }` | `{ url \| null, imageError?, prompt, tableId, functionName, room }` | persists `tables[tableId].imageUrl` on success |
 
 All three return 400 on `aggregate.totalCoins <= 0` (finale/brief) or zero stake on the table (table-render). All three read from `platform?.env` (Workers bindings) and `$env/dynamic/private` (build-time/secrets). The `code` field in every body is the LIVE room constant — the server ignores it.
@@ -2178,11 +2180,11 @@ These are Phase 7 additions, not the refactored drop-in. The drop-in is the poli
 
 ## State management
 
-- **`$lib/state/session`** — the only sync surface. Exposes: `room`, `connected`, `busy`, `error`, `code`, `phase`, `tables`, `analysisOpen`, `round`, `updatedAt`, plus actions `boot`, `refresh`, `ensure`, `setConfig`, `setTables`, `boardDelta`, `clearCell`, `submitTable` (default `seal: true`), `lockTable`/`unlockTable`, `advance`/`retreat`, `generateBrief`, `generateFinale`, `generateTableRender`, `updateBrief` (local-only, never POSTs).
+- **`$lib/state/session`** — the only sync surface. Exposes: `room`, `connected`, `busy`, `error`, `code`, `phase`, `tables`, `analysisOpen`, `round`, `updatedAt`, plus actions `boot`, `refresh`, `ensure`, `setConfig`, `setTables`, `boardDelta`, `clearCell`, `submitTable` (default `seal: true`), `lockTable`/`unlockTable`, `joinTable`/`tablePhysicallyDone`, `advance`/`retreat`, `generateBrief`, `generateRoomConcept`, `generateTableRender`, `generateWorkspaceDesignSheet`, `generateZyetaIPackage`, `selectRoomConcept`/`removeRoomConcept`, `updateBrief` (**persists via `POST /api/ai/brief-edit`**).
   - All mutating actions `POST` to the API, then either `applyRoom(res.room)` (whole-snapshot reference swap) or `await poll()`. `advance` and `retreat` schedule a `setTimeout(poll, 200)` to settle multi-isolate cache after the phase change.
   - `boardDelta` is a **silent no-op** on bad inputs (still 200, with the unchanged room).
-- **`$lib/state/play`** — `tableId` only, persisted under `cg-play-LIVE` (JSON `{ tableId }`). Loaded at module top level (browser-only — guarded with `typeof window`).
-- **`$lib/state/present`** — `screen` (1..5) with `next`/`prev`/`setScreen`/`enterAnalysis`. Module constant `TOTAL = 5`. `enterAnalysis()` resets `screen = 1`.
+- **`$lib/state/play`** — **deleted.** The phone page derives the table from `page.params.table`; nothing read `play.tableId`. The `cg-play-LIVE` localStorage key is gone with it.
+- **`$lib/state/present`** — `screen` (1..N) with `next`/`prev`/`setScreen`/`enterAnalysis`. `TOTAL = DECK_SCREENS.length` (single-sourced from `game/brief.ts`). `enterAnalysis()` keeps the current slide when in range.
 - **`$lib/state/host`** — `tableCount` + `roomBountyTokens` drafts. One-shot pull via `syncOnce(room)` on mount; `resync(room)` after reset (clears the `synced` flag and re-pulls). Do not re-sync in `$effect`.
 - **Co-located UI state**: `src/lib/components/present/future.svelte.ts` lives next to `FutureWorkspace.svelte` (presenter-modal progress/errors/brief-open). Re-exported from `present/index.ts` as `futureUi`.
 - **Replace references, don't mutate.** All state holders use `$state.raw<RoomState | null>` (session) or `$state(...)` (per-screen) with reference-replace on updates. Component local state is local `$state` only; nothing else should mutate `RoomState`.
@@ -2238,14 +2240,13 @@ These are Phase 7 additions, not the refactored drop-in. The drop-in is the poli
                                    · Analysis (open extra modal) · Open deck
    open === true               →  <StageNav> + #key present.screen pane:
                                    1: RoomGlance
-                                   2: RoomInsights
-                                   3: PriorityConstellation
-                                   4: WinnersLosers
-                                   5: FutureWorkspace
-   extra modal (showExtra)     →  ReachIntensityQuadrant + Headlines toggle
+                                   2: PriorityBreakdown
+                                   3: RoundInsights
+                                   4: PrioritiesSummary
+                                   5: FunctionPriorities
 ```
 
-- Keyboard: `←`/`B` back, `→`/`Space`/`Enter`/`N` forward, `A` advance, `B` (when in open mode) back, `E`/`e` toggle extra modal, `Esc` closes extra modal. `A` is ignored inside `<input>`/`<textarea>`.
+- Keyboard: `←`/`B` back, `→`/`Space`/`Enter`/`N` forward, `A` advance. `A` is ignored inside `<input>`/`<textarea>`. (The old `E` extra-analysis modal has been removed.)
 - `advanceRound` and `retreatRound` both call `present.enterAnalysis()` (reset to screen 1) and `await session.refresh()` after the mutation. `retreatRound` shows a `confirm(...)` before proceeding.
 - Header bar shows the 5 round rungs plus a `reveal`/`finale` chip on the right; `lockedCount/totalTables` chip appears during `phase === 'round'` and `lockedCount > 0`.
 
@@ -2449,7 +2450,7 @@ Total: about a day's work. The host page alone (steps 1 + 4) is a meaningful imp
 
 ## Architecture & idempotency (the runtime contract)
 
-The runtime is a single Cloudflare Worker holding an in-process `Store` singleton that mirrors a D1 row. The client polls `/api/room/${SESSION}/state` every 500 ms and the Server-Sent Events channel is *not* wired — it would shave the latency and remove the redundant network traffic. The HTTP verbs are mixed (`GET` is naturally idempotent; `POST` is not) and the AI endpoints are **expensive and non-idempotent** — every press of "Regen brief" re-pays Llama + fal. This section is the design spec for making the system **idempotent end-to-end, observably safe under concurrent isolates, and idiomatic Svelte 5** at every layer.
+The runtime is a single Cloudflare Worker holding an in-process `Store` singleton that mirrors a D1 row. The client polls `/api/room/${SESSION}/state` every 500 ms and the Server-Sent Events channel is *not* wired — it would shave the latency and remove the redundant network traffic. The HTTP verbs are mixed (`GET` is naturally idempotent; `POST` is not) and the AI endpoints are **expensive and non-idempotent** — every press of "Regen brief" re-pays  RapidI + fal. This section is the design spec for making the system **idempotent end-to-end, observably safe under concurrent isolates, and idiomatic Svelte 5** at every layer.
 
 ### A. The race in `withLiveRoom` is real, not theoretical
 
@@ -2628,7 +2629,7 @@ The codebase already uses runes (`$state`, `$state.raw`, `$derived`, `$derived.b
 
 8. **`AbortController` everywhere a fetch is held open**. Currently only `ExpandImage.svelte:30` does a single `fetch`; the new `session.tick()` (B) uses an `AbortSignal` for cancellation on unmount and on idle-tab.
 
-9. **Discriminated `Result<T, E>` from the server** for AI endpoints. The current shape is `{ url, imageError, prompt, brief, briefSource, llama, room }` — `imageError` is a string union. Replace with a tagged union: `{ kind: 'ok'; url; brief; room } | { kind: 'no_key' } | { kind: 'failed'; error }`. The client renders different UI per kind. **Svelte 5 + TypeScript are made for this.**
+9. **Discriminated `Result<T, E>` from the server** for AI endpoints. The current shape is `{ url, imageError, prompt, brief, briefSource, rapidi, room }` — `imageError` is a string union. Replace with a tagged union: `{ kind: 'ok'; url; brief; room } | { kind: 'no_key' } | { kind: 'failed'; error }`. The client renders different UI per kind. **Svelte 5 + TypeScript are made for this.**
 
 10. **No `bind:clientWidth` / `bind:clientHeight` / `bind:offsetWidth`**. The `RoomInsights.svelte` ring (`r=42, dash = (ring/100) * 2π*42`) is hard-coded at `viewBox="0 0 100 100"`. If we ever want to scale to container width, we need `bind:this={svg}` + `bind:clientWidth` + a `viewBox` recalculation. Or use `preserveAspectRatio="xMidYMid meet"` and let CSS scale the SVG. **Currently the ring is at a fixed 100×100 — fine, but the future-brief room render (`FutureRoomGen.svelte:34`) is a 16:9 box that should fill its container, and right now it has fixed `aspect-ratio: 16/9` + a max-width. Consider `viewBox="0 0 1600 900"` and CSS `width: 100%; height: auto;` — which is what the SVG `<svg viewBox>` pattern was designed for.**
 
@@ -2714,13 +2715,13 @@ If you do **three things**, do **(B) + (E.1) + (D SSE)** — the polling disappe
 
 If you do **all four**, add **(A.5 drop the singleton)** — every request reads, mutates a local snapshot, commits via conditional UPDATE. The `Store` class becomes a namespace of pure functions. The race window is closed. **One additional day.** Now the system is correct under concurrent isolates *and* idempotent under retries.
 
-If you do **all five**, add **(A.4 content-addressable AI cache)** — `brief` and `finale` re-generations are free within a prompt version. **Half a day.** Llama + fal costs drop ~80% in steady state.
+If you do **all five**, add **(A.4 content-addressable AI cache)** — `brief` and `finale` re-generations are free within a prompt version. **Half a day.**  RapidI + fal costs drop ~80% in steady state.
 
 ### G. New gotchas (architecture & idempotency)
 
-A1. **The `Store` singleton is not safe under concurrent isolates.** Last-write-wins on D1 is the current model; the singleton's in-memory `room` is stale on a different isolate. Fix per A.5 — drop the singleton, make every request read-then-mutate-then-conditional-UPDATE.
-A2. **All `POST /api/room/*` and `POST /api/ai/*` are NOT idempotent today.** The user said "idempotent" — they're not. Fix per E.1: add `Idempotency-Key` header + D1 table. **Do this before adding any other endpoint.**
-A3. **No `ETag` on `/api/room/${SESSION}/state`.** The client re-parses the entire `RoomState` every 500 ms even when nothing changed. Add `ETag: W/"${updatedAt}"` to the response and `If-None-Match` to the request — server returns `304 Not Modified`. **Eliminates 99% of the polling bandwidth** when the room is idle.
+A1. **~~The `Store` singleton is not safe under concurrent isolates.~~ FIXED.** `withLiveRoom` now serializes mutations per isolate (a promise chain) and commits via compare-and-swap on `updated_at` (`store.persistIfUnchanged` → `saveRoomIfUnchanged`). Losing the CAS re-syncs and re-runs, up to 3 attempts, then 409. **`fn` passed to `withLiveRoom` must therefore be pure with respect to the room — never put a side effect (fal call, email) inside it.**
+A2. **~~All `POST /api/room/*` and `POST /api/ai/*` are NOT idempotent today.~~ FIXED.** Every mutating POST is wrapped in `idempotentJson`; keys are validated `^[a-zA-Z0-9_-]{8,128}$`, cached in the D1 `idempotency` table for 24h, and replayed with an `idempotency-key-replay: true` header. The client sends a fresh `crypto.randomUUID()` per call and reuses the *same* key on a network-failure retry. **Any new mutating endpoint must use `idempotentJson`.**
+A3. **~~No `ETag` on `/api/room/${SESSION}/state`.~~ FIXED.** The state route returns `ETag: W/"<updatedAt>"` and answers `304` to a matching `If-None-Match`. `store.bump()` is monotonic (`max(Date.now(), prev + 1)`) so two mutations in the same millisecond can't share an ETag.
 A4. **No Server-Sent Events channel.** The client polls every 500 ms. Add `GET /api/room/${SESSION}/stream` (text/event-stream) and the polling disappears. See D. **Single biggest performance win.**
 A5. **`session.svelte.ts` is not a Svelte 5 module — it's a Svelte 4 store + runes glue.** `let timer` + `let booted` + `let pollChain` + `setInterval` are all hand-rolled. Replace with a `SessionState` class with `$state` fields, an `AbortController` for cancellation, and a discriminated `error` union. See B.
 A6. **The polling fetch has no `AbortController`.** When the route unmounts (presenter → host → play), the in-flight fetch continues. Add `signal: this.abort.signal` and an `AbortError` short-circuit in the catch. See B.
@@ -2739,7 +2740,7 @@ A18. **The `Date.now()` in `room.updatedAt` is set inside `recompute`** — but 
 
 
 - **`Store`** is a singleton at `src/lib/server/store.ts`. Methods take a leading `_code: string` parameter that's always ignored (room is always `LIVE`). Public surface: `sync`, `persist`, `ensure`, `reset`, `snapshot`, `get`, `setTables` (table count is hard-fixed to `N_SEATS` — argument is `void`-discarded), `setConfig`, `advance`, `retreat`, `boardDelta`, `boardSet`, `clearCell`, `submitTable`, `saveTableBoard`, `lockTable`, `unlockTable`, `unlockSeat`, `setFinaleImage`, `setTableImage`, `setEnhancedBrief`. Plus the free `currentScenario(round)`.
-- **`recompute(room)`** is the central integrity step called after every mutation. It rebuilds `aggregate`, per-table `matrix`/`reach`/`commonGround`, `lockedThisRound`/`expectedLocks`, `tableBountyTokens`, `analysisOpen`, the numbers brief (only if `briefSource !== 'llama'` — never overwrite a Llama brief), and `upsertHistory`. `setFinaleImage`/`setTableImage`/`setEnhancedBrief` skip the recompute and just bump `updatedAt`.
+- **`recompute(room)`** is the central integrity step called after every mutation. It rebuilds `aggregate`, per-table `matrix`/`reach`/`commonGround`, `lockedThisRound`/`expectedLocks`, `tableBountyTokens`, `analysisOpen`, the numbers brief (only if `briefSource !== 'rapidi'` — never overwrite a  RapidI brief), and `upsertHistory`. `setFinaleImage`/`setTableImage`/`setEnhancedBrief` skip the recompute and just bump `updatedAt`.
 - **`setTables`** is a vestigial endpoint — the count parameter is discarded (`void count;`); it always normalises to `N_SEATS` = 7.
 - **`setConfig`** accepts only `analysisForced` and `roomBountyTokens` (clamped 1..9999). Despite the older README/CLAUDE mention of `analysisUnlocks`, that field is **not** in the store or the endpoint.
 - **Submit contract** (`applySubmitTable` / `submitTable`):
@@ -2752,9 +2753,9 @@ A18. **The `Date.now()` in `room.updatedAt` is set inside `recompute`** — but 
   - `lobby → round 0` (R1) → R2 → R3 → R4 → R5 → `reveal` → `finale`. `lobby` is no-op for retreat.
   - `applyAdvance` upserts a `RoundSnapshot` for the **leaving** round on every round→round transition (and re-opens all boards — `reopenBoards` clears `lockedThisRound`/`submittedSeats` and `analysisForced`). `applyRetreat` prunes `room.history` to rounds ≤ `room.round`.
   - Boards are never wiped; tokens carry across rounds (boards are cumulative).
-- **Endpoint contract** (every handler under `src/routes/api/room/[code]/`):
+- **Endpoint contract** (every handler under `src/routes/api/room/[code]/`). **Every mutating POST is wrapped in `idempotentJson` (`src/lib/server/with-idempotency.ts`)** — send an `Idempotency-Key` header and a retry replays the cached response instead of re-executing:
   - **`POST /api/room`** `{ tableCount?, reset? }` → idempotent ensure or reset. Returns `{ code, tables, room }`. `tableCount` is ignored if `reset` not set; if `reset: true` and `tableCount` undefined, uses current `tables.length` or `DEFAULT_TABLE_COUNT`.
-  - **`GET /api/room/[code]/state`** → full `RoomState` with `cache-control: no-store, no-cache, must-revalidate`. (This **is** the client polling endpoint — `session.svelte.ts` calls `fetch('/api/room/${SESSION}/state?t=…')` every 500 ms.) `GET /api/room` (no code) is a separate summary endpoint that returns `{ code, phase, tables: room.tables.length }`.
+  - **`GET /api/room/[code]/state`** → full `RoomState` with `ETag: W/"<updatedAt>"` + `cache-control: no-store`. The client polls with `If-None-Match` and the server answers `304` (empty body) when unchanged. `GET /api/room` (no code) returns `{ code, phase, tables }`.
   - **`POST .../advance|retreat`** → `{ phase, round, boardsOpened, room }` (advance also returns `captured`).
   - **`POST .../board`** `{ tableId, seat, priority, delta | value }` → `applyBoardDelta`/`applyBoardSet`. **Server-side, `delta` is validated against `CHIP_DELTAS = CHIP_DENOMS.flatMap(c => [c.value, -c.value])` = `[10, -10]`** (only ±$10M; the client signature `delta: 1 | -1` is stale — see Gotchas). Bad delta → 400. Bad indices/locked table → 200 with unchanged room.
   - **`POST .../board/clear-cell`** → `applyBoardSet(..., 0)`.
@@ -2762,7 +2763,7 @@ A18. **The `Date.now()` in `room.updatedAt` is set inside `recompute`** — but 
   - **`POST .../unlock-table`** `{ tableId }` → `unlockTable`.
   - **`POST .../config`** `{ analysisForced?, roomBountyTokens? }` → `setConfig`. (No `analysisUnlocks`.)
   - **`POST .../tables`** `{ count }` → `setTables`. (Count is ignored; always 7.)
-  - **`POST /api/ai/finale`** `{ code }` → Llama brief + fal render. 400 if `aggregate.totalCoins <= 0`. Persists `enhancedBrief`/`briefSource` and `finaleImageUrl`. Returns `{ url, imageError, prompt, brief, briefSource, llama, room }`.
+  - **`POST /api/ai/room-concept`** / **`POST /api/ai/compose-brief`** — the two halves of the old `ai/finale`: fal room render and the RapidI brief respectively. 400 if `aggregate.totalCoins <= 0`. Persist `finaleImageUrl` / `enhancedBrief` + `briefSource`.
   - **`POST /api/ai/table-render`** `{ tableId: 1..7 }` → fal image from that function's cumulative bets. 400 on bad `tableId` or zero stake. Persists `tables[tableId].imageUrl` on success.
   - **`POST /api/ai/brief`** `{ code }` → regenerate narrative brief only (no image). Persists `enhancedBrief`/`briefSource`.
 
@@ -2952,16 +2953,473 @@ U18. **There's no "your journey" view.** `room.history[]` is captured on every a
 - **`brief.ts`** — domain-only after the prompts/ refactor; no AI strings here.
   - `priorityMix(matrix)` — sums to 100 (largest-remainder rounding) when `total > 0`, else all zeros.
   - `spatialProgramFromAggregate(agg)` — `{ mandate, program, lead, resolve, blind, features, alignmentIndex, compositionLine }`. `mandate` and `lead`/`resolve`/`blind` are empty strings when there's no stake.
-  - `buildEnhancedBrief(agg)` — numbers-only skeleton; returns `''` when `totalCoins <= 0` (no mandate invented). Used as the Llama fallback when Workers AI is unavailable.
-  - **Moved out:** `finalePrompt`, `tableFunctionPrompt`, `briefFactsForLlm` → `src/lib/server/ai/prompts/` (see "Prompts as data, not code" in [AI integration]).
+  - `buildEnhancedBrief(agg)` — numbers-only skeleton; returns `''` when `totalCoins <= 0` (no mandate invented). Used as the  RapidI fallback when Workers AI is unavailable.
+  - **Moved out:** `finalePrompt`, `tableFunctionPrompt`, `briefFactsForRapidi` → `src/lib/server/ai/prompts/` (see "Prompts as data, not code" in [AI integration]).
 - **`config.ts`**
   - **`PERSONAS[]` order is authoritative for `tableId`.** See the seven-row table in Project overview.
   - `tableSeatIndex(tableId)` clamps to `[1, PERSONAS.length]` and returns `n - 1`.
 - `PRIORITY_COLORS` is the 7-color palette used by portrait, winners, future.
 - `SCENARIOS[i]` is 0-based and paired with `roundLabel = i + 1` (R1..R5). `currentScenario(round)` (store helper) returns `SCENARIOS[round] ?? SCENARIOS[ROUND_COUNT - 1]`.
 
-## Master plan — 12 weeks, 11 milestones, 1 release
+## Strategy disclosure + per-round constraints — the strategy of addition or protection
+The current analysis answers *where* (lead, fault, blind) and *how much* (CGI, journey). The user asked a sharper question: **what was the room's *strategy*?** Was it additive (kept building)? Protective (held the line)? Balanced (made trades)? What did each *function* do? This section has three parts: **data flow** (A–G — pure functions, schema snapshots, consumer wiring, gotchas), **visual flow** (mock-ups of each consumer), and **integration with [AI integration]** (the brief prompt's expanded input shape + the empty-state guard).
 
+- **Per-priority board colors** (a single source of truth that the heatmap, the chord diagram, the chip pile, and the lead/fault/blind chips all consume).
+- **Per-round min/max token rules** (R1 has a floor of $30M; R2/R5 require coverage on ≥5 of 7 priorities with ≥$10M each; R3 requires ≥$20M of net removal). These rules are server-validated and tunable in the host's Game Config.
+- **Strategy disclosure** — a new pure-function family in `scoring.ts` that classifies the room's posture (`additive-dominant` / `protection-dominant` / `balanced-trade`) and each function's posture (`additive` / `protective` / `balanced` / `no-op`), plus the *protected* and *contested* priority lists. The phone shows the player's own strategy on submit (Phase 7); the presenter shows the room's strategy as a 7th screen *Strategy* (Phase 8, alongside screen 6 *Your journey*); the host shows it in the emerging-analysis panel (Phase 7); the AI brief consumes it as 2 lines of context.
+
+The whole feature is **pure functions on `RoomState`** for *computation* — no new endpoints, no new mutations. The `RoomState` schema gains **two optional cached snapshots** (`strategy: StrategySignature` and `protected: StrategySignature['protected']`) so the phone and presenter can read the result without recomputing on every poll. Default values mean the snapshots are backward-compatible.
+
+### A. Per-priority board colors
+
+Today every priority wears the **priority-palette color** *in the heatmap only*. Promote it to a system-wide token. A glance at any chart should answer "which priorities are we fighting over?" without reading a name.
+
+**`src/lib/game/config.ts`** — add a typed getter:
+
+```ts
+/** Priority → hex. Single source for the heatmap, chord, chip, label. */
+export const PRIORITY_COLORS = [
+  '#E0A458', // 0 Talent
+  '#E0665A', // 1 Employee Experience
+  '#E574B0', // 2 Employer Brand
+  '#5AA9E6', // 3 Productivity
+  '#7E8CE0', // 4 Innovation
+  '#3FB6A2', // 5 Cost / ROI
+  '#C9A227', // 6 Future Readiness
+] as const;
+
+export type PriorityIndex = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export function priorityColor(p: PriorityIndex): string {
+  return PRIORITY_COLORS[p];
+}
+```
+
+**`src/app.css @theme`** — expose each priority as a CSS variable so charts use `var(--priority-3)` instead of magic numbers:
+
+```css
+@theme {
+  --priority-0: #E0A458;  /* Talent */
+  --priority-1: #E0665A;  /* Employee Experience */
+  --priority-2: #E574B0;  /* Employer Brand */
+  --priority-3: #5AA9E6;  /* Productivity */
+  --priority-4: #7E8CE0;  /* Innovation */
+  --priority-5: #3FB6A2;  /* Cost / ROI */
+  --priority-6: #C9A227;  /* Future Readiness */
+}
+```
+
+**Where the colors apply** (one rule: *priority color = data; brand red/gold = chrome*):
+
+| Surface | Color rule |
+|---|---|
+| `Chip.svelte` chip pile row in `FunctionBoard` | The chips in each row take the *priority's* color, not all red. The chip border is the priority's color; the chip face is brand red (the chip is still $10M; the priority is what the row represents). |
+| `RoomInsights.svelte` lead/fault/blind chips | The *priority name* inside each chip is colored by the priority. The chip frame stays brand gold/teal/red by type. |
+| `PortraitMatrix` cells | Already color-mixes the priority color; just use `priorityColor(p)` instead of `PRIORITY_COLORS[p]` so the source is one function. |
+| Chord diagram (Phase 8) | Ribbon color encodes the priority where the disagreement is highest (the `fault`). Use the fault's priority color, not red. |
+| Conviction bars (`ConvictionBars.svelte`) | Each bar's fill uses the priority color, not the persona color. The persona dot stays the persona color. |
+| LinkedIn share frame | The `priorityColor(p)` paints the row the participant most protected on R3 — their "claim to fame". |
+
+
+> ⚠️ **Known collision** — priority index 6 (Future Readiness, `#C9A227`) shares its hex with the C-Suite persona. They're different *things* in different *contexts*: the priority color is the data, the persona color is the chrome. The visual confusion is acceptable because the contexts never overlap (priority name vs persona name). See [Branding] for the proposed fix.
+
+**What stays brand colors**: the wordmark, the action buttons (gold = primary, teal = confirmed, red = danger), the focus ring, the AI attribution. Brand chrome stays Zyeta teal/gold; **data wears priority color**. The split makes every chart instantly readable from across the room.
+
+### B. Per-round constraints
+
+Today a table can put $0 on every priority, or $100M on Innovation alone. That makes R2-R5 useless as *measurement* — there's nothing to compare against. Add real game constraints. **These are tunable per-session via the host's "Game Config" → "Constraints" tab.**
+
+**`src/lib/game/config.ts`** — type and default values:
+
+```ts
+export interface RoundConstraints {
+  /** Minimum $M total this table must place across all priorities this round. */
+  floorPerRound: Partial<Record<'wait' | 'capture' | 'hold', number>>;
+  /** Minimum number of priorities the table must cover with ≥$10M each. */
+  minPrioritiesPerRound: Partial<Record<'wait' | 'capture' | 'hold', number>>;
+  /** Maximum $M any single priority cell can hold (default: 100). */
+  maxPerPriority: number;
+  /** strategySignature() thresholds (see gotcha S3): */
+  protectionShrinkPct: number;     // R2→R3 row shrink to classify as 'protective' (default 0.20)
+  additiveGrowthPct: number;       // R2→R3 row grow to classify as 'additive'      (default 0.10)
+}
+
+export const DEFAULT_CONSTRAINTS: RoundConstraints = {
+  floorPerRound: { wait: 30, capture: 50, hold: 0 },
+  minPrioritiesPerRound: { wait: 0, capture: 5, hold: 0 },
+  maxPerPriority: 100,
+  protectionShrinkPct: 0.20,
+  additiveGrowthPct: 0.10,
+};
+
+**The default values** are tuned for a 7-priority board, $100M table cap, $10M chips. They force:
+
+- **R1 (`wait`)**: ≥$30M placed, no breadth minimum. "Start *somewhere*."
+- **R2 / R5 (`capture`, add)**: ≥$50M placed, ≥5 of 7 priorities at ≥$10M each. Forces *breadth* — the room can't all pile onto one priority.
+- **R3 (`capture`, remove)**: the *relative* floor — the table must remove ≥$20M of the previous standing total. Forces *churn* — R3 measures the room's willingness to take away.
+- **R4 (`hold`)**: no constraints. The board holds. R4 is a thinking pause.
+
+**`src/lib/game/rules/board.ts`** — server-side validation, returning the typed error the phone can render:
+
+export type SubmitTableResult =
+  | { ok: true; sealed: boolean }
+  | {
+      ok: false;
+      reason:
+        | 'not-accepting'
+        | 'not-capture-round'
+        | 'over-budget'
+        | 'wrong-seat'
+        | 'locked'
+        | 'floor-not-met'
+        | 'breadth-not-met';
+      message: string;        // human copy, shown in the phone's toast
+      hint?: string;          // optional suggestion (e.g. "Try covering more priorities")
+    };
+
+export function validateRoundSubmission(
+  room: RoomState,
+  tableId: number,
+  row: Vec7,
+  constraints: RoundConstraints
+): Extract<SubmitTableResult, { ok: false }> | Extract<SubmitTableResult, { ok: true }> {
+  // (See the domain logic below.)
+}
+
+**The phone UI** (`src/routes/play/[code]/[table]/+page.svelte`) gets back `{ ok: false, message: ... }` from the submit endpoint and renders a toast:
+
+```
+Round 2 needs at least $50M of $100M and 5 of 7 priorities covered.
+You're at $30M with 3 priorities.
+Try covering more priorities or moving chips around.
+```
+
+The `message` is server-generated copy. **Localised by the server**, *not* by the client. Round + budget + covered count come from the room state; the framing copy is `constraints.ts`'s concern.
+
+**Integration with `applySubmitTable`**: the existing `applyBoardDelta` already enforces R3's `move: 'remove'` rule and rejects over-budget. `validateRoundSubmission` is called *before* `applySubmitTable` — it does not double-validate `move` or budget (those remain the existing rules' responsibility). It adds the **new** validations (`floor-not-met`, `breadth-not-met`) on top. **Order of checks**: existing FSM (`not-accepting`, `not-capture-round`, `wrong-seat`, `locked`) → existing budget (`over-budget`) → new validator (`floor-not-met`, `breadth-not-met`). The error reason is whichever check fires first.
+
+
+### C. Strategy disclosure (the *real* feature)
+
+This answers the user's question — *"what was protected?"* The signature is a new pure function in `src/lib/game/scoring.ts`:
+
+```ts
+/** The room's posture across rounds. */
+export type RoomStrategy = 'additive-dominant' | 'protection-dominant' | 'balanced-trade';
+
+/** A single function's posture at a given round. */
+export type FunctionStrategy = 'additive' | 'protective' | 'balanced' | 'no-op';
+
+export interface StrategySignature {
+  /** R3 vs R2 net movement across the room. */
+  roomStrategy: RoomStrategy;
+  /** Per-function posture from R2 → R3. */
+  functionStrategies: Record<number, FunctionStrategy>;
+  /** Priorities each function held the line on (their R3 share ≥ room average). */
+  protected: Array<{ seat: number; priority: number; shareR2: number; shareR3: number; held: boolean }>;
+  /** The contested priority (same as verdicts.fault) and per-function share there. */
+  contested: { priority: number; perFunction: Array<{ seat: number; share: number }> };
+}
+
+export function strategySignature(room: RoomState): StrategySignature {
+  // Pure function. Called from `recomputeTable(room)` after every `applyAdvance` / `applyRetreat`.
+  // The `strategy` and `protected` snapshots in `RoomState` are updated by recomputeTable — no
+  // separate mutation surface needed. The result is *provisional* between R3 and R5 (the
+  // additive-dominant verdict can't confirm until R5 lands); see gotcha S6.
+  // Room posture — computed AFTER R3 (R5 has not happened yet):
+  //   Net removal > 50% of R2's standing  → protection-dominant.
+  //   Net removal < 10%                   → additive-dominant (R5 will re-confirm or override).
+  //   Otherwise                           → balanced-trade.
+  //
+  // Per-function (R2 → R3), checked in this order:
+  //   shrunk ≥ protectionShrinkPct (20%)   → protective
+  //   grew   ≥ additiveGrowthPct  (10%)    → additive
+  //   delta  === 0                          → no-op   (zero-change is a distinct signal)
+  //   otherwise (delta in ±thresholds)      → balanced
+  //
+  // Protected: for each (seat, priority) where R3 share >= R2 share AND
+  //   R3 share > room average share for that priority. "Held the line."
+  //
+  // Contested: from verdicts.fault. For each function, share = R3 row[fault].
+}
+**The narrative forms** (also in `scoring.ts`):
+
+```ts
+/** 3-bullet read-aloud for the presenter's "strategy" screen. */
+export function formatStrategyForRoom(room: RoomState): {
+  headline: string;     // "The room is protection-dominant."
+  bullets: [string, string, string];  // 3 named moves
+};
+
+/** 1-paragraph phone-side readout, shown on the user's own device after submit on capture rounds. */
+export function formatStrategyForFunction(
+  room: RoomState,
+  tableId: number
+): string;
+```
+
+**Example outputs:**
+
+```
+// formatStrategyForRoom
+{ headline: 'The room is protection-dominant on R3.',
+  bullets: [
+    'Marketing protected Future Readiness — held $40M of $100M there while the room cut it $30M overall.',
+    'Operations cut Talent by $40M, the most aggressive move in the room.',
+    'C-Suite held every priority flat — no-op.'
+  ] }
+
+### D. Where each consumer lands
+
+| **Presenter screen 7 "Strategy"** (Phase 8 — same phase as the *Your journey* screen 6; both are chart work) | One chart per row: room strategy + per-function strategies. Plus the room's contested-priority chord strip (priority-colored ribbons, not red). |
+| **Host's emerging-analysis panel** (above Status, **Phase 7**) | CGI hero + strategy fingerprint + protected/contested lists. The first thing the host sees on opening the page. |
+| **Phone "your strategy" card** (**Phase 7**, on `MobileSealed.svelte`) | A 1-paragraph readout of the *player's own* strategy. Shown after submit on R2/R3/R5. |
+| **LinkedIn share frame** | The participant's most-protected priority, painted in its `priorityColor`, in the LinkedIn header. |
+| **Brief prompt** (`prompts/brief.user.ts`) | Two lines of context appended: `Strategy: {roomStrategy}. Protected: {names}. Contested: {name}.` **Renderer projection**: `protected` is a per-seat array `Array<{seat, priority, shareR2, shareR3, held}>`. The brief renderer projects this to a deduped priority-name list — `protected = [...new Set(room.strategy.protected.filter(p => p.held).map(p => PRIORITIES[p.priority]))]`. `contested = PRIORITIES[room.strategy.contested.priority]`. **Empty-state guard**: when `room.strategy` is undefined (R1, R2, pre-reveal), the strategy lines are *omitted entirely* — never emit `Strategy: .` blank. See [AI integration §Failure modes] for the corresponding failure-mode row. The  RapidI brief uses these lines to inform the narrative. |
+
+
+### E. Concrete change list
+
+1. **`src/lib/game/config.ts`** — add `priorityColor(p: PriorityIndex)`, `PRIORITY_COLORS` typed const, `RoundConstraints` interface, `DEFAULT_CONSTRAINTS` const.
+2. **`src/lib/game/types.ts`** — extend `RoomState` with `constraints: RoundConstraints` (default `DEFAULT_CONSTRAINTS`), `protected: StrategySignature['protected']` (cached snapshot), `strategy: StrategySignature` (cached snapshot). All optional / have defaults.
+3. **`src/lib/game/rules/board.ts`** — add `validateRoundSubmission(room, tableId, row, constraints)` and extend `applySubmitTable` to return `SubmitTableError` from the validator. The error message is server-generated.
+4. **`src/lib/game/scoring.ts`** — add `strategySignature(room)`, `formatStrategyForRoom(room)`, `formatStrategyForFunction(room, tableId)`, `priorityColor(p)` re-export.
+5. **`src/app.css @theme`** — add `--priority-N` tokens.
+6. **`src/lib/components/Chip.svelte`** — accept optional `hex` for the *border* (chip face stays brand red). The refactored FunctionBoard per-row takes the row's priority color.
+7. **`src/lib/components/phone/MobileSealed.svelte`** — add the "Your strategy" card when `phase in {reveal, finale}`. Show the `formatStrategyForFunction(room, tableId)` 1-paragraph + the protected-priority list as 3 pills.
+8. **`src/lib/components/analytics/StrategyStrip.svelte`** (~60 lines) — per-function strip shown on screen 7 (Phase 8, alongside *Your journey* screen 6) and the host's emerging-analysis panel. Each dot = one function, colored by its strategy. **Avoid brand colors** — pick a *new* strategy palette that doesn't collide with persona or chrome: e.g. `additive` = green, `protective` = navy, `balanced` = teal, `no-op` = muted grey. The dot's tooltip shows protected + contested priorities.
+9. **`src/lib/components/analytics/FunctionStrategyDot.svelte`** (~30 lines) — single dot with hover tooltip.
+12. **`src/lib/client/linkedin-frame.ts`** — paint the participant's most-protected priority with its `priorityColor` in the LinkedIn header.
+13. **Tests** (`rules.test.ts`) — `validateRoundSubmission(...)` cases (floor-not-met, breadth-not-met, ok), `strategySignature(...)` cases (additive / protective / balanced classification).
+14. **Glossary entries** — `priorityColor`, `RoundConstraints`, `validateRoundSubmission`, `strategySignature`, `RoomStrategy`, `FunctionStrategy`, `additive-dominant`, `protection-dominant`, `balanced-trade`, `protected`, `contested`.
+15. **Master plan** — Phase 7 already mentions the host split; add a one-line "phone gets your-strategy card; presenter gets screen 7 *Strategy* (Phase 8, alongside screen 6 *Your journey*)" to its deliverables.
+### F. Why this matters
+
+The user's question — *"what was protected?"* — is the missing **narrative verb**. Today the analysis answers *where* (lead/fault/blind) and *how much* (CGI). After this change it answers *how* — "Marketing protected Future Readiness by holding the line at $40M of $100M while the room cut it $30M overall." That's the **Common Ground story** as a *post-game reflection*, not just a *real-time aggregate*.
+
+Three side-effects beyond the obvious:
+
+1. **The "Your strategy" phone card turns submission into reflection.** A boardroom talks about *what they did* in the minutes after submit. A 1-paragraph readout that names their posture and the priority they protected is the gamification of reflection.
+2. **The host gains situational awareness.** Today the host has zero analysis. The strategy fingerprint + the protected/contested lists answer "should I advance?" — if R3 was protection-dominant and the room is tight, the next round's add-mode will be more contested.
+3. **The brief gets narrative context.** Instead of "your lead is Future Readiness at 28%",  RapidI gets "The room is protection-dominant; Marketing held Future Readiness; Operations cut Talent." The brief reads like a story, not a stat dump.
+
+### G. New gotchas (S1–S8 — strategy disclosure)
+
+S1. **Don't merge the validator into the submit response.** `validateRoundSubmission` is a *server-side* function called by `applySubmitTable`; the client shows the resulting `message` verbatim. **The server owns the copy** because the constraints are configurable per-room — the client can't know them statically.
+S2. **The "no-op" function strategy is honest, not silent.** A function whose R3 row equals R2 row may have done *nothing*. `formatStrategyForRoom` should mention "no-op" explicitly — "C-Suite held every priority flat — no-op" — so the room sees who participated and who didn't.
+S3. **The protection threshold (20% R2→R3 shrink) is not a magic number.** It's a *tunable* in `DEFAULT_CONSTRAINTS`. A future session could choose "the room takes things back more aggressively" — the threshold is 35% in that case. Keep the threshold in the function signature, not buried in `strategySignature`.
+S4. **The "Your strategy" card is post-submit, not post-round.** Show it on the same screen as `MobileSealed.svelte` — the moment the user has finished *their* R3. Don't wait for the round to end; the participant's strategy is fixed the moment they submit, not the moment the round seals.
+S5. **The contested-priority list changes when `verdicts.fault` changes.** Recompute on every poll. The StrategyStrip should not memoize on `room.updatedAt` *or* `room.aggregate`; it should re-render whenever either changes. **Use `$derived.by`** for the strip and let Svelte 5 handle it.
+S6. **The "Strategy" presenter screen (7th) is gated by phase, not empty-state.** The strategy fingerprint is only meaningful after R3 + reveal, but `analysisOpen` already gates the deck to `phase in {'reveal', 'finale'}`. So this screen is *never* rendered before R3 + reveal — no empty-state needed. The fallback message in the prose ("Not enough rounds yet...") is unreachable; remove it if implemented as written. The "Strategy" tab in `StageNav` is hidden until the room has ≥3 rounds of history. (Phase 8's screen 6 is *Your journey* — strategy is screen 7 in the same phase.)
+S7. **The priority-color variables need a Tailwind safelist.** Tailwind v4's JIT doesn't include `--priority-N` automatically; either expose them as CSS variables (no JIT needed) or add them to the safelist config. The CSS-variable route is simpler — `var(--priority-3)` works in any `style:` attribute.
+S8. **LinkedIn frame color inheritance.** If `priorityColor` is unavailable in `linkedin-frame.ts` (it's a `.ts` file, not `.svelte`), inline the array from `config.ts`. Don't import directly into the `client/` folder (the `index.ts` is deprecated per [gotcha 16](#gotchas)). Use `import { priorityColor } from '$lib/game'`.
+
+### Persona hashtags + post-game badges (Phase 7, additive — *hashtag shipped; badge helper landed; badge UI pending MobileSealed.svelte*)
+
+Today the persona card (home page, `BoardSheet.svelte`, phone header) shows: persona name, lens, color dot, table ID, QR code. The persona's *identity* is conveyed through color + name only — there's no memorable single-line tag participants can rally around. And after the game, the persona's *play* (what they actually did) is conveyed only through the read-aloud narrative.
+
+Two new fields land the same data on three surfaces:
+
+**Hashtag** (static, brand-y, always shown):
+- New optional field on `Persona`: `hashtag?: string` (e.g. `#FootprintShrinker`, `#PeopleOptimizer`, `#AIAdopter`, `#CostDisciplinarian`, `#ResilienceBuilder`, `#BrandBuilder`, `#EnterpriseOptimizer`).
+- Lives in `src/lib/game/config.ts` next to `name`, `lens`, `bias`, `mission`, `strength`, `risk`.
+- Format: `#PascalCase` (one word, one hash, no spaces). Host-editable per session via the Game Config editor.
+- Always rendered on: home page card, `BoardSheet.svelte` (printed board), phone header (`MobileHeader.svelte`), LinkedIn share frame header.
+- Brand voice rule: the hashtag *is* the persona's vote slogan. It must fit on one line, be readable on a phone in 14 px text, and not exceed 18 characters (excluding the `#`).
+
+**Badge** (dynamic, post-game, derived from `strategySignature`):
+- Computed per-table after R3 reveal. Lives in the same `strategySignature.protected` shape — the existing `protected` array already names the priorities each function held the line on.
+- The badge is the *first* entry of the table's `protected` array, ranked by `shareR3` (highest share wins). E.g. "Held Future Readiness" or "Cut Talent — 60%".
+- Rendered on: post-game phone card (`MobileSealed.svelte`, the "Your strategy" card), LinkedIn share frame header (next to the priority color pill), presenter screen 7 strategy strip's hover tooltip.
+- Empty-state: when `strategySignature.protected` is empty for a table (no held priorities), the badge reads "Balanced" or "No-op" — never blank.
+
+**Visual mock-up** (home page card, after Phase 7):
+
+```
+┌──────────────────────────────────────────┐
+│  ● Real Estate                            │
+│  Table 1                                  │
+│  Optimise portfolio & reduce footprint    │
+│  #FootprintShrinker                       │ ← new hashtag line, monospace, brand gold
+│                                          │
+│       [QR CODE]                            │
+│                                          │
+│  Open Board →                             │
+└──────────────────────────────────────────┘
+```
+
+**Visual mock-up** (post-game phone card, after Phase 7):
+
+```
+┌──────────────────────────────────────┐
+│  YOUR STRATEGY                       │
+│                                      │
+│  Held Future Readiness               │ ← new badge line, priority-colored, bold
+│  $40M of $100M across R2-R3.         │
+│                                      │
+│  You were protection-dominant on     │
+│  Future Readiness: ...               │
+│                                      │
+│  #FootprintShrinker                  │ ← persona hashtag
+│                                      │
+│  Protected:  Future Readiness        │
+│           Cost / ROI                 │
+│           Innovation                │
+└──────────────────────────────────────┘
+```
+
+**Data flow** (additive, no schema breaks):
+
+```
+config.ts       (hashtag field on Persona)        ← static
+  ↓
+Persona.cards   (rendered everywhere a persona card renders)
+
+t.matrix        (existing per-table bets)
+  ↓
+strategySignature(room)
+  ↓
+room.strategy.protected[i]   (existing per-seat array)
+  ↓
+badgeForTable(room, tableId)  (new helper: protected[0] → "Held {name}")
+  ↓
+Post-game phone card, LinkedIn frame, presenter screen 7
+```
+
+**Why both hashtag and badge?**
+
+The hashtag is the persona's *declared identity* — what they said they'd do. The badge is the persona's *observed play* — what they actually did. When the hashtag and the badge tell the same story, the room celebrates. When they don't (HR declares `#PeopleOptimizer` but their badge says "Cut Talent"), the *fault* is visible — that's the strategy disclosure section's whole point. Both fields are additive; both surface on the same card.
+
+(See [Visual flow] below for the corresponding strategy-flow mock-ups.)
+
+
+
+### Visual flow — what each consumer looks like with strategy
+
+The data flow above describes *what* each consumer receives; this sub-section shows *how it renders* on each surface. Each block is a UI mock in prose — meant to keep the implementation and review teams aligned on appearance before code.
+
+**Phone "Your strategy" card** (`MobileSealed.svelte`, after submit on R2/R3/R5):
+
+```
+┌──────────────────────────────────────┐
+│  YOUR STRATEGY                       │ ← micro-cap, brand gold
+│                                      │
+│  ┌─ Held Future Readiness ────────┐ │ ← post-game badge
+│  │  $40M of $100M across R2-R3  │ │   priority-colored border
+│  └─────────────────────────────────┘ │
+│                                      │
+│  You were protection-dominant on     │ ← 14px body
+│  Future Readiness: you held $40M     │
+│  there across R2-R3 while the room   │
+│  cut it $30M overall. The room       │
+│  noticed.                            │
+│                                      │
+│  #FootprintShrinker                  │ ← persona hashtag, monospace, gold
+│                                      │
+│  Protected:  Future Readiness        │ ← 3 pills, priority-colored border
+│           Cost / ROI                 │
+│           Innovation                │
+└──────────────────────────────────────┘
+```
+
+**Presenter screen 7 "Strategy"** (Phase 8):
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  STRATEGY                                                       │ ← screen title (Inter Display 800, 72px)
+│                                                                │
+│  The room is protection-dominant on R3.                        │ ← formatStrategyForRoom().headline
+│                                                                │
+│  ┌─ Marketing ──────┐ ┌─ HR ──────────┐ ┌─ IT ──────────┐     │
+│  │ ● protective     │ │ ● additive    │ │ ● balanced    │     │ ← StrategyStrip
+│  │ held $40M FR     │ │ +$20M Talent  │ │ ±$0M          │     │   7 dots, color by strategy
+│  └──────────────────┘ └───────────────┘ └───────────────┘     │   palette (green/navy/teal/muted)
+│  ┌─ Finance ────────┐ ┌─ Operations ──┐ ┌─ Marketing ──┐     │
+│  │ ● protective     │ │ ● protective  │ │ ● protective  │     │
+│  │ -$40M Talent     │ │ -$40M Talent  │ │ held $40M FR  │     │
+│  └──────────────────┘ └───────────────┘ └───────────────┘     │
+│  ┌─ C-Suite ────────┐                                            │
+│  │ ● no-op          │                                            │ ← dot shows who participated
+│  │ held everything  │                                            │
+│  └──────────────────┘                                            │
+│                                                                │
+│  Contested: Cost / ROI                                          │ ← contested-priority chord strip
+│  [ribbon: C-Suite 60%] [ribbon: Marketing 5%] [ribbon: IT 12%] │   ribbon color = priority color
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Host's emerging-analysis panel** (Phase 7, above Status on `/host/[code]/`):
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  EMERGING ANALYSIS                                              │
+│                                                                │
+│         ╭─────────────╮                                          │
+│        ╱   67   CGI    ╲     Common Ground Index 67            │ ← CGI ring + read-aloud
+│        ╲   (Mixed)   ╱                                          │
+│         ╰─────────────╯                                          │
+│                                                                │
+│  The room is protection-dominant.                              │ ← headline, 1 line
+│  Protected: Future Readiness, Cost / ROI.                      │ ← protected list
+│  Contested: Talent (highest variance across functions).         │ ← contested priority
+└────────────────────────────────────────────────────────────────┘
+```
+
+**LinkedIn share frame** header strip:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  #WeFoundCommonGround   [gold/teal ZyetaI wordmark]            │ ← existing chrome
+│                                                                │
+│  Your claim to fame:                                           │ ← new line
+│  ┌────────────────────────┐                                    │
+│  │  Future Readiness      │ ← priority-colored pill            │
+│  │  $40M of $100M held    │ ← share-the-priority narrative     │
+│  └────────────────────────┘                                    │
+│                                                                │
+│  #FootprintShrinker  ·  Marketing  ·  @function_name             │ ← hashtag + persona
+│                                                                │
+│  [verdict chip] [function name] [share CTA]                    │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Brief prompt user-message** ( RapidI input, NOT a UI surface but the data shape — this is what the brand writer sees when editing the prompt):
+
+```
+ROOM STATE
+  matrix:  [...]
+  lead: Future Readiness (reach=7)
+  fault: Talent (variance=...)
+  blind: Productivity (least funded)
+  cgi: 67 (Mixed)
+  strategy: protection-dominant           ← NEW (Phase 8, see [AI integration])
+  protected: Future Readiness, Cost / ROI ← NEW (Phase 8)
+  contested: Talent                       ← NEW (Phase 8)
+  journey: [22, 38, 71, 64, 84]
+  verdict: Mixed
+
+OUTPUT RULES
+  ... (unchanged)
+```
+
+The RapidI *output* (the brief text) is unchanged in shape — still the brand voice, still 1 paragraph. The strategy context informs the narrative; it doesn't change the output format. **Empty-state**: when `room.strategy` is undefined (R1, R2, pre-reveal), the strategy lines are *omitted entirely*. The brief never blocks on strategy being present.
+
+### Why "look" matters
+
+The data flow is the *contract*; the visual flow is the *experience*. The two are coupled but not identical. The data layer (A–E above) defines what's possible; the look layer (this section) defines what the user actually *sees* and *feels*. Without this section, the implementer has to imagine the experience — and that imagination drifts between teammates. The mock-up pins it down.
+
+**Trade-offs encoded in the look above:**
+
+- **Phone card** uses `formatStrategyForFunction(room, tableId)` — the *1-paragraph narrative*, not 3 bullets. The phone is small; the participant wants *one story about themselves*, not analysis. The protected-list pills are decorative, not informational (the paragraph already names them).
+- **Presenter screen** is a *grid of dots*, not a chart. The chart would be the CGI; the dots are *who did what*. A chart of strategies would be over-engineered — 7 boolean-ish values don't need a chart.
+- **Host panel** has the *CGI ring* (existing) + the strategy headline + the lists. The ring is the trust signal; the lists are the data. The host needs *what to say*, not a chart.
+- **LinkedIn frame** shows the *single most-protected priority* as a colored pill, not the full list. LinkedIn shares are 1-second reads; the priority color does the storytelling.
+- **Brief prompt** keeps the strategy as *2 lines of facts*, not as a verbose paragraph.  RapidI writes the prose; we feed it facts. The prompt stays structured.
+
+### Why this section sits at the end
+
+The data flow (A–G) defines *what's possible*. The look section (this) defines *what the user sees*. Implementation should land the data flow first, *then* refine the look. The look is the polish pass, not the foundation.
+
+## Master plan — 12 weeks, 11 milestones, 1 release
 Everything above (Branding, UI/UX system, Analysis story, AI integration, Architecture & idempotency, UX deep review) is a *spec*. This section is the *plan* — how the specs land in order, what each phase unblocks, and what the live URL shows at each milestone. The plan is sequenced by **dependency** (early phases unblock later ones), by **risk** (low-risk first, so we can roll back easily), and by **demo value** (every milestone produces something visible on the live URL).
 
 ### Critical path (the one you must read first)
@@ -3070,9 +3528,9 @@ The dependency order is **strict**: the design system (Phase 0–1) is the found
 - `src/lib/server/ai/prompts/image.finale.json` + `image.finale.ts` — the room-render template + the renderer.
 - `src/lib/server/ai/prompts/image.table.json` + `image.table.ts` — the per-function template + the renderer.
 - `src/lib/server/ai/prompts/registry.ts` — `BRIEF`, `ROOM_RENDER`, `TABLE_RENDER`, `PROMPTS`, `promptHash(meta, system)`.
-- `src/lib/server/ai/llama.ts` — collapse to ~25 lines, calls `PROMPTS.brief`.
+- `src/lib/server/ai/rapidi.ts` — collapse to ~25 lines, calls `PROMPTS.brief`.
 - `src/lib/server/ai/fal.ts` — collapse to ~25 lines, calls `PROMPTS.roomRender`.
-- `src/lib/game/brief.ts` — drop `finalePrompt`, `tableFunctionPrompt`, `briefFactsForLlm`. Keep `priorityMix`, `spatialProgramFromAggregate`, `buildEnhancedBrief`. Add `readAloudForRoom(room)` (see Phase 6).
+- `src/lib/game/brief.ts` — drop `finalePrompt`, `tableFunctionPrompt`, `briefFactsForRapidi`. Keep `priorityMix`, `spatialProgramFromAggregate`, `buildEnhancedBrief`. Add `readAloudForRoom(room)` (see Phase 6).
 - `scripts/lint-prompts.ts` — the prompt lint script (60 lines, [AI integration Wiring & shrunken plumbing]).
 - `package.json` — add `"lint:prompts": "bun run scripts/lint-prompts.ts"`.
 
@@ -3080,7 +3538,7 @@ The dependency order is **strict**: the design system (Phase 0–1) is the found
 
 **Demo**: a brand writer can now edit `brief.system.json` in a PR. The system prompt version is in the meta. The `promptHash` in every AI response tells the client "this brief was generated with v2026.07.0 of the system prompt".
 
-**Rollback**: revert the prompts/ folder; restore `llama.ts` and `fal.ts` to their previous shape. The renderers in `brief.ts` are still there (we don't delete them until Phase 4 ships). ~30 minutes.
+**Rollback**: revert the prompts/ folder; restore `rapidi.ts` and `fal.ts` to their previous shape. The renderers in `brief.ts` are still there (we don't delete them until Phase 4 ships). ~30 minutes.
 
 ### Phase 5 — Motion + actions (1 week)
 
@@ -3161,12 +3619,15 @@ The dependency order is **strict**: the design system (Phase 0–1) is the found
 - `src/lib/components/analytics/PersonaAgreement.svelte` — 7 dots on a horizontal axis at `t.commonGround` x position, persona-color, surprise outlined in gold. ~50 lines.
 - `src/lib/components/analytics/PriorityMixBars.svelte` — 7 horizontal bars, sorted desc, the lowest 1–2 tagged BLIND. ~60 lines.
 - `src/lib/components/analytics/JourneyChart.svelte` — CGI over time, R1–R5, with a line chart and per-round dots. Reads `room.history[]`. ~50 lines of SVG.
-- Update `src/lib/game/scoring.ts` — extend `roomInsights()` with `pairs`, `agreement`, `mix` per [Analysis: the Common Ground story §Computed additions].
+- `src/lib/components/analytics/StrategyStrip.svelte` — per-function strategy strip (the 7th screen "Strategy" chart). Reads `room.strategy`; one dot per function. ~60 lines.
+- `src/lib/components/analytics/FunctionStrategyDot.svelte` — single dot with hover tooltip showing protected + contested. ~30 lines.
+- Update `src/lib/game/scoring.ts` — extend `roomInsights()` with `pairs`, `agreement`, `mix` per [Analysis: the Common Ground story §Computed additions]. Add `strategySignature(room)`, `formatStrategyForRoom(room)`, `formatStrategyForFunction(room, tableId)`.
 - Update the 5 screens to use the new charts: RoomGlance = CgiHero + PriorityMixBars, RoomInsights = CgiHero + ChordDiagram + fault/surprise callout, PriorityConstellation = CgiHero + bars with BLIND, WinnersLosers = CgiHero + PersonaAgreement, FutureWorkspace = CgiHero + Lead→Resolve→Protect strip + FutureBrief/Gen/Grid.
 - Add a 6th screen "Your journey" = JourneyChart + CgiHero + a "We started divided, ended aligned" 1-line summary.
+- Add a 7th screen "Strategy" = StrategyStrip + the contested-priority chord ribbon + the room's headline (`formatStrategyForRoom().headline`).
 - Wrap each new chart in `<svelte:boundary>` so a chart error doesn't take the deck down.
 
-**Risk**: medium-high. The chord diagram and journey chart are non-trivial SVG. The scoring changes to `roomInsights()` are additive but every consumer needs the new fields. The 6th screen breaks the `present.total = 5` invariant — `StageNav` and the keyboard nav need updating.
+**Risk**: medium-high. The chord diagram and journey chart are non-trivial SVG. The scoring changes to `roomInsights()` are additive but every consumer needs the new fields. Screens 6 and 7 break the `present.total = 5` invariant — `StageNav` and the keyboard nav need updating for 7 total screens.
 
 **Demo**: the live URL's presenter page is now visually the most important part of the product. The chord diagram shows the room's tensions. The journey tells the story of the session. The CGI hero is on every screen.
 
@@ -3234,7 +3695,7 @@ The dependency order is **strict**: the design system (Phase 0–1) is the found
 | 1 | 3 d | Brand wordmark, persona colors, type roles | One SVG + 5 component edits |
 | 2 | 3 d | Polling stops on background, cleaner errors | One rewrite of `session.svelte.ts` |
 | 3 | 5 d | Idempotent retries, no data loss on double-click | One server-side refactor + D1 schema |
-| 4 | 3 d | Brand-voice prompts in JSON, prompt version in responses | New `src/lib/server/ai/prompts/` folder + `llama.ts`/`fal.ts` collapse |
+| 4 | 3 d | Brand-voice prompts in JSON, prompt version in responses | New `src/lib/server/ai/prompts/` folder + `rapidi.ts`/`fal.ts` collapse |
 | 5 | 1 wk | Animations feel right; `use:enhance` everywhere it should be | New `src/lib/actions/` folder + 5 component edits |
 | 6 | 3 d | **Presenter deck reads as a story; read-aloud button** | New `<ReadAloudButton>` + 3 string changes + 1 chart move |
 | 7 | 2 wk | **Phone has mission, timer, leaderboard; host has 4 tabs** | 4 new route files + 1 sidebar + 5 component edits |
@@ -3284,30 +3745,30 @@ The conditional-UPDATE pattern in Phase 3 unlocks idempotency (Phase 3), the pro
 | `src/lib/server/store.ts` | Single LIVE room, `Store` class, `recompute()`, all mutation methods. `setTables` ignores count and forces `N_SEATS`. `setConfig` accepts only `analysisForced` and `roomBountyTokens`. |
 | `src/lib/server/live.ts` | Request-scoped D1 binding, `withLiveRoom` (sync + mutate + persist) and `readLiveRoom` (seed-on-empty). |
 | `src/lib/server/room-store.ts` | D1 table `room (id, data, updated_at)`, single row id `'LIVE'`, `INSERT … ON CONFLICT(id) DO UPDATE`. `ensureSchema` runs once per isolate. `loadRoom`/`saveRoom` swallow errors with `console.error` prefix. |
-| `src/lib/server/ai/llama.ts` | Thin wrapper around `PROMPTS.brief` — runs the chat model with the JSON-defined system prompt and the renderer-defined user message. Returns `null` on no binding / no stake / short reply / failure; caller falls back to `buildEnhancedBrief`. Exported `AiBinding` type used by `app.d.ts`. The brand-voice text is in `prompts/brief.system.json`, not here. |
+| `src/lib/server/ai/rapidi.ts` | Thin wrapper around `PROMPTS.brief` — runs the chat model with the JSON-defined system prompt and the renderer-defined user message. Returns `null` on no binding / no stake / short reply / failure; caller falls back to `buildEnhancedBrief`. Exported `AiBinding` type used by `app.d.ts`. The brand-voice text is in `prompts/brief.system.json`, not here. |
 | `src/lib/server/ai/fal.ts` | Thin wrapper around `PROMPTS.roomRender` / `PROMPTS.tableRender` — runs the fal image model with the JSON-defined prompt and the renderer-defined substitutions. `ImageResult = { url } \| { url: null, error: 'no_key' \| 'failed' }`. |
 | `src/lib/server/ai/prompts/` | **The prompts/ folder.** `_schema.ts` (PromptMeta, ChatPrompt, ImagePrompt), `brief.system.json` (brand-voice sections + meta + model), `brief.user.json` (slot text), `brief.user.ts` (renderer: `buildBriefFacts(room) → BriefFacts`, `renderUserPrompt(facts)`), `image.finale.json` / `image.finale.ts` (room-render prompt + renderer), `image.table.json` / `image.table.ts` (per-function prompt + renderer), `registry.ts` (typed `PROMPTS` map + `promptHash(meta, system)` for cache/regen diffs), `index.ts` (barrel). See "Prompts as data, not code" in [AI integration]. |
-| `src/lib/state/session.svelte.ts` | Polling client. `INTERVAL = 500`, serialized `pollChain`, `$state.raw<RoomState>`, post-advance poll +200 ms, refresh on `visibilitychange`. `updateBrief` is local-only. |
+| `src/lib/state/session.svelte.ts` | Polling client. `INTERVAL = 500`, `If-None-Match` conditional polls, serialized `pollChain`, `$state.raw<RoomState>`, per-call `Idempotency-Key` with one same-key network retry, 409 → resync, post-advance poll +200 ms, refresh on `visibilitychange`. |
 | `src/lib/state/present.svelte.ts` | `TOTAL = 5`, `screen` (1..5), `next`/`prev`/`setScreen`/`enterAnalysis`. |
 | `src/lib/state/host.svelte.ts` | `tableCount` + `roomBountyTokens` drafts, `syncOnce(room)`, `resync(room)`. |
 | `src/lib/game/rules/phase.ts` | `applyAdvance` / `applyRetreat` / `reopenBoards`. Boards never wiped; advance upserts `history` snapshot for the **leaving** round; retreat prunes history past current round. `reopenBoards` clears `analysisForced`. |
 | `src/lib/game/rules/board.ts` | `applyBoardDelta` (caps adds to `tableBountyTokens`, reject on locked/wrong seat/remove round, value `0` rejected, NaN rejected), `applyBoardSet` (clamps to budget; on R3 clamps to standing), `applySubmitTable` (returns `SubmitTableResult`), `isRemoveRound`, `canEditTable`, `functionSeatOrNull`, `boardTokenSum`, `tableBountyTokens`. |
 | `src/lib/game/config.ts` | `PERSONAS` (order = tableId), `PRIORITIES`, `PRIORITY_COLORS`, `ROUND_COUNT=5`, `EVOLUTION_ROUNDS = CAPTURE_ROUNDS = [2,3,5]`, `CHIP_VALUE=10`, `DEFAULT_TABLE_COUNT=7`, `DEFAULT_ROOM_BOUNTY_TOKENS=700`, `DEFAULT_TABLE_BOUNTY_TOKENS=100`, `SCENARIOS`, `SPACE`/`DESIGN_LONG`/`DESIGN_SHORT`, `isCaptureRound`. |
 | `src/lib/game/scoring.ts` | `cosine`, `commonGround`, `commonGroundIndex`, `verdicts`, `surpriseToken`, `aggregate`, `recomputeTable`, `analysisOpen`, `roomInsights`, `winnersLosersByFunction`, `roomPortrait`, `snapshotFromRoom`, `upsertHistory`. |
-| `src/lib/game/brief.ts` | Domain-only (no AI strings): `priorityMix`, `spatialProgramFromAggregate`, `buildEnhancedBrief` (numbers-only fallback for when Llama is unavailable), **`readAloudForRoom(room)`** (the canonical one-sentence story — used by every chart, the presenter deck, and the host page; see "Analysis: the Common Ground story"). **The AI prompt templates (`finalePrompt`, `tableFunctionPrompt`, `briefFactsForLlm`) move out of this file** into `src/lib/server/ai/prompts/` — they cross the AI boundary, not the domain boundary. See "Prompts as data, not code" in [AI integration]. |
+| `src/lib/game/brief.ts` | Domain-only (no AI strings): `priorityMix`, `spatialProgramFromAggregate`, `buildEnhancedBrief` (numbers-only fallback for when  RapidI is unavailable), **`readAloudForRoom(room)`** (the canonical one-sentence story — used by every chart, the presenter deck, and the host page; see "Analysis: the Common Ground story"). **The AI prompt templates (`finalePrompt`, `tableFunctionPrompt`, `briefFactsForRapidi`) move out of this file** into `src/lib/server/ai/prompts/` — they cross the AI boundary, not the domain boundary. See "Prompts as data, not code" in [AI integration]. |
 | `src/lib/game/types.ts` | `PRIORITIES`, `TableState`, `Aggregate`, `RoundSnapshot`, `RoomState`, `Persona`, `Scenario`, `Phase`, `RoundMove`, `RoundMode`, `TOKEN_VALUE_USD = 1_000_000`. |
 | `src/lib/game/money.ts` | `tokenUnitLabel`, `tableWalletLabel`, `formatUsd` (compact), `formatUsdFull` (Intl). |
 | `src/lib/components/phone/FunctionBoard.svelte` | Per-priority ± buttons step by `CHIP_VALUE` (10). R3 is remove-only. Enforces cap from `tableBountyTokens(room)`. Row-flash animation on change. `onpointerup` is used for touch handling with `touch-action: manipulation`. |
 | `src/lib/components/phone/MobileRender.svelte` | Selfie (file input `capture="user"`) + LinkedIn frame composite. Has a hard-coded LinkedIn share origin fallback: `https://common-ground-phygital.rdtect.workers.dev`. |
-| `src/lib/components/present/FutureWorkspace.svelte` | Composes `FutureBrief` + `FutureRoomGen` + `FutureTableGrid`; owns the editable brief modal (uses `session.updateBrief`, local-only). |
+| `src/lib/components/present/FutureWorkspace.svelte` | Composes the ZyetaI concept/design surfaces; owns the editable brief modal (uses `session.updateBrief`, which persists via `/api/ai/brief-edit`). |
 | `src/lib/components/present/future.svelte.ts` | Co-located UI state for Future Workspace screen (progress, err, briefOpen). |
 | `src/lib/components/present/StageNav.svelte` | Dots + Back/Next buttons; `total` default = 5, but the caller passes `present.total`. |
 | `src/lib/components/present/RoomGlance.svelte` | Strip (round / stake / budget) + per-table chips + `<PortraitMatrix>`. Comment in source: "Alignment lives on screen 2 — screen 1 is the board + money only." |
-| `src/lib/components/present/RoomInsights.svelte` | Ring (`r=42`, `dash = (ring/100) * 2π*42`) + lead/fault/blind chips + table-vs-room alignment bars + surprise caption. SSOT: `roomInsights`. |
-| `src/lib/components/present/WinnersLosers.svelte` | Podium (#1 priority, Heaviest Spender) + grid of per-function Backed/Dropped cards. |
-| `src/lib/components/analytics/PriorityConstellation.svelte` | Stacked bar per priority; summary: top leads, broadest, most concentrated. |
-| `src/lib/components/analytics/ReachIntensityQuadrant.svelte` | Quadrant SVG: Consensus Champion · Niche Conviction · Broad Support · Quiet Depths. |
-| `src/lib/components/analytics/Headlines.svelte` | Synthesized headlines (3 lines): alignment, surprise/blind, total stake. |
+| `src/lib/components/present/PriorityBreakdown.svelte` | Screen 2 — per-priority breakdown of room stake. |
+| `src/lib/components/present/RoundInsights.svelte` | Screen 3 — how the room evolved across capture rounds (SSOT: `roomInsights` + `roomRoundStory`). |
+| `src/lib/components/present/PrioritiesSummary.svelte` | Screen 4 — what each function did (backed / dropped per function). |
+| `src/lib/components/present/FunctionPriorities.svelte` | Screen 5 — per-function detail. |
+| `src/lib/components/analytics/PortraitMatrix.svelte` | 7×7 heatmap of function × priority stake, `color-mix` per cell. The only remaining analytics component. |
 | `src/lib/components/Modal.svelte` | Native `<dialog>` primitive with `$bindable` `open`. Uses `$effect` to call `showModal()`/`close()`. Backdrop click + native close sync `open` back. |
 | `src/lib/components/QrCode.svelte` | Async `qrcode.toDataURL` on mount with green-on-cream colors. |
 | `src/lib/components/Button.svelte` | Polymorphic: `<a>` when `href`, else `<button>`. Variants: `primary`/`secondary`/`teal`/`outline`/`ghost`/`danger`. Sizes: `sm`/`md`/`lg`. |
@@ -3336,7 +3797,7 @@ The conditional-UPDATE pattern in Phase 3 unlocks idempotency (Phase 3), the pro
 - **Build**: Vite 8 + `@sveltejs/vite-plugin-svelte` 7 + SvelteKit 2 + Svelte 5 (runes mode forced everywhere except `node_modules`). Adapter is `@sveltejs/adapter-cloudflare` 7.2.9, instantiated **inline in `vite.config.ts`** — there is **no `svelte.config.js`**.
 - **Worker**: `compatibility_date 2026-07-01`, `nodejs_compat`, `main .svelte-kit/cloudflare/_worker.js`, assets from `.svelte-kit/cloudflare`.
 - **D1**: single binding `common_ground_db`; schema `room (id TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL)` with row id `'LIVE'`. `ensureSchema` is per-isolate (cached in module scope, not persistent).
-- **Workers AI**: binding `AI`; model `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (3.1-8b was deprecated 2026-05-30). The Llama SYSTEM prompt mandates plain text (no `#` markdown), under 280 words, structured as Mandate / Where the money went / Lead / Resolve / Protect / Spatial program / One open question.
+- **Workers AI**: binding `AI`; model `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (3.1-8b (deprecated) was deprecated 2026-05-30). The  RapidI SYSTEM prompt mandates plain text (no `#` markdown), under 280 words, structured as Mandate / Where the money went / Lead / Resolve / Protect / Spatial program / One open question.
 - **fal**: `@fal-ai/client` 1.10, `fal-ai/nano-banana-2`, 16:9 1K webp, key from `$env/dynamic/private.FAL_API_KEY`/`FAL_KEY` then `platform.env`. Missing key → `url: null, error: 'no_key'`.
 - **Env files**: `.env` is gitignored and **currently contains a real key** — treat as a secret, do not echo. `.env.example` exposes only `FAL_API_KEY=`. Cloudflare local secrets live in `.dev.vars` (gitignored).
 - **Do not add native Node modules** (e.g. `better-sqlite3`). All persistence is D1; all inference is Workers AI; all images are fal.
@@ -3510,12 +3971,12 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 
 **Symptom**: the brief output reads as garbage, or the AI returns an error.
 
-**Diagnosis**: pre-Phase 4, the prompt is in `src/lib/game/brief.ts:139` (`briefFactsForLlm(agg)`). The render can return a string that the Llama model can't parse. **Post-Phase 4**, the prompt is in `src/lib/server/ai/prompts/brief.user.json` + `brief.user.ts` — the section keys are typed in `_schema.ts`. A missing section or a malformed render is the bug.
+**Diagnosis**: pre-Phase 4, the prompt is in `src/lib/game/brief.ts:139` (`briefFactsForRapidi(agg)`). The render can return a string that the  RapidI model can't parse. **Post-Phase 4**, the prompt is in `src/lib/server/ai/prompts/brief.user.json` + `brief.user.ts` — the section keys are typed in `_schema.ts`. A missing section or a malformed render is the bug.
 
 **Recovery**:
 1. **Pre-Phase 4**: check `brief.ts:139-155`. The user prompt is `Total stake: ${...} tokens (${tokenUnitLabel()}).\nAlignment index: ...\n...`. If the `room.aggregate` has a `NaN` (e.g. `aggregate.matrix[i] = NaN` from a `+nan` payload), the prompt reads as `NaN tokens`. Validate before render.
 2. **Post-Phase 4**: run `bun run lint:prompts` (the script from the plan). It catches missing `sections` keys, unknown `{{token}}` placeholders, and over-size system prompts.
-3. Check `wrangler tail` for the response: `[llama] brief failed: ...`. The Llama model is returning an error — likely a token limit (700 max_tokens, ~280 words).
+3. Check `wrangler tail` for the response: `[rapidi] brief failed: ...`. The  RapidI model is returning an error — likely a token limit (700 max_tokens, ~280 words).
 
 ### F14. The poster / chip / board UI is in a weird state
 
@@ -3552,7 +4013,7 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 
 **Recovery**:
 1. Read the build error carefully. It's a real Svelte 5 / TypeScript error.
-2. **Pre-Phase 4 (prompts/ refactor)**: most build errors are in `src/lib/server/ai/llama.ts` or `fal.ts`. The current `SYSTEM` constant is a template literal; a stray `\` in a prompt will fail the build.
+2. **Pre-Phase 4 (prompts/ refactor)**: most build errors are in `src/lib/server/ai/rapidi.ts` or `fal.ts`. The current `SYSTEM` constant is a template literal; a stray `\` in a prompt will fail the build.
 3. **Post-Phase 4**: the prompts/ refactor moved the prompt text to JSON. The build is less likely to fail on prompt content (JSON is more forgiving of multiline strings). The remaining build failures are usually Svelte runes misuse.
 4. `bun run build 2>&1 | head -200` — the first 200 lines are usually enough.
 
@@ -3590,21 +4051,21 @@ bun run build fails             │ read the error; usually Svelte rune
 6. **History is round-aware.** Evolution R2/R3/R5 only populates after those rounds have been advanced through; retreat prunes snapshots for rounds past the current one. `roomInsights` adds a **live** point for the current round if not yet in history, so the journey chart never blanks mid-round.
 7. **Phones show round number + scenario question + hint** (in `MobileHeader`/`RoundQuestion`). Scenario copy is also broadcast on the presenter side; phone is the only place that requires the user to read it on-device.
 8. **`ANTHROPIC_API_KEY` is declared in `src/app.d.ts` but unused** — don't trust its presence.
-9. **Two `workers-types` versions coexist** in `bun.lock` (root `5.20260721.1` vs adapter-pinned `4.20260702.1`); import bindings via `$lib/server/ai/llama` for the `AiBinding` type, not the workers-types namespace.
+9. **Two `workers-types` versions coexist** in `bun.lock` (root `5.20260721.1` vs adapter-pinned `4.20260702.1`); import bindings via `$lib/server/ai/rapidi` for the `AiBinding` type, not the workers-types namespace.
 10. **Single chip is $10M.** `CHIP_DENOMS` has exactly one entry (`{ red, value: 10 }`); `CHIP_DELTAS = [10, -10]`. The board endpoint's server validation **only accepts ±10** and 400s on anything else — despite the client `session.boardDelta` signature saying `delta: 1 | -1` (stale). The previous blue/green chip story is gone from code; `types.ts` still has a stale comment + the `$10M/$5M/$2M` legend in the `BoardSheet` print. Edit comments rather than the store.
 11. **`session.boardDelta` is a silent no-op** (still `200`) on phase ≠ `round` (or `lobby`), locked table, wrong seat, out-of-range priority, `delta: 0`, `NaN` priority, over-budget add, or remove-round positive delta. Clients should treat the response as informational, not authoritative. `boardSet` is also a no-op on locked/wrong-seat/bad-priority but clamps to budget on the happy path.
 12. **`setTables` is a no-op.** The endpoint accepts `{ count }` but `Store.setTables` discards it (`void count;`) and always normalises to `N_SEATS = 7`. The host UI doesn't expose it.
 13. **`setConfig` ignores `analysisUnlocks`.** The endpoint body type and `setConfig` patch type only accept `analysisForced` and `roomBountyTokens` (1..9999, clamped). The README/CLAUDE mention of `analysisUnlocks` is stale.
 14. **LinkedIn share fallback origin** is hard-coded to `https://common-ground-phygital.rdtect.workers.dev` in `MobileRender.svelte`; the real `window.location.origin` is preferred when available. `MobileRender.svelte` uses a file-input camera (`<input type="file" accept="image/*" capture="user">`) — this is a voluntary selfie for the LinkedIn frame, **not** board-reading vision (the README "no vision" claim still holds for gameplay).
-15. **`session.updateBrief(text)` is local-only.** It mutates only the in-memory `room` snapshot via `$state.raw` reference replace and never POSTs; a subsequent poll (or a `setEnhancedBrief` from the server) will overwrite it.
-16. **`$lib/client/index.ts` is deprecated.** It re-exports `SESSION`, `session`, `play`, `present`, `host` from `$lib/state`. New code should import from `$lib/state` directly.
+15. **`session.updateBrief(text)` persists.** It POSTs to `/api/ai/brief-edit`, which sets `enhancedBrief` with `briefSource: 'manual'` — and `recompute()` never overwrites a `manual` or `rapidi` brief with the numbers skeleton. (Earlier revisions of this doc called it local-only; that is stale.)
+16. **`$lib/client/index.ts` has been deleted.** It used to re-export `$lib/state`. Import from `$lib/state` directly.
 17. **`$lib/index.ts` is a thin barrel** re-exporting `game/types.js`, `game/config.js`, `game/scoring.js` only. It is **not** a general `$lib` entry point — there is no `client.ts` or `server.ts` barrel.
 18. **`app.css` seat color tokens are misaligned with `PERSONAS[]`.** The 7 `--color-seatN` tokens don't match the actual persona hex codes in the order they're used; components use `persona.color` directly. Don't reach for `--color-seat*` thinking it's the persona palette. **See [Branding] for the proposed fix.**
-19. **The client polls `/api/room/${SESSION}/state` directly every 500 ms** (`fetchStateOnce` in `src/lib/state/session.svelte.ts`). The state route IS the polling path, not just a debugging endpoint — the architecture diagram and the endpoint section both show that, but earlier drafts of this doc claimed otherwise. If you add a 404 here, every phone/presenter/host screen will stop refreshing.
+19. **The client polls `/api/room/${SESSION}/state` directly every 500 ms** (`fetchStateOnce` in `src/lib/state/session.svelte.ts`), sending `If-None-Match` so an unchanged room costs a `304` with no body. The state route IS the polling path, not just a debugging endpoint. If you add a 404 here, every phone/presenter/host screen will stop refreshing.
 20. **No print CSS on `/present/[code]/qrs/`.** The print sheet uses `print:` Tailwind variants but the route has no `@page` rule and no `body { background: white !important }` override. `/board/[seat]/` and `/boards/all/` do have `@page landscape margin:0`.
-21. **Default Svelte favicon.** `src/lib/assets/favicon.svg` is the orange "S" Svelte logo. Replace per [Branding] before any production deploy.
-22. **Prompts live in code, not in `src/lib/server/ai/prompts/`.** Today the Llama `SYSTEM` constant is in `llama.ts:22` and the image-prompt string templates (`finalePrompt`, `tableFunctionPrompt`, `briefFactsForLlm`) are in `src/lib/game/brief.ts`. That mixes brand-voice text with domain code, makes the brand voice un-diffable for non-engineers, and prevents runtime A/B. **Fix:** lift them into `src/lib/server/ai/prompts/` as JSON (sections + meta) with TS renderers + a typed `PROMPTS` registry — see "Prompts as data, not code" in [AI integration]. The current setup is the smell that gotcha 23 describes.
-23. **The CGI is invisible to the AI.** Neither the current Llama prompt nor the fal prompt names the Common Ground Index, the lead/fault/blind lens, or the verdict label. The AI ends up paraphrasing what the UI already shows instead of amplifying it. The refined prompts in `src/lib/server/ai/prompts/brief.system.json` (Common Ground vocabulary section) and `brief.user.ts` (Lens block) fix this.
+21. **Favicon is the `CG` monogram** (`src/lib/assets/favicon.svg`) — the default Svelte logo has been replaced. Later [Branding] prose that says otherwise is stale.
+22. **Prompts live in code, not in `src/lib/server/ai/prompts/`.** Today the  RapidI `SYSTEM` constant is in `rapidi.ts:22` and the image-prompt string templates (`finalePrompt`, `tableFunctionPrompt`, `briefFactsForRapidi`) are in `src/lib/game/brief.ts`. That mixes brand-voice text with domain code, makes the brand voice un-diffable for non-engineers, and prevents runtime A/B. **Fix:** lift them into `src/lib/server/ai/prompts/` as JSON (sections + meta) with TS renderers + a typed `PROMPTS` registry — see "Prompts as data, not code" in [AI integration]. The current setup is the smell that gotcha 23 describes.
+23. **The CGI is invisible to the AI.** Neither the current  RapidI prompt nor the fal prompt names the Common Ground Index, the lead/fault/blind lens, or the verdict label. The AI ends up paraphrasing what the UI already shows instead of amplifying it. The refined prompts in `src/lib/server/ai/prompts/brief.system.json` (Common Ground vocabulary section) and `brief.user.ts` (Lens block) fix this.
 24. **JSON for prompts, not markdown.** It is tempting to drop prompts in `static/prompts/*.md` so designers can edit them in any editor. **Don't.** Cloudflare Workers don't ship a filesystem; the bundle has to contain the prompt. Use `.json` in `src/lib/server/ai/prompts/` so the prompt rides with the rest of the Worker code, gets type-checked by the `PromptMeta` schema, and is diffable in PR review. Static markdown files would also lose the sectional structure (`{ role, audience, voice, vocabulary, structure, constraints }`) that makes a single-section edit safe.
 25. **No story in the analysis today.** The presenter deck has the *data* for "where we agree / where we fight / what we missed / who surprised us" but it does not have a *story* — the presenter sees a ring + chips + a heatmap and has to translate to English in their head. The host page has zero analysis at all. **Fix:** ship `readAloudForRoom(room)` in `src/lib/game/brief.ts` (the one-sentence read-aloud), add an `<CgiHero>` component, and surface the same string on both `/present/[code]/` and `/host/[code]/` — see "Analysis: the Common Ground story" above for the full change list.
 26. **Live URL drift.** The deployment at `https://common-ground-phygital.rdtect.workers.dev/host/LIVE` runs the code as of the last `wrangler deploy`. Local changes (including any of the analyses-redesign steps above) do not appear there until the Worker is rebuilt and redeployed. There is no CI; deploy is a manual `bun run build && wrangler deploy`. After the redesign, expect the live URL to lag the local dev server by however long the deploy takes (typically 1–2 minutes for the build, 10–30s for the wrangler push).
@@ -3625,17 +4086,18 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 - **aggressive cache** — see *Idempotency-Key*.
 - **alignment** — see *lead*.
 - **alignment index** — see *CGI*.
-- **AI binding** — the Workers AI binding `AI` (declared in `src/app.d.ts` as `AI?: AiBinding`). Used by `src/lib/server/ai/llama.ts` to invoke the Llama 3.3 chat model.
+- **AI binding** — the Workers AI binding `AI` (declared in `src/app.d.ts` as `AI?: AiBinding`). Used by `src/lib/server/ai/rapidi.ts` to invoke the RapidI chat model.
 - **analysis deck** — the 5-screen presenter view (`/present/[code]/`), gated on `analysisOpen(room)` (defined in `src/lib/game/scoring.ts`).
 - **analysisForced** — boolean field on `RoomState` (`src/lib/game/types.ts`). When `true`, the analysis deck is shown even during R1–R5. Set by the host via `POST /api/room/[code]/config` with `{ analysisForced: boolean }`.
 - **analysisOpen(room)** — pure function in `src/lib/game/scoring.ts` that returns `true` when the room is in `reveal`/`finale` or when `analysisForced` is set.
 - **AtC** — see *AbortController*.
 
 ### B
-
+- **backplate / panel / chip-frame** — the recessed green-felt background layer; brand chrome stays Zyeta teal/gold, **data wears priority color**.
 - **bias** — per-persona, per-priority 0–3 weight in `src/lib/game/config.ts` (`PERSONAS[i].bias`). The `surpriseToken` function uses this to detect off-type bets.
+- **`badgeForTable(room, tableId, persona?)` (proposed)** — `src/lib/game/scoring.ts`. Returns `{ hashtag, badge, badgePriority, badgeShare }` for one table. The `hashtag` is the persona's *declared* identity (e.g. `#FootprintShrinker`); the `badge` is the persona's *observed play* (e.g. `"Held Future Readiness"`, derived from the table's top-priority token). Empty-state: zero stake → `badge: 'No stake'`; missing hashtag → `'#YourFunction'`. Renders on the post-game phone card, LinkedIn share frame, and presenter screen 7.
 - **blind** — the priority that received the *least* $M in `aggregate.matrix`. Computed by `verdicts(matrix, reach, functionVectors)` in `src/lib/game/scoring.ts`. The lens named "what are we blind to".
-- **`buildEnhancedBrief(agg)`** — the numbers-only skeleton brief in `src/lib/game/brief.ts`. Used as the Llama fallback when Workers AI is unavailable.
+- **`buildEnhancedBrief(agg)`** — the numbers-only skeleton brief in `src/lib/game/brief.ts`. Used as the  RapidI fallback when Workers AI is unavailable.
 
 ### C
 
@@ -3667,7 +4129,7 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 - **`ease-out-quart`** — motion token (`--ease-out-quart = cubic-bezier(0.22, 1, 0.36, 1)`). The default transition curve in the design system.
 - **empty matrix** — `emptyMatrix()` in `src/lib/game/scoring.ts`. A 7×7 zero matrix, the default for a new table's `board` field.
 - **`endAt`** — `derived(page >= total)` in `StageNav.svelte`. The "Next → Done" affordance.
-- **`enhancedBrief`** — `RoomState.enhancedBrief: string` in `src/lib/game/types.ts`. The current brief (Llama or numbers). Persisted by `Store.setEnhancedBrief(code, brief, source)`.
+- **`enhancedBrief`** — `RoomState.enhancedBrief: string` in `src/lib/game/types.ts`. The current brief ( RapidI or numbers). Persisted by `Store.setEnhancedBrief(code, brief, source)`.
 - **`endpoint contract`** — the documentation in [Server: store + endpoints](#server-store--endpoints) that lists every `+server.ts` handler, its body, response, and side effects.
 - **Etag** — see *If-Match / If-None-Match*.
 - **even smaller ship** — the user's "if you only have X time" entry points in the Master plan. A single PR (font swap, favicon, read-aloud button) takes 30 minutes and changes the live URL.
@@ -3675,7 +4137,7 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 
 ### F
 
-- **`fallback`** — the behaviour when an AI call fails or a key is missing. `buildEnhancedBrief` is the numbers-only fallback for Llama. `generateImage` returns `ImageResult = { url: null, error: 'no_key' | 'failed' }` for fal.
+- **`fallback`** — the behaviour when an AI call fails or a key is missing. `buildEnhancedBrief` is the numbers-only fallback for the chat model. `generateImage` returns `ImageResult = { url: null, error: 'no_key' | 'failed' }` for fal.
 - **`fault`** — the priority with the *greatest spread* across functions (max variance, skipping the lead). Computed by `verdicts(matrix, reach, functionVectors)`. The lens named "where do we fight".
 - **`FEATURE_COUNT`** — not used. The `+page.svelte:43` host page could show a stat card with "X of Y features enabled" — proposed in Phase 7.
 - **FETCH_DELTAS** — see *CHIP_DELTAS* (different name, same concept).
@@ -3730,7 +4192,7 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 - **`linkedIn-frame.ts`** — `src/lib/client/linkedin-frame.ts`. The 1200×630 canvas composite for the share image. Paints "Powered by ZyetaI" at bottom-right.
 - **live URL** — `https://common-ground-phygital.rdtect.workers.dev/host/LIVE`. The only deployment. Updated by `wrangler deploy`. **The doc is a spec; the live URL is the truth.** If they disagree, the live URL wins.
 - **loading state** — see *busy*.
-- **LLAMA_MODEL** — `'@cf/meta/llama-3.3-70b-instruct-fp8-fast'` in `src/lib/server/ai/llama.ts:9`. The Workers AI chat model. `3.1-8b-instruct` was deprecated 2026-05-30.
+- **LLAMA_MODEL** — `'@cf/meta/llama-3.3-70b-instruct-fp8-fast'` in `src/lib/server/ai/rapidi.ts:9`. The Workers AI chat model. `3.1-8b (deprecated)-instruct (deprecated)` was deprecated 2026-05-30.
 - **`loadRoom(db)`** — `src/lib/server/room-store.ts:28-44`. Reads the row from D1. Returns `null` if no row, or if the row fails validation.
 
 ### M
@@ -3759,7 +4221,7 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 ### P
 
 - **`parseRoom(data)`** — not used. The D1 blob is `JSON.parse(row.data)` in `loadRoom`. The `typeof data.updatedAt !== 'number'` check is a minimal shape guard. Add a full Zod / Valibot schema in Phase 11.
-- **`PERSONAS[]`** — `src/lib/game/config.ts`. The 7 personas (Real Estate, HR, IT, Finance, Operations, Marketing, C-Suite). Source of truth for tableId → persona name + color + mission + lens.
+- **`PERSONAS[]`** — `src/lib/game/config.ts`. The 7 personas (Real Estate, HR, IT, Finance, Operations, Marketing, C-Suite). Source of truth for tableId → persona name + color + mission + lens + **hashtag** (e.g. `#FootprintShrinker`). Host-editable per session via the Game Config editor.
 - **`Phase`** — `'lobby' | 'round' | 'reveal' | 'finale'` (`src/lib/game/types.ts`). The room's state machine.
 - **`phaseStartedAt`** (proposed) — see *roundStartedAt*.
 - **`polling fallback`** — the 5 s `setInterval(this.tick.bind(this), 5000)` in Phase 9. Runs when `EventSource.readyState === CLOSED`.
@@ -3794,20 +4256,31 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 
 - **Sass / SCSS** — not used. The codebase uses Tailwind v4 with `@theme` CSS variables. No Sass, no PostCSS, no `.scss` files.
 - **`SCENARIOS[]`** — `src/lib/game/config.ts`. The 5-round scenario table. Each round has `mode` (wait | capture | hold), `move` (add | remove), `instruction`, `title`, `question`, `hint`, `emoji`.
-- **`Screens` (presenter)** — the 5 (or 6 post-Phase 8) `SCREENS[]` entries in `src/routes/present/[code]/+page.svelte:19-25`. Each has `title`, `subtitle`, `short`.
+- **`strategySignature(room)` (proposed)** — `src/lib/game/scoring.ts`. Returns the room's posture (`additive-dominant` / `protection-dominant` / `balanced-trade`), per-function posture (`additive` / `protective` / `balanced` / `no-op`), the *protected* priority list (where each function held the line), and the *contested* priority list (the room's `fault` and per-function share there). Drives the 7th presenter screen "Strategy" (Phase 8, alongside the 6th screen "Your journey"), the phone "Your strategy" card, the host's emerging-analysis panel, and 2 lines of context in the  RapidI brief.
+- **`RoomStrategy`** — `'additive-dominant' | 'protection-dominant' | 'balanced-trade'`. The room-level classification in `strategySignature`. Computed from R3's net removal vs R2's standing (>50% removed = protection-dominant; <10% removed AND R5 added ≥20% = additive-dominant; else balanced-trade).
+- **`FunctionStrategy`** — `'additive' | 'protective' | 'balanced' | 'no-op'`. The per-function classification. Thresholds: R2→R3 row shrank ≥20% = protective; grew ≥10% = additive; within ±10% = balanced; zero delta = no-op. The thresholds are tunable in `DEFAULT_CONSTRAINTS`.
+- **`additive-dominant`** — room-level posture: R3 was a *light touch* (≤10% removed) AND R5 added ≥20% over R4. The room kept building.
+- **`protection-dominant`** — room-level posture: R3 net-removed >50% of R2's standing. The room took things back.
+- **`Screens` (presenter)** — the 5 base screens in `src/routes/present/[code]/+page.svelte:19-25`. Phase 8 adds a 6th ("Your journey") and a 7th ("Strategy" — strategy disclosure). Each has `title`, `subtitle`, `short`.
+- **`protected`** (StrategySignature.protected) — `Array<{ seat, priority, shareR2, shareR3, held: boolean }>`. The priorities each function held the line on. "Held" means R3 share ≥ R2 share AND R3 share > the room's average for that priority. The function's strategy is *protective* on that priority.
+- **`priorityColor(p: PriorityIndex)` (proposed)** — `src/lib/game/config.ts`. Returns `PRIORITY_COLORS[p]`. Single source of truth for the heatmap, the chord diagram, the chip pile, and the lead/fault/blind labels. Brand colors (gold/teal/red) stay for chrome; **priority colors are for data**.
+- **`PRIORITY_COLORS`** — `src/lib/game/config.ts`. The 7-priority palette: Talent `#E0A458`, Employee Experience `#E0665A`, Employer Brand `#E574B0`, Productivity `#5AA9E6`, Innovation `#7E8CE0`, Cost / ROI `#3FB6A2`, Future Readiness `#C9A227`.
+- **`RoundConstraints` (proposed)** — `src/lib/game/config.ts`. Per-round validation rules: `floorPerRound: Partial<Record<mode, number>>` (R1: $30M, R2/R5: $50M, R4: 0), `minPrioritiesPerRound: Partial<Record<mode, number>>` (R1: 0, R2/R5: 5, R4: 0), `maxPerPriority: number` (default 100). The host's Game Config → Constraints tab edits these per session.
+- **`validateRoundSubmission(room, tableId, row, constraints)` (proposed)** — `src/lib/game/rules/board.ts`. Returns `{ ok: true } | { ok: false, reason, message, hint? }`. The `message` is server-generated copy that the phone renders verbatim. The validator owns the *copy* because the constraints are per-session configurable.
+- **`SubmitTableError` (proposed)** — typed result of `validateRoundSubmission`. Reasons: `'not-accepting' | 'not-capture-round' | 'over-budget' | 'wrong-seat' | 'locked' | 'floor-not-met' | 'breadth-not-met'`. Phone renders the `message` in a toast.
 - **`session.boot()`** — `src/lib/state/session.svelte.ts`. Called from `+layout.svelte`'s `onMount`. Starts the polling loop and the visibility listener. Returns a teardown.
 - **`session.busy`** — boolean flag on the `SessionState`. True while a mutating action is in flight. UI gates buttons on this.
 - **`session.connected`** — boolean. True when the last polling fetch succeeded. False on first error.
 - **`session.error`** — discriminated union `{ kind: 'none' | 'transient' | 'fatal' }` (post-Phase 2). Today it's a string.
-- **`setEnhancedBrief('', brief, source)`** — `src/lib/server/store.ts`. Sets `room.enhancedBrief` and `room.briefSource` (the second arg is ignored — `_code: string` is always `LIVE`). Recomputes only if `source === 'numbers'`; the Llama brief is preserved.
+- **`setEnhancedBrief('', brief, source)`** — `src/lib/server/store.ts`. Sets `room.enhancedBrief` and `room.briefSource` (the second arg is ignored — `_code: string` is always `LIVE`). Recomputes only if `source === 'numbers'`; the  RapidI brief is preserved.
 - **`setFinaleImage('', url)`** — same shape, for `room.finaleImageUrl`. Skips recompute.
 - **`SEATS` / `SEAT_COLORS` / `SEAT_LENS` / `SEAT_MISSIONS` / `SEAT_BIAS`** — `src/lib/game/config.ts`. Per-persona fields, mirrored from `PERSONAS[]`. (The seat-color tokens in `app.css` are drift — see [Branding fix].)
 - **showExtra (presenter)** — `let showExtra = $state(false)` in the presenter page. The `E` key toggles it. Promoted to primary deck content in the [Analysis redesign].
 - **silent** — see *Reactive*. Svelte 5 reactivity. Module-level `$state` is not reactive; only class field `$state` is.
-- **`StageNav.svelte`** — the dots + Back/Next buttons for the presenter deck. `total` defaults to 5; caller passes `present.total`. Will need to handle 6 screens (Phase 8).
+- **`StageNav.svelte`** — the dots + Back/Next buttons for the presenter deck. `total` defaults to 5; caller passes `present.total`. Will need to handle 7 screens in Phase 8 (5 base + *Your journey* + *Strategy*).
 - **store (singleton)** — `src/lib/server/store.ts`. The `class Store` with `private room: RoomState | null`. The process-local singleton. **Dropped in Phase 3** — replaced with per-request read-then-mutate-then-conditional-UPDATE.
 - **store (verb)** — `applyBoardDelta`, `applyBoardSet`, `applySubmitTable`, `applyAdvance`, `applyRetreat`. The mutating verbs. Pure functions on `room` + `table`. Take a `RoomState`, return success/failure + (sometimes) a derived shape.
-- **subject** — the `setSubject` for the AI prompts. Currently inline in `llama.ts:51`. Moved to `prompts/brief.user.ts` in Phase 4.
+- **subject** — the `setSubject` for the AI prompts. Currently inline in `rapidi.ts:51`. Moved to `prompts/brief.user.ts` in Phase 4.
 - **sub-tables** — not used. One table per function. No nested tables. See *sub-card* for the presenter's submissions grid.
 - **subCard (presenter)** — `src/routes/present/[code]/+page.svelte:215-242`. A 7-card grid showing each table's submission state (✓ Submitted, 🧊 Frozen, Open). Hidden when the analysis deck is open. Will collapse to a sticky footer strip in Phase 7.
 - **surprise** — `aggregate.surprise: { seat, priority } | undefined`. The function that put ≥25% of its money on an off-type priority. The lens named "who surprised us".
@@ -3822,7 +4295,7 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 - **`tear-down`** — the function returned by `session.boot()`. Called from `onDestroy` (post-Phase 2). Clears the interval, removes the visibility listener, aborts the `AbortController`.
 - **tiered lock** — the future capability to lock a single table by the host. Today's `lockTable` is binary (locked / unlocked). Phase 7 adds "lock all" with an undo toast.
 - **time-to-first-byte** — the live URL's TTFB is bounded by Cloudflare's edge. The polling client's TTFB is irrelevant; SSE Phase 9 makes it irrelevant.
-- **token usage (Llama)** — `max_tokens: 700` in `llama.ts:55`. The brief is under 280 words. Phase 4 drops to `max_tokens: 480` to bound cost on the `fp8-fast` variant.
+- **token usage (RapidI)** — `max_tokens: 700` in `rapidi.ts:55`. The brief is under 280 words. Phase 4 drops to `max_tokens: 480` to bound cost on the `fp8-fast` variant.
 - **`tokenUnitLabel()`** — `src/lib/game/money.ts`. Returns the single chip value as a string (`'$10M'`).
 - **`try/finally`** — every mutating endpoint uses this pattern. The `finally` resets `busy = false`. Post-Phase 7: replaced by `<svelte:boundary>` for partial UI failure.
 - **type alias** — the `RoomState` and related types in `src/lib/game/types.ts` are the schema. A future Zod / Valibot schema would catch drift.

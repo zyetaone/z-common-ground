@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import BoardSheet from '$lib/components/BoardSheet.svelte';
-	import { SEATS } from '$lib/game';
+	import { tablePersona } from '$lib/game';
+	import { session } from '$lib/state';
 
 	const seat = Math.min(6, Math.max(0, Number(page.params.seat) || 0));
-	const name = SEATS[seat];
 	const roomCode = (page.url.searchParams.get('room') || 'LIVE').toUpperCase();
-	const tableId = Number(page.url.searchParams.get('table')) || 1;
+	const tableId = Number(page.url.searchParams.get('table')) || seat + 1;
+	const name = $derived(tablePersona(tableId, session.room).name);
 
 	function print() {
 		window.print();
@@ -27,7 +28,7 @@
 </div>
 
 <div class="stage">
-	<BoardSheet {seat} {roomCode} {tableId} />
+	<BoardSheet {seat} {roomCode} {tableId} room={session.room} />
 </div>
 
 <style>

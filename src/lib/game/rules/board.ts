@@ -3,21 +3,28 @@
  * Mutates table.board; caller recompute.
  */
 import {
-	DEFAULT_ROOM_BOUNTY_TOKENS,
-	DEFAULT_TABLE_BOUNTY_TOKENS,
 	N_SEATS,
-	SCENARIOS,
+	R2_FULL_BUDGET,
+	R3_REMOVE_TARGET,
+	R5_RESTRUCTURE_CAP,
 	isCaptureRound,
+	roomScenarios,
+	tableBountyTokens,
 	tableSeatIndex
 } from '../config';
 import { emptyMatrix } from '../scoring';
 import { N_PRIORITIES } from '../types';
 import type { RoomState, TableState, Vec7 } from '../types';
 
-export function tableBountyTokens(room: RoomState): number {
-	const n = Math.max(1, room.tables.length);
-	const fromRoom = Math.floor((room.roomBountyTokens || DEFAULT_ROOM_BOUNTY_TOKENS) / n);
-	return Math.max(1, fromRoom || DEFAULT_TABLE_BOUNTY_TOKENS);
+export { tableBountyTokens };
+
+/** Wallet ceiling for the current round (R5 restructure caps at $90M). */
+export function activeTableCap(room: RoomState): number {
+	const base = tableBountyTokens(room);
+	if (room.phase === 'round' && room.round + 1 === 5) {
+		return Math.min(base, R5_RESTRUCTURE_CAP);
+	}
+	return base;
 }
 
 export function boardTokenSum(board: number[][]): number {
@@ -26,9 +33,10 @@ export function boardTokenSum(board: number[][]): number {
 	return n;
 }
 
+/** Host scenario move is SSOT (default R3 = remove). */
 export function isRemoveRound(room: RoomState): boolean {
 	if (room.phase !== 'round') return false;
-	return SCENARIOS[room.round]?.move === 'remove';
+	return roomScenarios(room)[room.round]?.move === 'remove';
 }
 
 export function canEditTable(
@@ -64,7 +72,10 @@ export function applyBoardDelta(
 	// Enforce the table wallet on the primary tap-to-place path (adds only) —
 	// the cap used to live only on the seldom-hit seal path, so over-budget
 	// totals reached analytics and got frozen into history.
-	if (delta > 0 && boardTokenSum(table.board) + delta > tableBountyTokens(room)) return false;
+	if (delta > 0) {
+		const cap = activeTableCap(room);
+		if (boardTokenSum(table.board) + delta > cap) return false;
+	}
 
 	const row = table.board[fnSeat].slice();
 	row[priority] = Math.max(0, (row[priority] ?? 0) + delta);
@@ -89,9 +100,9 @@ export function applyBoardSet(
 	const rounded = Math.round(Number(value));
 	let next = Math.max(0, Math.min(99, Number.isFinite(rounded) ? rounded : 0));
 	if (isRemoveRound(room) && next > cur) next = cur;
-	// Clamp so the whole board can never exceed the table wallet.
+	// Clamp so the whole board can never exceed the active wallet.
 	const otherSum = boardTokenSum(table.board) - cur;
-	next = Math.min(next, Math.max(0, tableBountyTokens(room) - otherSum));
+	next = Math.min(next, Math.max(0, activeTableCap(room) - otherSum));
 
 	const row = table.board[fnSeat].slice();
 	row[priority] = next;
@@ -121,13 +132,13 @@ export function applySubmitTable(
 
 	const roundLabel = room.phase === 'round' ? room.round + 1 : 0;
 	const wantSeal = opts?.seal !== false;
-	const canSeal = room.phase === 'round' && isCaptureRound(roundLabel);
+	const canSeal = room.phase === 'round' && isCaptureRound(roundLabel, room);
 	const seal = wantSeal && canSeal;
 
 	if (wantSeal && !canSeal) {
 		return {
 			ok: false,
-			error: `Submit/capture only on R2 · R3 · R5 (now ${room.phase === 'round' ? `R${roundLabel}` : room.phase})`
+			error: `Submit/capture only on capture rounds (now ${room.phase === 'round' ? `R${roundLabel}` : room.phase})`
 		};
 	}
 
@@ -146,7 +157,7 @@ export function applySubmitTable(
 	nextBoard[seat] = row;
 
 	const standing = prev.reduce((a, b) => a + b, 0);
-	const cap = isRemoveRound(room) ? Math.max(0, standing) : tableBountyTokens(room);
+	const cap = isRemoveRound(room) ? Math.max(0, standing) : activeTableCap(room);
 	const total = boardTokenSum(nextBoard);
 	if (total > cap) {
 		return {
@@ -155,6 +166,26 @@ export function applySubmitTable(
 				? `R3 REMOVE only — cannot add. Holding ${standing} tok; submitted ${total}.`
 				: `Over table bounty: ${total} tokens > ${cap} allowed (room total ${room.roomBountyTokens})`
 		};
+	}
+
+	// Round targets (seal path only — physical facilitation mirrors these numbers)
+	if (seal && roundLabel === 2) {
+		const need = Math.min(tableBountyTokens(room), R2_FULL_BUDGET);
+		if (total !== need) {
+			return {
+				ok: false,
+				error: `R2 requires the full $${need}M budget (you have $${total}M). Place every token, then seal.`
+			};
+		}
+	}
+	if (seal && roundLabel === 3 && isRemoveRound(room)) {
+		const removed = standing - total;
+		if (removed < R3_REMOVE_TARGET) {
+			return {
+				ok: false,
+				error: `R3 requires removing $${R3_REMOVE_TARGET}M (you removed $${removed}M of $${standing}M). Cut more, then seal.`
+			};
+		}
 	}
 
 	table.board = nextBoard;

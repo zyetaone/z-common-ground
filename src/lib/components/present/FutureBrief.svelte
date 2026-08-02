@@ -1,35 +1,30 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
 	import { PRIORITY_COLORS, spatialProgramFromAggregate } from '$lib/game';
-	import { session } from '$lib/state';
-	import { futureUi } from './future.svelte';
 
-	/** Left column — mix + brief actions. */
+	/** Left column — mix bars only; package CTA lives on FutureWorkspace. */
 	let {
 		room,
-		onOpenBrief,
-		onRegenBrief
+		onOpenBrief
 	}: {
 		room: RoomState;
 		onOpenBrief: () => void;
-		onRegenBrief: () => void;
 	} = $props();
 
-	const program = $derived(spatialProgramFromAggregate(room.aggregate));
+	const program = $derived(spatialProgramFromAggregate(room.aggregate, room));
 	const hasData = $derived(room.aggregate.totalCoins > 0);
 	const brief = $derived(room.enhancedBrief ?? '');
-	const briefSource = $derived(room.briefSource);
 	const colors = PRIORITY_COLORS;
 </script>
 
 <div class="panel">
-	<div class="kicker">Imagine the future of the workplace</div>
+	<div class="cg-kicker">Common Ground mix</div>
 
 	{#if !hasData}
-		<p class="comp muted">No stake yet</p>
+		<p class="comp muted cg-empty-inline">Waiting for priorities…</p>
 	{:else}
 		<p class="mandate">{program.mandate}</p>
-		<p class="comp">Where the money went</p>
+		<p class="comp">Where the wallets land</p>
 
 		<div class="bars">
 			{#each program.program as row (row.priority)}
@@ -54,23 +49,9 @@
 			<div class="dir b"><b>Protect.</b> {program.blind}</div>
 		</div>
 
-		<div class="brief-actions">
-			<button type="button" class="open-brief" onclick={onOpenBrief}>
-				{brief
-					? briefSource === 'llama'
-						? 'Open ZyetaI brief →'
-						: 'Open brief →'
-					: 'Generate AI brief'}
-			</button>
-			<button
-				type="button"
-				class="brief-only"
-				disabled={session.busy || !hasData}
-				onclick={onRegenBrief}
-			>
-				{session.busy && futureUi.progress ? 'Writing…' : 'Regen brief · ZyetaI'}
-			</button>
-		</div>
+		{#if brief}
+			<button type="button" class="open-brief" onclick={onOpenBrief}>Open brief →</button>
+		{/if}
 	{/if}
 </div>
 
@@ -81,12 +62,7 @@
 		background: var(--color-panel);
 		padding: 16px 18px;
 	}
-	.kicker {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.22em;
-		text-transform: uppercase;
-		color: var(--color-muted);
+	.cg-kicker {
 		margin-bottom: 8px;
 	}
 	.comp {
@@ -122,7 +98,7 @@
 	.track {
 		height: 10px;
 		border-radius: 4px;
-		background: rgba(255, 255, 255, 0.05);
+		background: color-mix(in srgb, var(--color-ink) 6%, transparent);
 		overflow: hidden;
 	}
 	.fill {
@@ -160,31 +136,15 @@
 	.dir.b {
 		border-color: var(--color-red);
 	}
-	.brief-actions {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-	.open-brief,
-	.brief-only {
+	.open-brief {
 		width: 100%;
 		border-radius: 12px;
 		padding: 12px;
 		font-weight: 700;
 		cursor: pointer;
 		font-size: 13px;
-	}
-	.open-brief {
 		border: 1px solid color-mix(in srgb, var(--color-gold) 50%, transparent);
 		background: color-mix(in srgb, var(--color-gold) 12%, transparent);
 		color: var(--color-gold);
-	}
-	.brief-only {
-		border: 1px solid var(--color-line);
-		background: transparent;
-		color: var(--color-ink);
-	}
-	.brief-only:disabled {
-		opacity: 0.4;
 	}
 </style>

@@ -1,8 +1,11 @@
-/**
- * Presenter analysis deck — 5 screens.
- * Extra analysis in modal (not in this counter).
- */
-const TOTAL = 5;
+// Presenter analysis deck — pattern-recognition beats (in-page).
+// Matrix → Breakdown → Evolution → Priorities → Functions.
+// Concepts: /present/LIVE/look · Architectural set: /present/LIVE/design
+// Optional deep-link query: s=1 to s=N
+import { DECK_SCREENS } from '$lib/game';
+
+/** Single source of truth — the deck's screen list in game/brief.ts. */
+const TOTAL = DECK_SCREENS.length;
 
 let screen = $state(1);
 
@@ -18,8 +21,9 @@ export const present = {
 		if (n >= 1 && n <= TOTAL) screen = n;
 	},
 
+	/** Enter deck; keep current slide if already in range, else 1. */
 	enterAnalysis() {
-		screen = 1;
+		if (screen < 1 || screen > TOTAL) screen = 1;
 	},
 
 	next() {

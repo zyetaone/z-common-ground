@@ -4,40 +4,41 @@
 	import { session } from '$lib/state';
 	import { futureUi } from './future.svelte';
 
-	/** Right column — room render gen + expand. */
+	/** Room render preview — generation is part of Create ZyetaI brief. */
 	let {
 		imageUrl,
 		hasData,
-		onGenerate,
 		onExpand
 	}: {
 		imageUrl: string;
 		hasData: boolean;
-		onGenerate: () => void;
-		onExpand: (src: string, title: string) => void;
+		onExpand: () => void;
 	} = $props();
 </script>
 
 <div class="panel">
 	<div class="kicker-row">
-		<div class="kicker">Room board</div>
-		<ZyetaI compact />
+		<div class="cg-kicker">Room workplace</div>
+		<div class="frg-brand">
+			<ZyetaI variant="badge" />
+			<span class="created">Created by ZyetaI</span>
+		</div>
 	</div>
 	<div class="frame">
 		{#if imageUrl}
 			<button
 				type="button"
 				class="img-btn"
-				onclick={() => onExpand(imageUrl, 'Room workplace')}
-				aria-label="Expand room image"
+				onclick={onExpand}
+				aria-label="Expand Common Ground room image"
 			>
-				<img src={imageUrl} alt="Future workplace for this room" class="img" />
-				<span class="expand-hint">Expand</span>
+				<img src={imageUrl} alt="Common Ground — combined room workplace" class="img" />
+				<span class="expand-hint">Expand · room mix</span>
 			</button>
 		{:else}
 			<div class="empty">
 				<div class="icon"><Icon name="building" size={40} /></div>
-				<p>{hasData ? 'Generate room render' : 'Waiting for stake'}</p>
+				<p>{hasData ? 'Common Ground render runs with Create ZyetaI brief' : 'Waiting for priorities…'}</p>
 			</div>
 		{/if}
 		{#if session.busy && futureUi.progress}
@@ -48,20 +49,9 @@
 		{/if}
 	</div>
 
-	{#if futureUi.err}
-		<p class="err">{futureUi.err}</p>
+	{#if imageUrl}
+		<button type="button" class="dl" onclick={onExpand}>Expand Common Ground</button>
 	{/if}
-
-	<div class="actions">
-		<button type="button" class="gen" disabled={session.busy || !hasData} onclick={onGenerate}>
-			{session.busy && futureUi.progress ? '…' : imageUrl ? 'Regen room' : 'Generate room'}
-		</button>
-		{#if imageUrl}
-			<button type="button" class="dl" onclick={() => onExpand(imageUrl, 'Room workplace')}>
-				Expand
-			</button>
-		{/if}
-	</div>
 </div>
 
 <style>
@@ -73,17 +63,24 @@
 	}
 	.kicker-row {
 		display: flex;
-		align-items: baseline;
+		align-items: center;
 		justify-content: space-between;
 		gap: 10px;
 		margin-bottom: 8px;
+		flex-wrap: wrap;
 	}
-	.kicker {
+	.frg-brand {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.created {
 		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.22em;
+		font-size: 9px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--color-muted);
+		color: var(--color-gold);
 	}
 	.frame {
 		position: relative;
@@ -97,10 +94,10 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		padding: 0;
 		border: none;
+		padding: 0;
+		cursor: pointer;
 		background: transparent;
-		cursor: zoom-in;
 		position: relative;
 	}
 	.img {
@@ -112,16 +109,12 @@
 		position: absolute;
 		right: 10px;
 		bottom: 10px;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 800;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		padding: 4px 8px;
+		font-size: 11px;
+		font-weight: 700;
+		padding: 6px 10px;
 		border-radius: 999px;
-		background: rgba(10, 15, 26, 0.8);
-		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
-		color: var(--color-gold);
+		background: rgba(0, 0, 0, 0.55);
+		color: #fff;
 	}
 	.empty {
 		height: 100%;
@@ -129,70 +122,51 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 6px;
-		padding: 20px;
-		text-align: center;
+		gap: 10px;
 		color: var(--color-muted);
 		font-size: 13px;
+		padding: 16px;
+		text-align: center;
 	}
 	.icon {
-		font-size: 1.75rem;
+		opacity: 0.5;
 	}
 	.overlay {
 		position: absolute;
 		inset: 0;
-		background: rgba(7, 11, 20, 0.72);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: 10px;
-		font-size: 13px;
+		background: rgba(10, 15, 26, 0.72);
+		color: #fff;
+		font-size: 12px;
+		font-family: var(--font-mono);
 	}
 	.spin {
-		width: 34px;
-		height: 34px;
+		width: 28px;
+		height: 28px;
+		border: 2px solid rgba(255, 255, 255, 0.25);
+		border-top-color: var(--color-gold);
 		border-radius: 50%;
-		border: 3px solid var(--color-line);
-		border-top-color: var(--color-teal);
-		animation: spin 0.8s linear infinite;
+		animation: spin 0.7s linear infinite;
 	}
 	@keyframes spin {
 		to {
 			transform: rotate(360deg);
 		}
 	}
-	.actions {
-		display: flex;
-		gap: 10px;
-		margin-top: 12px;
-		align-items: center;
-	}
-	.gen {
-		border: none;
-		border-radius: 12px;
-		padding: 12px 16px;
-		font-family: var(--font-display);
-		font-weight: 800;
-		background: var(--color-teal);
-		color: var(--color-on-teal);
-		cursor: pointer;
-	}
-	.gen:disabled {
-		opacity: 0.4;
-	}
 	.dl {
-		color: var(--color-gold);
-		font-size: 13px;
-		text-decoration: underline;
-		background: none;
-		border: none;
-		cursor: pointer;
+		margin-top: 10px;
+		width: 100%;
+		border-radius: 12px;
+		padding: 10px;
+		border: 1px solid var(--color-line);
+		background: transparent;
 		font-weight: 700;
-	}
-	.err {
-		color: var(--color-red);
-		font-size: 12px;
-		margin: 8px 0 0;
+		font-size: 13px;
+		cursor: pointer;
+		color: var(--color-ink);
 	}
 </style>

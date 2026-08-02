@@ -9,6 +9,5 @@
  *  .ts         → pure domain / server
  */
 export { SESSION, session } from './session.svelte';
-export { play } from './play.svelte';
 export { present } from './present.svelte';
 export { host } from './host.svelte';

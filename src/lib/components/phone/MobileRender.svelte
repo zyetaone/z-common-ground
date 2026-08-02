@@ -21,7 +21,7 @@
 		counts: Vec7;
 	} = $props();
 
-	const persona = $derived(tablePersona(tableId));
+	const persona = $derived(tablePersona(tableId, room));
 	const total = $derived(counts.reduce((a, b) => a + b, 0));
 	const imageUrl = $derived(room.tables.find((t) => t.id === tableId)?.imageUrl ?? '');
 	const roomImage = $derived(room.finaleImageUrl ?? '');
@@ -85,11 +85,18 @@
 		downloading = true;
 		err = '';
 		try {
+			// Combine this table's render + room finale + other table renders when present
+			const others = room.tables
+				.filter((t) => t.id !== tableId && t.imageUrl)
+				.map((t) => t.imageUrl!)
+				.slice(0, 5);
+			if (roomImage && roomImage !== imageUrl) others.unshift(roomImage);
 			await downloadLinkedInFrame({
 				aiImageUrl: imageUrl,
 				selfieDataUrl: selfieUrl || undefined,
 				functionName: persona.name,
-				tokens: total
+				tokens: total,
+				tableImageUrls: others
 			});
 		} catch (e) {
 			err = e instanceof Error ? e.message : 'Frame export failed';
@@ -141,7 +148,7 @@
 					<img src={imageUrl} alt="{persona.name} workplace render" />
 					<span class="expand-hint">Expand</span>
 				</button>
-				<div class="watermark"><span>Powered by <b>ZyetaI</b></span></div>
+				<div class="watermark"><span class="wm-dot"></span><span>Created by <b>ZyetaI</b></span></div>
 			{:else}
 				<div class="empty">
 					<div class="icon"><Icon name="building" size={40} /></div>
@@ -374,14 +381,29 @@
 		position: absolute;
 		bottom: 8px;
 		left: 8px;
-		background: rgba(10, 15, 26, 0.85);
-		border: 1px solid color-mix(in srgb, var(--color-gold) 40%, transparent);
-		border-radius: 6px;
-		padding: 3px 8px;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		background: rgba(10, 15, 26, 0.88);
+		border: 1px solid color-mix(in srgb, var(--color-teal) 45%, transparent);
+		border-radius: 999px;
+		padding: 4px 10px 4px 8px;
 		font-family: var(--font-mono);
 		font-size: 10px;
-		color: var(--color-gold);
+		color: #c8c0a8;
 		pointer-events: none;
+		letter-spacing: 0.04em;
+	}
+	.watermark b {
+		color: #3fb6a2;
+		font-weight: 800;
+	}
+	.wm-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #1f8b78, #b8932e);
+		flex-shrink: 0;
 	}
 	.empty {
 		min-height: 150px;

@@ -1,18 +1,29 @@
 <script lang="ts">
-	import { PRIORITIES, SEAT_COLORS, SEAT_LENS, SEAT_MISSIONS, SEATS } from '$lib/game';
+	import { roomPriorities, tablePersona, type RoomState } from '$lib/game';
 	import QrCode from './QrCode.svelte';
 
 	let {
 		seat,
 		roomCode = 'LIVE',
 		tableId = 1,
-		origin = ''
-	}: { seat: number; roomCode?: string; tableId?: number; origin?: string } = $props();
+		origin = '',
+		/** When set, host persona + priority overrides paint the sheet. */
+		room = null
+	}: {
+		seat: number;
+		roomCode?: string;
+		tableId?: number;
+		origin?: string;
+		room?: RoomState | null;
+	} = $props();
 
-	const seatName = $derived(SEATS[seat]);
-	const seatColor = $derived(SEAT_COLORS[seat]);
-	const lens = $derived(SEAT_LENS[seat]);
-	const mission = $derived(SEAT_MISSIONS[seat]);
+	const persona = $derived(tablePersona(tableId || seat + 1, room));
+	const seatName = $derived(persona.name);
+	const seatColor = $derived(persona.color);
+	const lens = $derived(persona.lens);
+	const mission = $derived(persona.mission);
+	const hashtag = $derived(persona.hashtag ?? '');
+	const priorityLabels = $derived(roomPriorities(room));
 	/** QR lands on this function table (no selection). */
 	const joinUrl = $derived(
 		`${origin || (typeof window !== 'undefined' ? window.location.origin : '')}/play/${roomCode}/${tableId}`
@@ -32,8 +43,12 @@
 		<div style="font-size:16.5px;color:#F3ECD8;line-height:1.3;font-family:Helvetica,Arial,sans-serif">{mission}</div>
 	</foreignObject>
 
+	{#if hashtag}
+		<text x="80" y="370" font-size="14" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" fill="#D9B44A" letter-spacing="2">{hashtag}</text>
+	{/if}
+
 	<g transform="translate(520, 0)">
-		{#each PRIORITIES as p, i (p)}
+		{#each priorityLabels as p, i (i)}
 			{@const x = i * 140}
 			<rect x={x + 4} y="150" width="130" height="730" rx="10" fill="#0A5735" stroke="#D9B44A" stroke-width="1.5" />
 			{#each p.split(' ') as word, k (k)}

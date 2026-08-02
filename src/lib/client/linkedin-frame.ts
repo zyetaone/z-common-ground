@@ -1,6 +1,6 @@
 /**
- * LinkedIn celebration frame — canvas composite (extracted from MobileRender).
- * Browser-only.
+ * LinkedIn celebration frame — canvas composite.
+ * Browser-only. SSOT for share caption + downloadable 1200×630.
  */
 import { formatUsdFull } from '$lib/game';
 
@@ -38,11 +38,11 @@ function loadImg(src: string): Promise<HTMLImageElement> {
 	});
 }
 
+/** Share caption — CoreNet + ZyetaI celebration. */
 export function linkedInShareText(functionName: string, tokens: number): string {
-	return `We found common ground! ${functionName} · ${tokens} tokens · ${formatUsdFull(tokens)}. #WeFoundCommonGround #CoreNet #ZyetaI`;
+	return `We found common ground at CoreNet with ZyetaI! ${functionName} · ${formatUsdFull(tokens)}. #WeFoundCommonGround #CoreNet #ZyetaI`;
 }
 
-/** Open LinkedIn share-offsite (url only — caption must be copied separately). */
 export function openLinkedInShare(pageUrl: string) {
 	const shareUrl = encodeURIComponent(pageUrl);
 	window.open(
@@ -53,80 +53,108 @@ export function openLinkedInShare(pageUrl: string) {
 }
 
 /**
- * Build 1200×630 PNG: selfie (left) + AI workplace (right).
- * Downloads via anchor click.
+ * Build 1200×630 PNG:
+ *  - selfie (left) + primary AI workplace (right), or
+ *  - if tableImages provided: selfie strip + mosaic of table/room renders
  */
 export async function downloadLinkedInFrame(opts: {
 	aiImageUrl: string;
 	selfieDataUrl?: string;
 	functionName: string;
 	tokens: number;
+	/** Optional extra table/room renders for mosaic strip under AI hero */
+	tableImageUrls?: string[];
 }): Promise<void> {
-	const { aiImageUrl, selfieDataUrl, functionName, tokens } = opts;
+	const { aiImageUrl, selfieDataUrl, functionName, tokens, tableImageUrls = [] } = opts;
 	const canvas = document.createElement('canvas');
 	canvas.width = 1200;
 	canvas.height = 630;
 	const ctx = canvas.getContext('2d');
 	if (!ctx) throw new Error('Canvas unavailable');
 
-	const grad = ctx.createLinearGradient(0, 0, 0, 630);
-	grad.addColorStop(0, '#0A0F1A');
-	grad.addColorStop(1, '#131B26');
-	ctx.fillStyle = grad;
+	// Cream boardroom frame (brand)
+	ctx.fillStyle = '#FDF8ED';
 	ctx.fillRect(0, 0, 1200, 630);
 
-	ctx.strokeStyle = '#E0A458';
+	ctx.strokeStyle = '#B8932E';
 	ctx.lineWidth = 6;
 	ctx.strokeRect(12, 12, 1176, 606);
 
-	ctx.fillStyle = '#E0A458';
-	ctx.font = 'bold 22px monospace';
+	// ZyetaI teal bar under gold frame
+	ctx.fillStyle = '#1F8B78';
+	ctx.fillRect(12, 12, 1176, 4);
+
+	ctx.fillStyle = '#1F8B78';
+	ctx.font = 'bold 16px monospace';
 	ctx.textAlign = 'left';
-	ctx.fillText('#WEFOUNDCOMMONGROUND  ·  #CORENET', 40, 56);
+	ctx.fillText('ZYETAI  ·  #WeFoundCommonGround  ·  #CoreNet', 40, 48);
 
-	ctx.fillStyle = '#FFFFFF';
-	ctx.font = 'bold 34px sans-serif';
-	ctx.fillText(`${functionName} · Common Ground`, 40, 102);
+	ctx.fillStyle = '#111A14';
+	ctx.font = 'bold 32px sans-serif';
+	ctx.fillText(`We found common ground at CoreNet`, 40, 96);
 
-	ctx.fillStyle = '#37B6A2';
-	ctx.font = 'bold 18px monospace';
-	ctx.fillText(`${tokens} tokens · ${formatUsdFull(tokens)}`, 40, 134);
+	ctx.fillStyle = '#B8932E';
+	ctx.font = 'bold 20px sans-serif';
+	ctx.fillText(`${functionName} · ${formatUsdFull(tokens)} · powered by ZyetaI`, 40, 128);
 
-	const [aiImg, selfieImg] = await Promise.all([
+	const extras = tableImageUrls.filter(Boolean).slice(0, 6);
+	const [aiImg, selfieImg, ...extraImgs] = await Promise.all([
 		loadImg(aiImageUrl).catch(() => null),
-		selfieDataUrl ? loadImg(selfieDataUrl).catch(() => null) : Promise.resolve(null)
+		selfieDataUrl ? loadImg(selfieDataUrl).catch(() => null) : Promise.resolve(null),
+		...extras.map((u) => loadImg(u).catch(() => null))
 	]);
 
+	const hasMosaic = extraImgs.some(Boolean);
+	const mainH = hasMosaic ? 320 : 390;
+	const mainY = 150;
+
 	if (selfieImg) {
-		drawCover(ctx, selfieImg, 40, 160, 550, 390);
+		drawCover(ctx, selfieImg, 40, mainY, 550, mainH);
 	} else {
-		ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-		ctx.fillRect(40, 160, 550, 390);
-		ctx.fillStyle = '#E0A458';
-		ctx.font = 'bold 22px sans-serif';
+		ctx.fillStyle = 'rgba(17, 26, 20, 0.06)';
+		ctx.fillRect(40, mainY, 550, mainH);
+		ctx.fillStyle = '#B8932E';
+		ctx.font = 'bold 20px sans-serif';
 		ctx.textAlign = 'center';
-		ctx.fillText('Add selfie for full frame', 315, 355);
+		ctx.fillText('Add selfie for full frame', 315, mainY + mainH / 2);
+		ctx.textAlign = 'left';
 	}
-	ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+	ctx.strokeStyle = 'rgba(31, 139, 120, 0.45)';
 	ctx.lineWidth = 3;
-	ctx.strokeRect(40, 160, 550, 390);
+	ctx.strokeRect(40, mainY, 550, mainH);
 
 	if (!aiImg) {
 		throw new Error('AI image blocked by CORS — use Expand and screenshot, or try again.');
 	}
-	drawCover(ctx, aiImg, 620, 160, 540, 390);
-	ctx.strokeStyle = 'rgba(224, 164, 88, 0.45)';
+	drawCover(ctx, aiImg, 620, mainY, 540, mainH);
+	ctx.strokeStyle = 'rgba(184, 147, 46, 0.5)';
 	ctx.lineWidth = 3;
-	ctx.strokeRect(620, 160, 540, 390);
+	ctx.strokeRect(620, mainY, 540, mainH);
 
-	ctx.fillStyle = '#E0A458';
-	ctx.font = 'bold 16px monospace';
+	// Mosaic of other table workplaces (room-wide combination)
+	if (hasMosaic) {
+		const stripY = 490;
+		const valid = extraImgs.filter((i): i is HTMLImageElement => !!i);
+		const gap = 8;
+		const n = Math.min(valid.length, 6);
+		const cellW = (1120 - gap * (n - 1)) / n;
+		valid.slice(0, n).forEach((img, i) => {
+			const x = 40 + i * (cellW + gap);
+			drawCover(ctx, img, x, stripY, cellW, 90);
+			ctx.strokeStyle = 'rgba(17, 26, 20, 0.15)';
+			ctx.lineWidth = 1;
+			ctx.strokeRect(x, stripY, cellW, 90);
+		});
+	}
+
+	ctx.fillStyle = '#5A6A5E';
+	ctx.font = 'bold 13px monospace';
 	ctx.textAlign = 'right';
-	ctx.fillText('Powered by ZyetaI', 1160, 590);
+	ctx.fillText('ZyetaI · Imagine the future of the workplace', 1160, hasMosaic ? 600 : 590);
 
 	const dataUrl = canvas.toDataURL('image/png');
 	const link = document.createElement('a');
-	link.download = `CommonGround_${functionName.replace(/\s+/g, '_')}_Moment.png`;
+	link.download = `CommonGround_${functionName.replace(/\s+/g, '_')}_CoreNet.png`;
 	link.href = dataUrl;
 	link.click();
 }
