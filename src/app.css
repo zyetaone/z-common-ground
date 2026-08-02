@@ -14,6 +14,13 @@
 	--color-on-gold: #111a14;
 	--color-on-teal: #ffffff;
 
+	/* Teal used as a *fill behind white text* (primary buttons, active pills).
+	   The brand teal is 4.18:1 against white — below WCAG AA — so solid-fill
+	   controls use this slightly darker shade at 4.57:1. Hue and saturation are
+	   unchanged (lightness -1.5%), so it reads as the same brand colour; the
+	   brand token stays untouched for borders, dots and non-text fills. */
+	--color-teal-fill: #1d8472;
+
 	/* Ink-vs-fill convention: raw gold/teal are fills, borders and dots only —
 	   never text. Use the *-ink tokens for text on light surfaces. */
 	--color-gold-ink: #8a6d1f; /* 4.6:1 on cream */

@@ -31,8 +31,11 @@
 		lg: 'px-6 py-4 text-base min-h-12'
 	};
 	const variants = {
-		/* primary = confirm / live / submit (teal action) */
-		primary: 'bg-teal text-[var(--color-on-teal)] hover:bg-teal/90',
+		/* primary = confirm / live / submit (teal action).
+		   Uses --color-teal-fill, not the raw brand teal: white on brand teal is
+		   4.18:1, below WCAG AA. See the token comment in app.css. */
+		primary:
+			'bg-[var(--color-teal-fill)] text-[var(--color-on-teal)] hover:bg-[var(--color-teal)]',
 		/* secondary = emphasis / deck nav / neutral bordered (gold border) */
 		secondary: 'border border-gold/50 text-gold-ink hover:bg-gold/10',
 		ghost: 'text-muted hover:text-gold-ink',
