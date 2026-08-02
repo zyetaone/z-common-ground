@@ -37,7 +37,7 @@ function pickUrl(result: unknown): string | null {
 export async function generateImage(
 	apiKey: string | undefined,
 	prompt: string,
-	opts?: { quality?: ImageQuality; aspect_ratio?: '16:9' | '1:1' | '4:3' | '3:2' }
+	opts?: { quality?: ImageQuality; aspect_ratio?: '16:9' | '1:1' | '4:3' | '3:2' | '21:9' }
 ): Promise<ImageResult> {
 	if (!apiKey) return { url: null, error: 'no_key' };
 	const quality = opts?.quality ?? 'high';
@@ -101,7 +101,10 @@ export async function generateImageWithRefs(
 	if (!apiKey) return { url: null, error: 'no_key' };
 	const refs = imageUrls.filter(Boolean).slice(0, 14);
 	if (!refs.length) {
-		return generateImage(apiKey, prompt, { quality: opts?.quality ?? 'high' });
+		return generateImage(apiKey, prompt, {
+			quality: opts?.quality ?? 'high',
+			aspect_ratio: opts?.aspect_ratio
+		});
 	}
 
 	const quality = opts?.quality ?? 'high';

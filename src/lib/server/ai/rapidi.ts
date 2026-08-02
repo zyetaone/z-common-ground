@@ -35,7 +35,7 @@ function extractText(out: { response?: string } | string): string {
 
 /** Workers AI binding shape we actually use (kept narrow so .run() is the only contract). */
 
-/** Boardroom-tuned Workers AI chat model. Override via wrangler.jsonc vars.AI_CHAT_MODEL. */
+/** Boardroom-tuned Workers AI chat model. */
 const DEFAULT_CHAT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 async function runChat(
@@ -76,7 +76,7 @@ export async function generateBriefWithRapidi(
 ): Promise<string | null> {
 	if (!ai) return null;
 	if (agg.totalCoins <= 0) return null;
-	const user = briefFactsForRapidi(agg);
+	const user = briefFactsForRapidi(agg, room);
 	const text = await runChat(ai, SYSTEM, user, 480);
 	return text;
 }

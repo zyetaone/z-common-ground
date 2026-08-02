@@ -364,12 +364,11 @@ class Store {
 	removeRoomConcept(_code: string, url: string): RoomState {
 		const room = this.ensure();
 		const list = (room.roomConceptUrls ?? []).filter((u) => u !== url);
-		// Also drop if only on finale
+		// Backfill the primary only when the removed url was the finale image.
 		if (room.finaleImageUrl === url) {
 			room.finaleImageUrl = list[0];
 		}
 		room.roomConceptUrls = list.length ? list : undefined;
-		if (!room.finaleImageUrl && list[0]) room.finaleImageUrl = list[0];
 		bump(room);
 		return room;
 	}

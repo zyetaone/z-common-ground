@@ -3,7 +3,11 @@
  *
  * D1 has a single primary, so every colo reads the same state — unlike the
  * Cache API (per-colo), which split writes and reads across a multi-colo edge.
- * The whole room is one JSON blob under id 'LIVE'; last write wins.
+ * The whole room is one JSON blob under id 'LIVE'. Mutations persist via
+ * saveRoomIfUnchanged, a compare-and-swap on updated_at: the write only lands
+ * when the row still matches the version synced before mutating, so a losing
+ * isolate's write is rejected instead of silently overwriting. Plain saveRoom
+ * (seed/reset paths) is unconditional last-write-wins.
  */
 import type { RoomState } from '$lib/game/types';
 

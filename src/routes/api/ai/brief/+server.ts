@@ -16,7 +16,7 @@ export const POST: RequestHandler = async (event) => {
 
 		const ai = event.platform?.env?.AI;
 		const rapidi = await generateBriefWithRapidi(ai, room.aggregate, room);
-		const brief = rapidi ?? buildEnhancedBrief(room.aggregate);
+		const brief = rapidi ?? buildEnhancedBrief(room.aggregate, room);
 		await withLiveRoom(() => store.setEnhancedBrief('', brief, rapidi ? 'rapidi' : 'numbers'));
 
 		return {
