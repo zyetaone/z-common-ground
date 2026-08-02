@@ -179,7 +179,7 @@ Update `src/app.html` if you want a different rel (`<link rel="icon" type="image
 - Domain writes return `boolean` or a tagged `{ ok, error }`; submit failures are HTTP 400. Some invalid board mutations (e.g. `boardDelta` with bad chip value, locked table, wrong seat) are intentional **silent no-ops that still return a 200 snapshot** with the unchanged room.
 - API handlers are thin: `await request.json()` → `withLiveRoom(() => store.x(...))` → `json()` / `error(400|404)`. The `code` param in every `+server.ts` is ignored. AI endpoints 400 when `aggregate.totalCoins <= 0`.
 - **No `+page.ts` / `+page.server.ts` / `load` / `form action` / `hooks.server.ts` / `error.svelte` modules** — SSR renders connecting/placeholder UI and the browser takes over via `session.boot()`.
-- The presenter +page renders the **deck canvas only when `open = analysisOpen`** is true. Before then (`analysisForced=false` and `phase ∈ {lobby, round}`), the page shows a live **submissions grid** during `phase === 'round'` (sub-card per table: ✓ Submitted or Open / Editing / Waiting) and a "tables scan QR" hero during `lobby`. The `#key present.screen` directive remounts the active `.pane` on screen change so transitions re-trigger.
+- The live stage (`/present/LIVE`) shows a **submissions grid** during `phase === 'round'` (sub-card per table: ✓ Submitted or Open / Editing / Waiting) and a "tables scan QR" hero during `lobby`; it always links out to the deck. The deck lives at **`/presenter/analysis`** and gates on `isRevealable` (`phase ∈ {reveal, finale} || analysisForced`). Its `#key present.screen` directive remounts the active `.pane` on screen change so transitions re-trigger.
 
 ## Key directories
 
@@ -208,7 +208,8 @@ Update `src/app.html` if you want a different rel (`<link rel="icon" type="image
 | `/play/[code]/` | Table directory; `?table=1..7` deep links set the player state (`play.pickTable`) and `goto` to `/play/{SESSION}/{fromQuery}`. |
 | `/play/[code]/[table]/` | Mobile gameplay. See "Mobile page state machine" below. |
 | `/play/[code]/[table]/[seat]/` | Legacy seat URL → redirects into `/play/{SESSION}/{table}`. |
-| `/present/[code]/` | Presenter deck. See "Presenter page state machine" below. |
+| `/present/[code]/` | Presenter live stage (lobby / submissions grid / advance). Links to the deck. See "Presenter pages state machine" below. |
+| `/presenter/analysis/` | The 5-screen analysis deck, deep-linkable via `?s=1..5`. |
 | `/present/[code]/qrs/` | Printable QR sheet (`@page landscape` is **not** set here — print CSS uses `print:` Tailwind variants, but the parent `/present/[code]/` body has no print rules). |
 | `/host/[code]/` | Operator console: per-table lock/unlock, room budget editor (Save Budget), JSON export, image download (all + finale), session reset. **Does not advance/retreat** — that's presenter-only. |
 | `/board/[seat]/` · `/boards/all/` | Printable function boards (SVG with QR, `@page landscape margin:0`). |
@@ -2227,28 +2228,37 @@ These are Phase 7 additions, not the refactored drop-in. The drop-in is the poli
 - `overCap` on R3 uses `standingCap` (the baseline total — you can't add); on other rounds it uses `session.room?.tableBountyTokens ?? 100`.
 - `play.pickTable(id)` is called from `onMount` whenever `id` is 1..7.
 
-## Presenter page state machine
+## Presenter pages state machine
 
-`src/routes/present/[code]/+page.svelte` is gated on `open = analysisOpen` (= `analysisForced || phase ∈ {reveal, finale}`).
+The presenter surface is **two routes**: the live stage (`src/routes/present/[code]/+page.svelte`) and the analysis deck (`src/routes/presenter/analysis/+page.svelte`). The deck is no longer gated inside the live page — it has its own URL, so the operator can open it on a second screen.
 
 ```
-   phase === 'lobby'           →  🏁 sc-bar · "Start R1 →"   (advance only)
-   phase === 'round' && !open  →  live submissions grid (sub-card per table)
-                                   · Back / Advance buttons in sc-bar
-   phase ∈ {reveal, finale} && !open
-                              →  📊/🏆 sc-bar · "All rounds complete"
-                                   · Analysis (open extra modal) · Open deck
-   open === true               →  <StageNav> + #key present.screen pane:
-                                   1: RoomGlance
-                                   2: PriorityBreakdown
-                                   3: RoundInsights
-                                   4: PrioritiesSummary
-                                   5: FunctionPriorities
+LIVE STAGE — /present/LIVE
+   phase === 'lobby'   →  🏁 sc-bar · "Start R1 →"   (advance only)
+                          + "tables scan QR" hero
+   phase === 'round'   →  live submissions grid (sub-card per table)
+                          · Back / Advance in sc-bar · "Open analysis →"
+   phase ∈ {reveal, finale}
+                       →  📊/🏆 "All rounds complete" · "Open analysis →"
+
+ANALYSIS DECK — /presenter/analysis           (deep-link ?s=1..5)
+   !st                 →  "Connecting…"
+   no stake            →  empty card · "Go to live →"
+   !isRevealable       →  "Analysis not yet available"
+       isRevealable = phase ∈ {reveal, finale} || analysisForced
+   else                →  #key present.screen pane + <StageNav>:
+                            1: RoomGlance
+                            2: PriorityBreakdown
+                            3: RoundInsights
+                            4: PrioritiesSummary
+                            5: FunctionPriorities
+                          StageNav's end link → /present/LIVE/look (Concepts →)
 ```
 
-- Keyboard: `←`/`B` back, `→`/`Space`/`Enter`/`N` forward, `A` advance. `A` is ignored inside `<input>`/`<textarea>`. (The old `E` extra-analysis modal has been removed.)
-- `advanceRound` and `retreatRound` both call `present.enterAnalysis()` (reset to screen 1) and `await session.refresh()` after the mutation. `retreatRound` shows a `confirm(...)` before proceeding.
-- Header bar shows the 5 round rungs plus a `reveal`/`finale` chip on the right; `lockedCount/totalTables` chip appears during `phase === 'round'` and `lockedCount > 0`.
+- The deck syncs the screen index into `?s=` via `replaceState`, so a refresh or a shared link lands on the same slide.
+- Live-stage keyboard: `A` advance (ignored inside `<input>`/`<textarea>`). (The old `E` extra-analysis modal has been removed.)
+- `advanceRound` / `retreatRound` call `await session.refresh()` after the mutation; `retreatRound` confirms first.
+- Header bar shows the round rungs (capture rounds marked via `isCaptureRound(r, st)`, not a hard-coded `[2,3,5]`) plus a `reveal`/`finale` chip; the `lockedCount/totalTables` chip appears during `phase === 'round'`.
 
 ## Analysis: the Common Ground story
 
