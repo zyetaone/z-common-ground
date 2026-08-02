@@ -26,13 +26,13 @@
 
 <div class="pb">
 	<header class="hdr">
-		<span class="hdr-title">PRIORITY BREAKDOWN</span>
+		<span class="cg-kicker hdr-title">PRIORITY BREAKDOWN</span>
 		<span class="hdr-sub">
 			Total room stake · {formatUsd(totalCoins)} · ranked by share of room
 		</span>
 	</header>
 
-	<header class="legend" aria-label="Column legend">
+	<header class="cg-kicker legend" aria-label="Column legend">
 		<span class="lg-rank">#</span>
 		<span class="lg-name">Priority</span>
 		<span class="lg-bar">Share of room</span>
@@ -77,7 +77,7 @@
 	</section>
 
 	<footer class="sum" aria-label="Total verification">
-		<span class="sum-lbl">All 7 sum to</span>
+		<span class="cg-kicker sum-lbl">All 7 sum to</span>
 		<span class="sum-pct">{mix.reduce((s, m) => s + m.pct, 0)}%</span>
 		<span class="sum-eq">≈</span>
 		<span class="sum-amt">{formatUsd(totalCoins)}</span>
@@ -99,13 +99,11 @@
 		justify-content: space-between;
 		align-items: baseline;
 	}
+	/* Only the axes that differ from .cg-kicker — see app.css. */
 	.hdr-title {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-gold);
+		--k-size: 11px;
+		--k-weight: 800;
+		--k-color: var(--color-gold);
 	}
 	.hdr-sub {
 		font-family: var(--font-mono);
@@ -113,16 +111,13 @@
 		color: var(--color-muted);
 	}
 	.legend {
+		--k-size: 9px;
+		--k-track: 0.06em;
 		display: grid;
 		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 80px 44px 88px;
 		align-items: center;
 		gap: 10px;
 		padding: 0 12px;
-		font-family: var(--font-mono);
-		font-size: 9px;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
 		color: var(--color-muted);
 	}
 	.lg-rank {
@@ -163,7 +158,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.rank.lead {
-		color: var(--color-gold);
+		color: var(--color-gold-ink);
 	}
 	.pdot {
 		width: 10px;
@@ -248,9 +243,7 @@
 		letter-spacing: 0.04em;
 	}
 	.sum-lbl {
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
+		--k-track: 0.08em;
 	}
 	.sum-pct,
 	.sum-amt {

@@ -194,7 +194,10 @@ body::before {
 	text-transform: uppercase;
 	color: var(--k-color, var(--color-muted));
 	font-weight: var(--k-weight, 700);
-	line-height: 1.2;
+	/* Deliberately no line-height: none of the 58 existing kicker rules set one,
+	 * so adding it would change every line box by a fraction and make adoption a
+	 * visual change rather than a refactor. Callers that need it set --k-lead. */
+	line-height: var(--k-lead, inherit);
 }
 .cg-empty {
 	display: grid;
