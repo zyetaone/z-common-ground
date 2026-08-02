@@ -9,6 +9,9 @@
 
 <svelte:head>
 	<title>Table QRs · LIVE</title>
+	<style>
+		@page { margin: 12mm; }
+	</style>
 </svelte:head>
 
 <main class="min-h-screen bg-bg p-6 text-ink">
@@ -37,7 +40,7 @@
 		</div>
 	</header>
 
-	<ol class="mb-8 space-y-1 text-sm text-muted print:text-black/80">
+	<ol class="mb-8 space-y-1 text-sm text-muted print:hidden">
 		<li>1. Print this page — one QR on each physical table</li>
 		<li>2. Players scan their table only (no choose-table step)</li>
 		<li>3. Place tokens on the 7 priorities for that function</li>
@@ -65,6 +68,8 @@
 				<div class="rounded-xl bg-white p-3">
 					{#if origin}
 						<QrCode text={url} size={160} />
+					{:else}
+						<div class="h-[160px] w-[160px] animate-pulse rounded-xl bg-panel"></div>
 					{/if}
 				</div>
 				<div class="break-all text-center font-mono text-[10px] tracking-wide text-muted print:text-black/60">

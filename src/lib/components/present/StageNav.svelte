@@ -72,12 +72,12 @@
 	}
 	.title {
 		margin: 0;
-		font-family: var(--font-display);
-		font-size: clamp(1.25rem, 2.2vw, 1.75rem);
-		font-weight: 800;
-		letter-spacing: -0.025em;
-		line-height: 1.15;
-		color: var(--color-ink);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
 		text-align: center;
 	}
 	.dots {

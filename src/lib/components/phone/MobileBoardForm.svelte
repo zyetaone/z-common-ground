@@ -80,6 +80,19 @@
 
 	{#if editable}
 		{#if canCapture}
+			{#if roundLabel === 2}
+				<p class="hint-cap req" class:met={r2Ready}>
+					{r2Ready
+						? `Full ${formatUsdFull(r2Target)} wallet ready`
+						: `Needs the full ${formatUsdFull(r2Target)} wallet`}
+				</p>
+			{:else if roundLabel === 3 && removeOnly}
+				<p class="hint-cap req" class:met={r3Ready}>
+					{r3Ready
+						? `${formatUsdFull(removeTarget)} removed — target met`
+						: `Needs ${formatUsdFull(Math.max(0, removeTarget - removedTokens))} more removed`}
+				</p>
+			{/if}
 			<button
 				type="submit"
 				class="submit"
@@ -87,15 +100,11 @@
 			>
 				{busy
 					? 'Locking in…'
-					: roundLabel === 2 && !r2Ready
-						? `Need full ${formatUsd(r2Target)} · now ${formatUsdFull(totalTokens)}`
-						: roundLabel === 3 && removeOnly && !r3Ready
-							? `Remove ${formatUsd(removeTarget)} · cut ${formatUsd(removedTokens)} so far`
-							: removeOnly
-								? `Capture R3 · protected ${formatUsdFull(totalTokens)}`
-								: roundLabel === 5
-									? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsd(tableCap)}`
-									: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
+					: removeOnly
+						? `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`
+						: roundLabel === 5
+							? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsdFull(tableCap)}`
+							: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
 			</button>
 			{#if submitError}
 				<p class="hint-cap err">{submitError}</p>
@@ -156,6 +165,14 @@
 		font-size: 11px;
 		color: var(--color-muted);
 		line-height: 1.35;
+	}
+	.hint-cap.req {
+		color: var(--color-danger);
+		font-weight: 600;
+	}
+	.hint-cap.req.met {
+		color: var(--color-muted);
+		font-weight: 500;
 	}
 	.hint-cap.err {
 		color: var(--color-red);

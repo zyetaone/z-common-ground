@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import {
 		ROUND_COUNT,
 		boardTokenSum,
@@ -14,11 +13,13 @@
 	import HostPhotos from '$lib/components/host/HostPhotos.svelte';
 	import HostGameConfig from '$lib/components/host/HostGameConfig.svelte';
 
-	onMount(() => {
-		host.syncOnce(session.room);
-	});
-
 	const st = $derived(session.room);
+
+	// First poll lands ~100–300ms after mount, so onMount is always too early;
+	// syncOnce no-ops until the room arrives and again once synced.
+	$effect(() => {
+		host.syncOnce(st);
+	});
 	const rs = $derived(roomScenarios(st));
 	const scenario = $derived(rs[st?.round ?? 0]);
 	const lockedCount = $derived(st?.tables.filter((t) => t.lockedThisRound).length ?? 0);
@@ -164,6 +165,9 @@
 		</div>
 	</header>
 
+	{#if !st}
+		<div class="cg-empty">Connecting to LIVE…</div>
+	{:else}
 	<div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-start">
 		<!-- RUN COLUMN -->
 		<div class="space-y-5">
@@ -196,11 +200,15 @@
 								class:border-teal={cur}
 								class:bg-teal={cur}
 								class:text-bg={cur}
-								class:border-gold={[2, 3, 5].includes(r) && !cur}
-								class:text-gold-ink={[2, 3, 5].includes(r) && !cur}
-								class:border-line={!cur && ![2, 3, 5].includes(r)}
-								class:text-muted={!cur && ![2, 3, 5].includes(r)}
-								class:opacity-50={past && !cur}>R{r}{[2, 3, 5].includes(r) ? '◉' : ''}</span
+								class:border-gold={isCaptureRound(r, st) && !cur}
+								class:text-gold-ink={isCaptureRound(r, st) && !cur}
+								class:border-line={!cur && !isCaptureRound(r, st)}
+								class:text-muted={!cur && !isCaptureRound(r, st)}
+								class:opacity-50={past && !cur}
+								>R{r}{#if isCaptureRound(r, st)}<span
+										class="ml-0.5 text-[9px]"
+										title="Capture round">●</span
+									>{/if}</span
 							>
 						{/each}
 					</div>
@@ -362,6 +370,7 @@
 			<HostPhotos />
 		</div>
 	</div>
+	{/if}
 </main>
 
 <Modal bind:open={resetOpen} label="Reset session" onclose={() => (resetConfirm = '')}>

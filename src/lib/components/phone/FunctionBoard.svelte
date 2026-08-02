@@ -103,18 +103,16 @@
 </script>
 
 <div class="seat-board" class:uneditable={!editable} class:remove={removeOnly} style="--seat:{color}">
-	{#if total > 0}
-		<div class="spend-line" aria-live="polite">
-			<span class="spent-label">Spent</span>
-			<span class="spent-val t-tabular" use:countUp={total}>{formatUsdFull(total)}</span>
-			<span class="of">of</span>
-			<span class="cap-val t-tabular">{formatUsdFull(capTokens)}</span>
-			{#if remaining > 0 && !removeOnly}
-				<span class="dot-sep">·</span>
-				<span class="remaining t-tabular">{formatUsd(remaining)} left</span>
-			{/if}
-		</div>
-	{/if}
+	<div class="spend-line" aria-live="polite">
+		<span class="spent-label">Spent</span>
+		<span class="spent-val t-tabular" use:countUp={total}>{total > 0 ? formatUsdFull(total) : '—'}</span>
+		<span class="of">of</span>
+		<span class="cap-val t-tabular">{formatUsdFull(capTokens)}</span>
+		{#if remaining > 0 && !removeOnly}
+			<span class="dot-sep">·</span>
+			<span class="remaining t-tabular">{formatUsd(remaining)} left</span>
+		{/if}
+	</div>
 
 	{#if removeOnly}
 		<p class="remove-hint">
@@ -181,19 +179,19 @@
 				</div>
 				{#if editable}
 					<div class="acts">
-						{#if v > 0}
-							<button
-								type="button"
-								class="btn minus"
-								disabled={busy || v < CHIP_VALUE}
-								aria-label="Remove {formatUsd(CHIP_VALUE)} from {name}"
-								onclick={() => {
-									if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
-								}}
-							>
-								−
-							</button>
-						{/if}
+						<button
+							type="button"
+							class="btn minus"
+							disabled={busy || v < CHIP_VALUE}
+							aria-label={v >= CHIP_VALUE
+								? `Remove ${formatUsd(CHIP_VALUE)} from ${name}`
+								: `No chips to remove from ${name}`}
+							onclick={() => {
+								if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
+							}}
+						>
+							−
+						</button>
 						<button
 							type="button"
 							class="btn plus"
@@ -205,15 +203,17 @@
 						>
 							+
 						</button>
-						{#if onClear && v > 0 && !removeOnly}
+						{#if onClear && !removeOnly}
 							<button
 								type="button"
 								class="btn clear"
-								disabled={busy}
-								aria-label="Clear all {formatUsd(CHIP_VALUE)} chips from {name}"
+								disabled={busy || v <= 0}
+								aria-label={v > 0
+									? `Clear all ${formatUsd(CHIP_VALUE)} chips from ${name}`
+									: `No chips to clear from ${name}`}
 								title="Clear"
 								onclick={() => {
-									if (!busy) onClear(p);
+									if (!busy && v > 0) onClear(p);
 								}}
 							>
 								✕

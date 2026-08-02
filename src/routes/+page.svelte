@@ -9,6 +9,7 @@
 		R2_FULL_BUDGET,
 		formatUsd,
 		roomPersonas,
+		tableBountyTokens,
 		tablePersona
 	} from '$lib/game';
 	import { SESSION, session } from '$lib/state';
@@ -16,6 +17,9 @@
 	let origin = $state('');
 	let activeQr = $state<{ id: number; name: string; url: string; color: string } | null>(null);
 	let copied = $state(false);
+
+	// Per-table wallet follows the live room pool; falls back to the default before the first poll.
+	const wallet = $derived(session.room ? tableBountyTokens(session.room) : R2_FULL_BUDGET);
 
 	onMount(() => {
 		origin = window.location.origin;
@@ -48,7 +52,7 @@
 	<header class="text-center">
 		<p class="font-mono text-xs uppercase tracking-[0.32em] text-gold-ink">Common Ground · LIVE</p>
 		<h1 class="font-display mt-2 text-4xl font-bold tracking-tight md:text-5xl">
-			If your function had <span class="text-gold-ink">{formatUsd(R2_FULL_BUDGET)}</span>
+			If your function had <span class="text-gold-ink">{formatUsd(wallet)}</span>
 		</h1>
 		<p class="mx-auto mt-3 max-w-xl text-sm text-muted leading-relaxed">
 			Where would you put it? Seven functions · same wallet · five rounds. Stats find Common Ground.
@@ -60,12 +64,14 @@
 		>
 			<li class="flex gap-3">
 				<span class="font-mono text-gold-ink font-bold shrink-0">1</span>
-				<span><b class="text-ink">Scan your table QR</b> — one function, one $100M wallet.</span>
+				<span
+					><b class="text-ink">Scan your table QR</b> — one function, one {formatUsd(wallet)} wallet.</span
+				>
 			</li>
 			<li class="flex gap-3">
 				<span class="font-mono text-gold-ink font-bold shrink-0">2</span>
 				<span
-					><b class="text-ink">Prioritise</b> — physical board first; R2 full {formatUsd(R2_FULL_BUDGET)} · R3
+					><b class="text-ink">Prioritise</b> — physical board first; R2 full {formatUsd(wallet)} · R3
 					cut · R5 restructure.</span
 				>
 			</li>
@@ -90,8 +96,8 @@
 			{@const persona = tablePersona(id, session.room)}
 			{@const url = origin ? `${origin}/play/${SESSION}/${id}` : `/play/${SESSION}/${id}`}
 			<div
-				class="flex flex-col items-center gap-3 rounded-2xl border border-line bg-panel/40 p-5 transition hover:border-gold/50"
-				style="border-color: color-mix(in srgb, {persona.color} 40%, transparent)"
+				class="card flex flex-col items-center gap-3 rounded-2xl border bg-panel/40 p-5 transition"
+				style="--seat:{persona.color}"
 			>
 				<div class="flex items-center gap-2">
 					<span
@@ -183,3 +189,13 @@
 		</div>
 	{/if}
 </Modal>
+
+<style>
+	/* Persona-colored border via --seat; inline border-color would kill :hover. */
+	.card {
+		border-color: color-mix(in srgb, var(--seat) 40%, transparent);
+	}
+	.card:hover {
+		border-color: color-mix(in srgb, var(--seat) 75%, transparent);
+	}
+</style>

@@ -13,6 +13,7 @@
 		tablePersona
 	} from '$lib/game';
 	import { present, SESSION, session } from '$lib/state';
+	import Modal from '$lib/components/Modal.svelte';
 
 	const st = $derived(session.room);
 	const phase = $derived(session.phase);
@@ -39,9 +40,11 @@
 		}
 	}
 
+	let retreatOpen = $state(false);
+
 	async function retreatRound() {
 		if (session.busy) return;
-		if (!confirm('Step back one round? Boards reopen so tables can fix mistakes. Tokens stay.')) return;
+		retreatOpen = false;
 		await session.retreat();
 		await session.refresh();
 	}
@@ -127,7 +130,7 @@
 			</div>
 			<div class="sc-act">
 				{#if canRetreatNow}
-					<button type="button" class="sc-btn ghost" disabled={session.busy} onclick={retreatRound}>← Back</button>
+					<button type="button" class="sc-btn ghost" disabled={session.busy} onclick={() => (retreatOpen = true)}>← Back</button>
 				{/if}
 				<button type="button" class="sc-btn primary" disabled={session.busy || !canAdvanceNow} onclick={advanceRound}>
 					{session.busy ? '…' : advanceLabelNow}
@@ -205,18 +208,29 @@
 						{/each}
 					</div>
 				</div>
-			{:else if phase === 'reveal' || phase === 'finale'}
-				<div class="post-reveal">
-					<header class="pr-h">
-						<p class="pr-title">Reveal is on.</p>
-						<p class="pr-sub">The pattern-recognition analysis lives on its own page.</p>
-					</header>
-					<a class="pr-cta" href="/presenter/analysis">Open analysis →</a>
-				</div>
 			{/if}
 		</div>
 	{/if}
 </main>
+
+<Modal bind:open={retreatOpen} label="Step back one round">
+	<div class="confirm-panel">
+		<p class="confirm-kicker">Step back</p>
+		<h2 class="confirm-title">Step back one round?</h2>
+		<p class="confirm-copy">Boards reopen so tables can fix mistakes. Tokens stay.</p>
+		<div class="confirm-acts">
+			<button type="button" class="confirm-btn" onclick={() => (retreatOpen = false)}>Cancel</button>
+			<button
+				type="button"
+				class="confirm-btn danger"
+				disabled={session.busy}
+				onclick={retreatRound}
+			>
+				{session.busy ? '…' : 'Step back'}
+			</button>
+		</div>
+	</div>
+</Modal>
 
 <style>
 	.stage {
@@ -281,8 +295,11 @@
 		border-color: var(--color-gold);
 		color: var(--color-on-gold);
 	}
+	.rung.past {
+		opacity: 0.55;
+	}
 	.rung.evo {
-		opacity: 0.5;
+		border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
 	}
 	.tb-right {
 		display: flex;
@@ -417,7 +434,7 @@
 	}
 	.submissions {
 		width: 100%;
-		max-width: 56rem;
+		max-width: 72rem;
 		margin: 0 auto;
 	}
 	.sub-head {
@@ -452,7 +469,7 @@
 		border-radius: 12px;
 		border: 1px solid var(--color-line);
 		background: var(--color-panel);
-		padding: 12px;
+		padding: 16px;
 		text-align: center;
 		transition: border-color 0.2s;
 	}
@@ -478,19 +495,19 @@
 		margin-bottom: 8px;
 	}
 	.sub-dot {
-		width: 8px;
-		height: 8px;
+		width: 14px;
+		height: 14px;
 		border-radius: 50%;
 		flex-shrink: 0;
 	}
 	.sub-name {
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 15px;
+		font-size: 20px;
 	}
 	.sub-badge {
 		font-family: var(--font-mono);
-		font-size: 9px;
+		font-size: 12px;
 		font-weight: 800;
 		letter-spacing: 0.06em;
 		padding: 2px 6px;
@@ -505,51 +522,72 @@
 		color: var(--color-muted);
 	}
 	.sub-lens {
-		font-size: 11px;
+		font-size: 13px;
 		color: var(--color-muted);
 		line-height: 1.3;
 	}
 	.sub-status {
-		font-size: 10px;
+		font-size: 13px;
 		color: var(--color-muted);
 		margin-top: 2px;
 	}
-	.post-reveal {
-		margin: 32px auto;
-		max-width: 520px;
+	.sc-bar.finale .sc-btn.primary {
+		padding: 14px 28px;
+		font-size: 16px;
+	}
+	.confirm-panel {
+		max-width: 420px;
 		padding: 24px;
-		text-align: center;
 		border-radius: 16px;
+		border: 1px solid color-mix(in srgb, var(--color-red) 40%, var(--color-line));
 		background: var(--color-panel);
-		border: 1px solid var(--color-line);
 	}
-	.pr-h {
-		margin: 0 0 16px;
+	.confirm-kicker {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 800;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: var(--color-red);
 	}
-	.pr-title {
+	.confirm-title {
+		margin: 6px 0 0;
 		font-family: var(--font-display);
-		font-size: 22px;
+		font-size: 20px;
 		font-weight: 800;
 		color: var(--color-ink);
-		margin: 0 0 4px;
 	}
-	.pr-sub {
+	.confirm-copy {
+		margin: 10px 0 0;
 		font-size: 13px;
+		line-height: 1.45;
 		color: var(--color-muted);
-		margin: 0;
 	}
-	.pr-cta {
-		display: inline-block;
-		padding: 10px 20px;
+	.confirm-acts {
+		display: flex;
+		justify-content: flex-end;
+		gap: 8px;
+		margin-top: 18px;
+	}
+	.confirm-btn {
 		border-radius: 10px;
-		background: var(--color-teal);
-		color: var(--color-on-teal);
+		padding: 10px 16px;
 		font-family: var(--font-display);
 		font-weight: 800;
-		font-size: 14px;
-		text-decoration: none;
+		font-size: 13px;
+		cursor: pointer;
+		border: 1px solid var(--color-line);
+		background: transparent;
+		color: var(--color-muted);
 	}
-	.pr-cta:hover {
-		filter: brightness(1.05);
+	.confirm-btn.danger {
+		border: none;
+		background: var(--color-red);
+		color: #fff;
+	}
+	.confirm-btn:disabled {
+		opacity: 0.4;
+		cursor: default;
 	}
 </style>

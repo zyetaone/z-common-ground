@@ -26,7 +26,6 @@
 
 <div class="pb">
 	<header class="hdr">
-		<span class="cg-kicker hdr-title">PRIORITY BREAKDOWN</span>
 		<span class="hdr-sub">
 			Total room stake · {formatUsd(totalCoins)} · ranked by share of room
 		</span>
@@ -98,12 +97,6 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-	}
-	/* Only the axes that differ from .cg-kicker — see app.css. */
-	.hdr-title {
-		--k-size: 11px;
-		--k-weight: 800;
-		--k-color: var(--color-gold);
 	}
 	.hdr-sub {
 		font-family: var(--font-mono);

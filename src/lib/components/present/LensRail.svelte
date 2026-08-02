@@ -47,7 +47,8 @@
 		if (busyById[tableId] || session.busy) return;
 		busyById = { ...busyById, [tableId]: true };
 		futureUi.clearErr();
-		futureUi.progress = `Rendering ${name} concept…`;
+		// No futureUi.progress here — single renders use the per-row spinner,
+		// not the full-pipeline ZyetaIGenerating overlay.
 		try {
 			const res = await session.generateTableRender(tableId);
 			if (res.imageError === 'no_key') {
@@ -61,7 +62,6 @@
 			futureUi.err = e instanceof Error ? e.message : `Generate failed for ${name}`;
 		} finally {
 			busyById = { ...busyById, [tableId]: false };
-			futureUi.progress = '';
 		}
 	}
 </script>

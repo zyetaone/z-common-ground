@@ -25,7 +25,6 @@
 		<p class="empty">Waiting for priorities…</p>
 	{:else}
 		<header class="hdr">
-			<span class="hdr-title">SEAT MATRIX · ROOM AT A GLANCE</span>
 			<span class="hdr-sub">7 personas · 7 priorities · one $100M wallet each</span>
 		</header>
 
@@ -86,14 +85,6 @@
 		align-items: baseline;
 		flex-shrink: 0;
 	}
-	.hdr-title {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-gold-ink);
-	}
 	.hdr-sub {
 		font-family: var(--font-mono);
 		font-size: 10px;
@@ -133,7 +124,7 @@
 	}
 	.m-num {
 		font-family: var(--font-display);
-		font-size: 1.5rem;
+		font-size: clamp(2.5rem, 4vw, 3.5rem);
 		font-weight: 800;
 		letter-spacing: -0.03em;
 		color: var(--color-ink);
@@ -148,6 +139,7 @@
 	.m-verdict {
 		--k-track: 0.06em;
 		--k-color: var(--color-teal-ink);
+		font-size: 14px;
 	}
 	.m-val {
 		font-family: var(--font-display);

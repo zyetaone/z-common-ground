@@ -118,6 +118,7 @@ const isRevealable = $derived(
 		<div class="canvas">
 			{#key present.screen}
 				<div class="pane">
+					<h1 class="screen-hero">{meta.title}</h1>
 					{#if present.screen === 1}
 						<RoomGlance room={st} />
 					{:else if present.screen === 2}
@@ -222,7 +223,7 @@ const isRevealable = $derived(
 		color: var(--color-on-gold);
 	}
 	.rung.evo {
-		border-style: dashed;
+		border-color: color-mix(in srgb, var(--color-gold) 55%, transparent);
 	}
 	.rung.past {
 		opacity: 0.55;
@@ -287,6 +288,16 @@ const isRevealable = $derived(
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
+	}
+	.screen-hero {
+		margin: 0 0 4px;
+		font-family: var(--font-display);
+		font-size: clamp(2.25rem, 4vw, 3.5rem);
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1.05;
+		color: var(--color-ink);
+		flex-shrink: 0;
 	}
 	.pane {
 		flex: 1;

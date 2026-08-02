@@ -37,7 +37,8 @@
 		if (session.busy || busy || !hasData) return;
 		busy = true;
 		futureUi.clearErr();
-		futureUi.progress = 'Rendering Common Ground concept…';
+		// No futureUi.progress here — single renders use the local busy state,
+		// not the full-pipeline ZyetaIGenerating overlay.
 		try {
 			const res = await session.generateRoomConcept();
 			if (!res.ok) return; // busy — another action in flight
@@ -52,7 +53,6 @@
 			futureUi.err = e instanceof Error ? e.message : 'Generate failed';
 		} finally {
 			busy = false;
-			futureUi.progress = '';
 		}
 	}
 

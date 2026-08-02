@@ -87,7 +87,6 @@
 		<p class="empty">Advance through R1 — the rebuild shows here.</p>
 	{:else}
 		<header class="head">
-			<span class="col-ttl">HOW THE ROOM EVOLVED</span>
 			<span class="legend">Coloured by priority · lead highlighted with <span class="emph">↻</span> when it changed from the previous phase</span>
 		</header>
 
@@ -174,14 +173,6 @@
 		align-items: baseline;
 		gap: 8px;
 		flex-wrap: wrap;
-	}
-	.col-ttl {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-gold-ink);
 	}
 	.legend {
 		font-family: var(--font-mono);

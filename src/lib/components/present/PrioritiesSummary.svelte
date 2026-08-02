@@ -114,7 +114,6 @@
 
 <div class="ps">
 	<header class="head">
-		<span class="col-ttl">WHAT EACH FUNCTION DID · CUT → REBUILD</span>
 		<button
 			type="button"
 			class="info-btn"
@@ -207,14 +206,6 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: baseline;
-	}
-	.col-ttl {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 800;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: var(--color-gold-ink);
 	}
 	.info-btn {
 		display: inline-flex;

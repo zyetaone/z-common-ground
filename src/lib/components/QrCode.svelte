@@ -6,7 +6,7 @@
 	let dataUrl = $state('');
 
 	onMount(async () => {
-		dataUrl = await QR.toDataURL(text, { width: size, margin: 1, color: { dark: '#0A3D2B', light: '#F3ECD8' } });
+		dataUrl = await QR.toDataURL(text, { width: size, margin: 2, color: { dark: '#0A3D2B', light: '#F3ECD8' } });
 	});
 </script>
 

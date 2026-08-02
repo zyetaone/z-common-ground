@@ -20,6 +20,17 @@
 		scenario: Scenario | null;
 		isFinale: boolean;
 	} = $props();
+
+	/** Round verb shown inside the badge — from the scenario's move/roundLabel. */
+	const moveVerb = $derived(
+		phase === 'round' && scenario
+			? scenario.move === 'remove'
+				? 'REMOVE'
+				: scenario.roundLabel === 5
+					? 'RESTRUCTURE'
+					: 'ADD'
+			: null
+	);
 </script>
 
 <section class="top" aria-live="polite">
@@ -37,7 +48,7 @@
 				{#if phase === 'lobby'}
 					Lobby
 				{:else}
-					R{roundLabel}/{roundCount}
+					R{roundLabel}/{roundCount}{#if moveVerb} · {moveVerb}{/if}
 				{/if}
 			</span>
 			<span class="badge-question">
@@ -49,18 +60,12 @@
 			</span>
 		</div>
 		{#if phase === 'round' && scenario}
-			{@const moveLabel =
-				scenario.move === 'remove'
-					? 'Remove'
-					: scenario.roundLabel === 5
-						? 'Restructure'
-						: 'Add'}
-			<p class="instruction">{moveLabel}</p>
-			{#if scenario.hint}
-				<p class="budget-hint">{scenario.hint}</p>
-			{/if}
-			{#if scenario.modelRules}
-				<p class="model-rules">{scenario.modelRules}</p>
+			{#if scenario.hint || scenario.modelRules}
+				<p class="budget-hint">
+					{scenario.hint ?? ''}{#if scenario.hint && scenario.modelRules}
+						·
+					{/if}{#if scenario.modelRules}<span class="rules">{scenario.modelRules}</span>{/if}
+				</p>
 			{/if}
 		{:else if persona.mission && phase === 'lobby'}
 			<p class="mission"><span class="mission-k">Lens</span> {persona.mission}</p>
@@ -159,21 +164,11 @@
 		line-height: 1.3;
 		color: var(--color-ink);
 		display: -webkit-box;
-		-webkit-line-clamp: 4;
-		line-clamp: 4;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		flex: 1;
-	}
-	.instruction {
-		margin: 6px 0 0;
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--color-teal-ink);
-		line-height: 1.35;
 	}
 	.mission {
 		margin: 6px 0 0;
@@ -206,12 +201,11 @@
 		line-height: 1.4;
 		font-weight: 600;
 	}
-	.model-rules {
-		margin: 3px 0 0;
+	.budget-hint .rules {
 		font-family: var(--font-mono);
 		font-size: 10px;
 		letter-spacing: 0.04em;
+		font-weight: 500;
 		color: var(--color-muted);
-		line-height: 1.35;
 	}
 </style>

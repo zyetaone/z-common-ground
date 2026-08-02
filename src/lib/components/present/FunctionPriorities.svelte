@@ -6,8 +6,7 @@ import {
 		priorityMix,
 		roomPersonas,
 		roomPriorities,
-		tableSeatIndex,
-		winnersLosersByFunction
+		tableSeatIndex
 	} from '$lib/game';
 	import FunctionProfileSheet from './FunctionProfileSheet.svelte';
 
@@ -35,11 +34,11 @@ import {
 	};
 	const rows = $derived.by((): CardRow[] => {
 		const personas = roomPersonas(room);
-		const outcomes = winnersLosersByFunction(room.tables, room);
-		const byTable = new Map<number, (typeof outcomes)[number]>();
-		for (const o of outcomes) byTable.set(o.seat + 1, o);
 		const cards: CardRow[] = [];
 		for (const t of room.tables) {
+			// Skip tables with no stake — an empty row would sort last and get
+			// crowned "Independent Lens" with fabricated divergence.
+			if ((t.matrix ?? []).reduce((s, n) => s + n, 0) <= 0) continue;
 			const id = t.id;
 			const seat = tableSeatIndex(id);
 			const persona = personas[seat] ?? personas[0];
@@ -61,6 +60,9 @@ import {
 		// Sort: highest alignment first (most aligned with room = "Common Ground builder")
 		return cards.sort((a, b) => b.cg - a.cg);
 	});
+
+	/** Tables with no stake are excluded from the insights — surface the count. */
+	const excludedCount = $derived(room.tables.length - rows.length);
 
 	function tableMixPct(tableId: number): number[] {
 		const t = room.tables.find((x) => x.id === tableId);
@@ -109,21 +111,25 @@ import {
 	{:else}
 		<!-- ── Executive Function Insights Header ── -->
 		<header class="fp-hdr">
-			{#if mostAligned}
-				<div class="fp-insight" style="--c:{mostAligned.color}">
-					<span class="fp-tag">🤝 Most Aligned Ally</span>
-					<strong class="fp-title">{mostAligned.name} ({mostAligned.cg}/100)</strong>
-					<span class="fp-sub">Closest match to room mix</span>
-				</div>
-			{/if}
-			{#if mostDivergent}
-				<div class="fp-insight div" style="--c:{mostDivergent.color}">
-					<span class="fp-tag">⚡ Independent Lens</span>
-					<strong class="fp-title">{mostDivergent.name} ({mostDivergent.cg}/100)</strong>
-					<span class="fp-sub">
-						Diverges on {mostDivergent.topDivergence.name} ({mostDivergent.topDivergence.delta > 0 ? '+' : ''}{mostDivergent.topDivergence.delta}pp)
-					</span>
-				</div>
+			{#if excludedCount > 0}
+				<p class="fp-note">{excludedCount} {excludedCount === 1 ? 'table' : 'tables'} no stake yet</p>
+			{:else}
+				{#if mostAligned}
+					<div class="fp-insight" style="--c:{mostAligned.color}">
+						<span class="fp-tag">🤝 Most Aligned Ally</span>
+						<strong class="fp-title">{mostAligned.name} ({mostAligned.cg}/100)</strong>
+						<span class="fp-sub">Closest match to room mix</span>
+					</div>
+				{/if}
+				{#if mostDivergent}
+					<div class="fp-insight div" style="--c:{mostDivergent.color}">
+						<span class="fp-tag">⚡ Independent Lens</span>
+						<strong class="fp-title">{mostDivergent.name} ({mostDivergent.cg}/100)</strong>
+						<span class="fp-sub">
+							Diverges on {mostDivergent.topDivergence.name} ({mostDivergent.topDivergence.delta > 0 ? '+' : ''}{mostDivergent.topDivergence.delta}pp)
+						</span>
+					</div>
+				{/if}
 			{/if}
 		</header>
 
@@ -221,6 +227,12 @@ import {
 		gap: 10px;
 		flex-wrap: wrap;
 		flex-shrink: 0;
+	}
+	.fp-note {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--color-muted);
 	}
 	.fp-insight {
 		display: flex;
