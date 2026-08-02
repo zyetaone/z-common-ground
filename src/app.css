@@ -11,8 +11,17 @@
 	--color-gold: #b8932e;
 	--color-teal: #1f8b78;
 	--color-red: #c9403a;
-	--color-on-gold: #ffffff;
+	--color-on-gold: #111a14;
 	--color-on-teal: #ffffff;
+
+	/* Ink-vs-fill convention: raw gold/teal are fills, borders and dots only —
+	   never text. Use the *-ink tokens for text on light surfaces. */
+	--color-gold-ink: #8a6d1f; /* 4.6:1 on cream */
+	--color-teal-ink: #17695a; /* 6.1:1 on cream */
+
+	/* Dark surfaces — reserved for later phases */
+	--color-well: #0a0f1a;
+	--color-scrim: rgba(0, 0, 0, 0.85);
 
 	/* ZyetaI brand surface */
 	--color-zi: var(--color-teal);
@@ -78,7 +87,7 @@
 	outline: 2px solid var(--color-emphasis);
 	outline-offset: 3px;
 	box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-emphasis) 25%, transparent);
-	border-radius: 4px;
+	border-radius: inherit;
 }
 
 html,
@@ -161,14 +170,31 @@ body::before {
 	font-variant-numeric: tabular-nums;
 }
 
-/* Shared analysis chrome — avoid per-panel kicker/empty CSS */
+/* Shared analysis chrome — avoid per-panel kicker/empty CSS.
+ *
+ * The micro-cap label ("SEAT MATRIX", "LEAD", "ALIGNED") is the single most
+ * repeated visual idea in the app: 58 near-identical rule blocks across 28
+ * components, drifted into 34 signatures with 9 tracking values and 4 sizes.
+ * Four variants render together on the presenter deck.
+ *
+ * The fix is parameterisation, not a fixed style — the earlier hard-coded
+ * .cg-kicker matched none of the 58 real usages (every one differs in tracking
+ * or colour), which is exactly why it had zero consumers. Tone and tracking are
+ * the two axes that legitimately vary, so they are variables with the common
+ * case as the default:
+ *
+ *   <p class="cg-kicker">SEAT MATRIX</p>
+ *   <p class="cg-kicker" style="--k-color: var(--color-teal)">ALIGNED</p>
+ *   <p class="cg-kicker" style="--k-track: 0.08em">Room at a glance</p>
+ */
 .cg-kicker {
 	font-family: var(--font-mono);
-	font-size: 10px;
-	letter-spacing: 0.18em;
+	font-size: var(--k-size, 10px);
+	letter-spacing: var(--k-track, 0.14em);
 	text-transform: uppercase;
-	color: var(--color-gold);
-	font-weight: 700;
+	color: var(--k-color, var(--color-muted));
+	font-weight: var(--k-weight, 700);
+	line-height: 1.2;
 }
 .cg-empty {
 	display: grid;
@@ -222,6 +248,7 @@ body::before {
 	--color-border-strong: color-mix(in srgb, #3a4534 60%, #f3ecd8);
 	--color-bg-elevated: color-mix(in srgb, #ffffff 7%, #18221a);
 	--color-bg-overlay: color-mix(in srgb, #10160f 75%, transparent);
+	--color-teal-ink: #3fb6a2; /* 7:1 on dark panel — same token, theme-scoped */
 	--color-zi-bg: color-mix(in srgb, var(--color-teal) 16%, #18221a);
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
 	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);

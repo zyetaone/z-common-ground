@@ -35,21 +35,21 @@
 
 		<footer class="bar" aria-label="Room summary">
 			<div class="metric">
-				<span class="m-label">Common Ground</span>
+				<span class="cg-kicker m-label">Common Ground</span>
 				<span class="m-num">{ring}</span>
 				<span class="m-u">/100</span>
-				<span class="m-verdict">{i.verdict}</span>
+				<span class="cg-kicker m-verdict">{i.verdict}</span>
 			</div>
 			<div class="metric">
-				<span class="m-label">Lead</span>
+				<span class="cg-kicker m-label">Lead</span>
 				<span class="m-val">{i.lead}</span>
 			</div>
 			<div class="metric">
-				<span class="m-label">Divide</span>
+				<span class="cg-kicker m-label">Divide</span>
 				<span class="m-val">{i.fault}</span>
 			</div>
 			<div class="metric">
-				<span class="m-label">Overlooked</span>
+				<span class="cg-kicker m-label">Overlooked</span>
 				<span class="m-val">{i.blind}</span>
 			</div>
 			<div class="dots" aria-label="{sealed} of {tables} sealed">
@@ -127,13 +127,9 @@
 		align-items: baseline;
 		gap: 5px;
 	}
+	/* Only the axes that differ from .cg-kicker — see app.css. */
 	.m-label {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--color-muted);
+		--k-track: 0.08em;
 	}
 	.m-num {
 		font-family: var(--font-display);
@@ -150,12 +146,8 @@
 		color: var(--color-muted);
 	}
 	.m-verdict {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--color-teal);
+		--k-track: 0.06em;
+		--k-color: var(--color-teal);
 	}
 	.m-val {
 		font-family: var(--font-display);
