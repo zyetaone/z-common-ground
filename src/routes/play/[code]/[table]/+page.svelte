@@ -11,13 +11,13 @@
 	} from '$lib/components/phone';
 	import {
 		R2_FULL_BUDGET,
-		R3_REMOVE_TARGET,
 		R4_ADD_BACK,
-		R5_RESTRUCTURE_CAP,
 		emptyMatrix,
 		formatUsd,
 		isCaptureRound,
 		ROUND_COUNT,
+		r3RemoveTarget,
+		r5CapForWallet,
 		roomPriorities,
 		roomScenarios,
 		tablePersona,
@@ -77,16 +77,16 @@
 		removeOnly
 			? Math.max(standingCap, totalTokens)
 			: roundLabel === 5
-				? Math.min(baseWallet, R5_RESTRUCTURE_CAP)
+				? r5CapForWallet(baseWallet)
 				: baseWallet
 	);
 	const overCap = $derived(totalTokens > tableCap);
 	const removedTokens = $derived(Math.max(0, standingCap - totalTokens));
-	const r2Ready = $derived(
-		!canCapture || roundLabel !== 2 || totalTokens === Math.min(baseWallet, R2_FULL_BUDGET)
-	);
+	const r2Target = $derived(baseWallet);
+	const r3Target = $derived(r3RemoveTarget(standingCap));
+	const r2Ready = $derived(!canCapture || roundLabel !== 2 || totalTokens === r2Target);
 	const r3Ready = $derived(
-		!canCapture || roundLabel !== 3 || !removeOnly || removedTokens >= R3_REMOVE_TARGET
+		!canCapture || roundLabel !== 3 || !removeOnly || removedTokens >= r3Target
 	);
 
 	function reseedFromServer() {
@@ -174,12 +174,12 @@
 	async function onSubmit(e: Event) {
 		e.preventDefault();
 		if (!editable || submitting || overCap || !canCapture) return;
-		if (roundLabel === 2 && totalTokens !== Math.min(baseWallet, R2_FULL_BUDGET)) {
-			submitError = `R2 needs the full ${formatUsd(Math.min(baseWallet, R2_FULL_BUDGET))} budget.`;
+		if (roundLabel === 2 && totalTokens !== r2Target) {
+			submitError = `R2 needs the full ${formatUsd(r2Target)} budget.`;
 			return;
 		}
-		if (roundLabel === 3 && removeOnly && removedTokens < R3_REMOVE_TARGET) {
-			submitError = `R3 needs ${formatUsd(R3_REMOVE_TARGET)} removed (you’ve cut ${formatUsd(removedTokens)}).`;
+		if (roundLabel === 3 && removeOnly && removedTokens < r3Target) {
+			submitError = `R3 needs ${formatUsd(r3Target)} removed (you’ve cut ${formatUsd(removedTokens)}).`;
 			return;
 		}
 		if (!removeOnly && totalTokens <= 0) return;
@@ -220,13 +220,13 @@
 		roundLabel === 1
 			? `Physical board · first stake`
 			: roundLabel === 2
-				? `Physical board · full ${formatUsd(R2_FULL_BUDGET)}`
+				? `Physical board · full ${formatUsd(r2Target)}`
 				: roundLabel === 3
-					? `Physical board · remove ${formatUsd(R3_REMOVE_TARGET)}`
+					? `Physical board · remove ${formatUsd(r3RemoveTarget(baseWallet))}`
 					: roundLabel === 4
 						? `Physical board · +${formatUsd(R4_ADD_BACK)}`
 						: roundLabel === 5
-							? `Physical board · restructure ${formatUsd(R5_RESTRUCTURE_CAP)}`
+							? `Physical board · restructure ${formatUsd(r5CapForWallet(baseWallet))}`
 							: `Physical board · R${roundLabel}`
 	);
 	const freezeSub = $derived(
@@ -300,24 +300,6 @@
 				sub="Waiting for presenter to start Round 1…"
 			/>
 		{/if}
-	{:else if phase === 'round' && !canCapture}
-		{#if !physicallyDone}
-			<MobileWaitStage
-				icon="🎯"
-				heading={freezeHeading}
-				sub={freezeSub}
-				actionLabel={session.busy ? 'Freezing…' : 'Freeze'}
-				actionBusy={session.busy}
-				onaction={onFreeze}
-			/>
-		{:else}
-			<MobileWaitStage
-				joined
-				icon="✅"
-				heading="Board frozen"
-				sub="Waiting for presenter to continue…"
-			/>
-		{/if}
 	{:else if phase === 'round' && !physicallyDone}
 		<MobileWaitStage
 			icon="🎯"
@@ -340,6 +322,8 @@
 			{removeOnly}
 			{r2Ready}
 			{r3Ready}
+			r2Target={r2Target}
+			removeTarget={r3Target}
 			{overCap}
 			{totalTokens}
 			{removedTokens}

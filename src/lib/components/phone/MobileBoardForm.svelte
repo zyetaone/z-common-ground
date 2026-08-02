@@ -1,12 +1,6 @@
 <script lang="ts">
 	import FunctionBoard from './FunctionBoard.svelte';
-	import {
-		CHIP_VALUE,
-		R2_FULL_BUDGET,
-		R3_REMOVE_TARGET,
-		formatUsd,
-		formatUsdFull
-	} from '$lib/game';
+	import { CHIP_VALUE, formatUsd, formatUsdFull } from '$lib/game';
 	import type { RoundMove, Vec7 } from '$lib/game/types';
 
 	/**
@@ -25,6 +19,8 @@
 		removeOnly = false,
 		r2Ready = true,
 		r3Ready = true,
+		r2Target = 0,
+		removeTarget = 0,
 		overCap = false,
 		totalTokens = 0,
 		removedTokens = 0,
@@ -49,6 +45,10 @@
 		removeOnly?: boolean;
 		r2Ready?: boolean;
 		r3Ready?: boolean;
+		/** R2 seal target in tokens — the full per-table wallet. */
+		r2Target?: number;
+		/** R3 seal target in tokens — 30% of the standing total. */
+		removeTarget?: number;
 		overCap?: boolean;
 		totalTokens?: number;
 		removedTokens?: number;
@@ -88,9 +88,9 @@
 				{busy
 					? 'Locking in…'
 					: roundLabel === 2 && !r2Ready
-						? `Need full ${formatUsd(Math.min(baseWallet, R2_FULL_BUDGET))} · now ${formatUsdFull(totalTokens)}`
+						? `Need full ${formatUsd(r2Target)} · now ${formatUsdFull(totalTokens)}`
 						: roundLabel === 3 && removeOnly && !r3Ready
-							? `Remove ${formatUsd(R3_REMOVE_TARGET)} · cut ${formatUsd(removedTokens)} so far`
+							? `Remove ${formatUsd(removeTarget)} · cut ${formatUsd(removedTokens)} so far`
 							: removeOnly
 								? `Capture R3 · protected ${formatUsdFull(totalTokens)}`
 								: roundLabel === 5

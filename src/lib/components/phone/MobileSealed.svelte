@@ -19,10 +19,7 @@
 		labels?: string[];
 	} = $props();
 
-	let celebrate = $state(false);
-
 	onMount(() => {
-		celebrate = true;
 		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 			try {
 				navigator.vibrate([20, 50, 20]);
@@ -33,7 +30,7 @@
 	});
 </script>
 
-<div class="sealed" use:confetti={celebrate ? { count: 14 } : undefined}>
+<div class="sealed" use:confetti={{ count: 14 }}>
 	<div class="sealbadge">
 		<span class="tick">✓</span>
 		<div>

@@ -6,7 +6,8 @@
 		PRIORITIES,
 		R3_REMOVE_TARGET,
 		formatUsd,
-		formatUsdFull
+		formatUsdFull,
+		r3RemoveTarget
 	} from '$lib/game';
 	import type { RoundMove, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
@@ -45,6 +46,8 @@
 	const removeOnly = $derived(move === 'remove');
 	const baseTotal = $derived((baseline ?? counts).reduce((a, b) => a + b, 0));
 	const removed = $derived(Math.max(0, baseTotal - total));
+	/** R3 cut target — 30% of the standing total (falls back to the default-wallet $30M). */
+	const removeTarget = $derived(baseline ? r3RemoveTarget(baseTotal) : R3_REMOVE_TARGET);
 	const remaining = $derived(Math.max(0, capTokens - total));
 	const chipColor = $derived(CHIP_DENOMS[0].hex);
 	const chipSize = 24;
@@ -115,7 +118,7 @@
 
 	{#if removeOnly}
 		<p class="remove-hint">
-			Remove <b>{formatUsd(R3_REMOVE_TARGET)}</b> total. What stays is <b>protected</b>
+			Remove <b>{formatUsd(removeTarget)}</b> total. What stays is <b>protected</b>
 			{#if removed > 0}
 				· cut {formatUsd(removed)} so far
 			{/if}
