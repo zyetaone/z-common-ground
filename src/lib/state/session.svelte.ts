@@ -2,7 +2,6 @@
  * Global LIVE session — Svelte 5 runes module ($state / $derived, no $effect).
  * Poll never drops an update; advance applies returned room immediately.
  */
-import { tablePersona } from '$lib/game';
 import type { RoomState, WorkspaceDesignKind } from '$lib/game/types';
 
 export const SESSION = 'LIVE';
@@ -395,21 +394,20 @@ export const session = {
 		}
 	},
 
-	
-		/** Player taps "Freeze" — physical tokens on the board are final. */
-		async tablePhysicallyDone(tableId: number) {
-			error = '';
-			try {
-				const res = await post<{ ok: boolean; room?: RoomState }>(
-					`/api/room/${SESSION}/physical-done`,
-					{ tableId }
-				);
-				if (res.room) applyRoom(res.room);
-				else await poll();
-			} catch (e) {
-				error = e instanceof Error ? e.message : 'Freeze failed';
-			}
-		},
+	/** Player taps "Freeze" — physical tokens on the board are final. */
+	async tablePhysicallyDone(tableId: number) {
+		error = '';
+		try {
+			const res = await post<{ ok: boolean; room?: RoomState }>(
+				`/api/room/${SESSION}/physical-done`,
+				{ tableId }
+			);
+			if (res.room) applyRoom(res.room);
+			else await poll();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Freeze failed';
+		}
+	},
 	async lockTable(tableId: number) {
 		const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/lock`, {
 			tableId,
@@ -424,11 +422,14 @@ export const session = {
 	 * join presence, freeze physical, and seal when the round is a capture round.
 	 */
 	async emulateDemoPlay(seed = Date.now()) {
+		if (busy) return { ok: false as const, error: 'busy' as const };
 		const { emulateRoomBoards, isCaptureRound } = await import('$lib/game');
 		error = '';
 		busy = true;
 		try {
 			await this.ensure({});
+			// ensure's finally clears busy — hold it for the rest of the batch
+			busy = true;
 			let current = room;
 			if (!current) throw new Error('No room');
 			if (current.phase === 'lobby') {
@@ -458,6 +459,7 @@ export const session = {
 				await this.submitTable(p.tableId, p.board, { seal, quiet: true });
 			}
 			await poll();
+			return { ok: true as const };
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Emulate failed';
 			throw e;
@@ -472,7 +474,7 @@ export const session = {
 	 * Pushes onto roomConceptUrls via setFinaleImage.
 	 */
 	async generateRoomConcept() {
-		if (busy) return { url: null as string | null, imageError: 'failed' as const };
+		if (busy) return { ok: false as const, error: 'busy' as const };
 		busy = true;
 		error = '';
 		try {
@@ -484,7 +486,7 @@ export const session = {
 			}>(`/api/ai/room-concept`, { code: SESSION, t: Date.now() });
 			if (res.room) applyRoom(res.room);
 			else await poll();
-			return res;
+			return { ok: true as const, ...res };
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Room concept failed';
 			throw e;
