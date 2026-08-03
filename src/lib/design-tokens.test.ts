@@ -77,6 +77,26 @@ describe('token contrast on the stage-dark surface', () => {
 	});
 });
 
+describe('token contrast on the board felt', () => {
+	// The printable board and /boards index paint text straight onto felt.
+	// These are physical artifacts people read across a table, so AA matters
+	// as much as on screen.
+	const felt = token('--color-felt');
+
+	it.each([
+		['--color-felt-ink', AA],
+		['--color-felt-muted', AA] // /boards caption is 12px — not "large text"
+	])('%s clears WCAG AA on plain felt', (name, min) => {
+		expect(ratio(token(name), felt)).toBeGreaterThanOrEqual(min);
+	});
+
+	it('stays legible on the darker felt panel too', () => {
+		const deep = token('--color-felt-deep');
+		expect(ratio(token('--color-felt-ink'), deep)).toBeGreaterThanOrEqual(AA);
+		expect(ratio(token('--color-felt-muted'), deep)).toBeGreaterThanOrEqual(AA);
+	});
+});
+
 describe('text on solid fills', () => {
 	// Pills and badges: ink on a gold fill. Measured 6.14:1 — comfortably AA,
 	// short of AAA. Recorded so a palette change can't quietly drop it below AA.

@@ -34,7 +34,9 @@
 	--color-felt: #0e6b41;
 	--color-felt-deep: #0a5735;
 	--color-felt-ink: #f3ecd8;
-	--color-felt-muted: #bfd8c7;
+	/* 4.51:1 on plain felt — the /boards caption is 12px, so it needs the full
+	   AA ratio, not the 3:1 large-text allowance. */
+	--color-felt-muted: #c3dccb;
 
 	/* ZyetaI brand surface */
 	--color-zi: var(--color-teal);
