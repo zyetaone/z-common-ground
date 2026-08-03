@@ -7,7 +7,10 @@
 
 	let { children } = $props();
 
-	onMount(() => session.boot());
+	onMount(() => {
+		const teardown = session.boot();
+		return teardown;
+	});
 
 	onNavigate((nav) => {
 		if (typeof document === 'undefined' || !document.startViewTransition) return;

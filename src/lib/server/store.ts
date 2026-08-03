@@ -198,16 +198,6 @@ class Store {
 		return this.ensure();
 	}
 
-	/** Always 7 function tables (one persona each). Extra count ignored. */
-	setTables(_code: string, count: number): RoomState {
-		const room = this.ensure();
-		const n = N_SEATS; // fixed — one table per function
-		void count;
-		while (room.tables.length < n) room.tables.push(emptyTable(room.tables.length + 1));
-		while (room.tables.length > n) room.tables.pop();
-		recompute(room);
-		return room;
-	}
 
 	setConfig(
 		_code: string,

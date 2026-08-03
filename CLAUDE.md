@@ -43,7 +43,7 @@ Import `session` / `play` / `present` / `host` from `$lib/state`.
 
 - **No vision/camera path.** Tokens are entered by hand on phones; do not reintroduce photo board-reading without an explicit product ask.
 - **`boardDelta` fails silently** — returns `200` as a no-op if phase ≠ `round`, the table is locked, or indices are bad. Don't assume `200` means the token landed; read state back.
-- **Render needs a key.** Without `FAL_API_KEY`/`FAL_KEY`, `POST /api/ai/finale` returns `url: null` by design — handle the empty state, don't treat it as an error.
+- **Render needs a key.** Without `FAL_API_KEY`/`FAL_KEY`, `POST /api/ai/room-concept` returns `url: null` by design — handle the empty state, don't treat it as an error.
 - **Evolution screen needs history.** Presenter screen 2 (R2/R3/R5) only populates after those rounds have board data *and* the host has advanced past them.
 - **Don't invent extra presenter analytics.** The deck is exactly 4 screens (see AGENTS.md); keep the derived-lens vocabulary (alignment · fault line · blind spot · surprise · Common Ground Index) stable.
 

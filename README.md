@@ -62,7 +62,7 @@ Paged like z-corenet: **← →** or **Space**, or `?screen=1…4`.
   *“Spatial composition MUST reflect: 28% productivity, 15% innovation…”*  
   Larger % → more floorplate / focal presence.
 - **Open full brief** shows the AI-ready text with alignment index, mix, mandate, fault/blind, directives.
-- **Generate room render** → `POST /api/ai/finale` → fal.ai (`nano-banana-2`). Graceful empty state if no API key.
+- **Generate room render** → `POST /api/ai/room-concept` → fal.ai (`nano-banana-2`). Graceful empty state if no API key. (The brief is composed separately via `POST /api/ai/compose-brief`.)
 - Single render first; multi-image gallery is optional later.
 
 Analysis is **hidden** until unlock rounds (or force), so the room can still look at physical boards first.
@@ -89,12 +89,12 @@ Analysis is **hidden** until unlock rounds (or force), so the room can still loo
 | `POST /api/room` | Create room `{ tableCount? }` |
 | `GET /api/room/[code]/state` | Full `RoomState` snapshot |
 | `POST .../advance` | Host phase / round |
-| `POST .../tables` | Resize tables |
+| `POST .../table-count` | Resize tables to N (1..N_SEATS) |
 | `POST .../config` | `{ analysisUnlocks?, analysisForced? }` |
 | `POST .../board` | `{ tableId, seat, priority, delta: ±1 }` or `value` |
 | `POST .../board/clear-cell` | Zero one cell |
 | `POST .../lock` / `.../unlock-table` | Round lock |
-| `POST /api/ai/finale` | `{ code }` → fal render URL |
+| `POST /api/ai/room-concept` / `/api/ai/compose-brief` | fal render + RapidI brief respectively |
 
 ---
 

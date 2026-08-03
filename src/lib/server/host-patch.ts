@@ -6,15 +6,15 @@
 import { error } from '@sveltejs/kit';
 import { N_PRIORITIES, type Persona, type Scenario } from '$lib/game/types';
 
-/** Print-friendly text only — rejects control chars (newlines, NUL) so a patch
- *  can't smuggle layout breaks or terminal escapes into persisted copy.
- *  Accepts the Latin supplement, extended Latin, and general punctuation so
- *  em-dash (—), en-dash (–), curly quotes, etc. all pass.
+/** Print-friendly text only — rejects control chars (newlines, NUL, DEL) so a
+ *  patch can't smuggle layout breaks or terminal escapes into persisted copy.
+ *  Allows all printable Unicode (Latin, Cyrillic, Greek, CJK, etc.) so a host
+ *  can edit persona names in any language.
  *
  *  This is a *charset* guard, not an XSS guard: `<script>` is printable ASCII
  *  and passes. Markup is handled separately by HAS_MARKUP below, and Svelte
  *  escapes interpolated text anyway (no `{@html}` on any host-editable field). */
-const SAFE_TEXT = /^[\x20-\x7E\u00A0-\u02FF\u2010-\u205F]*$/;
+const SAFE_TEXT = /^[^\x00-\x1F\x7F]*$/u;
 
 /** Emoji fields are pictographic by definition, so SAFE_TEXT would reject every
  *  default (📈 🤖 ✂️ 🌟 🎯). Allow printable text plus the pictographic blocks,

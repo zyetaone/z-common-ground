@@ -238,8 +238,8 @@ The AI surface is small but does the heavy lifting at the finale. **All prompt t
 
 | File | What it does | Model | Prompt |
 |---|---|---|---|
-| `src/lib/server/ai/rapidi.ts` (calls `PROMPTS.brief`) → `src/routes/api/ai/brief/+server.ts`, `src/routes/api/ai/finale/+server.ts` | Executive brief narrative. System + dynamic user prompt with priority mix, lead/fault/blind, surprise, journey, verdict. **Proposed expansion (Phase 8)**: also appends 2 lines of strategy context — `Strategy: {roomStrategy}. Protected: {names}. Contested: {name}.` — driven by `strategySignature(room)` from [Strategy disclosure]. The renderer projects `protected` (per-seat array) into a deduped priority-name list. | Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (3.1-8b (deprecated) was deprecated 2026-05-30). | `prompts/brief.system.json` + `prompts/brief.user.ts` renderer. |
-| `src/lib/server/ai/fal.ts` (calls `PROMPTS.roomRender`) → `src/routes/api/ai/finale/+server.ts` | Room render — the visual floorplan. Prompt is %-weighted on `priorityMix(matrix)`; "warm materials · cinematic natural light · 16:9 · no text/logos". | `fal-ai/nano-banana-2`, `num_images: 1`, `aspect_ratio: '16:9'`, `resolution: '1K'`, `output_format: 'webp'`. | `prompts/image.finale.json` + `prompts/image.finale.ts` renderer. |
+| `src/lib/server/ai/rapidi.ts` (calls `PROMPTS.brief`) → `src/routes/api/ai/brief/+server.ts`, `src/routes/api/ai/compose-brief/+server.ts` | Executive brief narrative. System + dynamic user prompt with priority mix, lead/fault/blind, surprise, journey, verdict. **Proposed expansion (Phase 8)**: also appends 2 lines of strategy context — `Strategy: {roomStrategy}. Protected: {names}. Contested: {name}.` — driven by `strategySignature(room)` from [Strategy disclosure]. The renderer projects `protected` (per-seat array) into a deduped priority-name list. | Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (3.1-8b (deprecated) was deprecated 2026-05-30). | `prompts/brief.system.json` + `prompts/brief.user.ts` renderer. |
+| `src/lib/server/ai/fal.ts` (calls `PROMPTS.roomRender`) → `src/routes/api/ai/room-concept/+server.ts` | Room render — the visual floorplan. Prompt is %-weighted on `priorityMix(matrix)`; "warm materials · cinematic natural light · 16:9 · no text/logos". | `fal-ai/nano-banana-2`, `num_images: 1`, `aspect_ratio: '16:9'`, `resolution: '1K'`, `output_format: 'webp'`. | `prompts/image.finale.json` + `prompts/image.finale.ts` renderer. |
 | `src/lib/server/ai/fal.ts` (calls `PROMPTS.tableRender`) → `src/routes/api/ai/table-render/+server.ts` | Per-function render — what one function's bets look like as a workplace. | Same as above. | `prompts/image.table.json` + `prompts/image.table.ts` renderer. |
 
 **Branding surfaces:** "AI powered by ZyetaI" pill (`<ZyetaI>` / `compact`) appears on the home page, `FutureBrief`, `FutureRoomGen`, `MobileRender` (function + room cards), and as a watermark on the table render. The LinkedIn frame canvas draws "Powered by ZyetaI" at the bottom-right (`linkedin-frame.ts` line 125).
@@ -253,6 +253,8 @@ The AI surface is small but does the heavy lifting at the finale. **All prompt t
 - Missing `FAL_API_KEY` / `FAL_KEY` → `generateImage` returns `no_key`; brief still works.
 - No `AI` binding →  RapidI `null`; brief falls back.
 - **`room.strategy` undefined (R1, R2, pre-reveal)** → strategy signature isn't computed until ≥1 capture round. The brief user-message renderer must handle this: omit the strategy lines (don't emit empty `Strategy: .`) and continue with the existing mix/lead/fault/blind/surprise/journey/verdict facts. **The brief never blocks on strategy being present.**
+
+> **STATUS (2026-08-02):** *Proposed* — this refactor was rejected in code review (claim-then-update state machine + JSON-folder + typed registry added ~1,000 lines of unused scaffolding). Current state is a single `src/lib/server/ai/prompts.ts` (242L). Open below for the brand-voice migration path when a non-engineer editor needs to change the prompt text.
 
 ### Prompts as data, not code (the bigger fix)
 
@@ -763,7 +765,8 @@ Wire it up in `package.json`:
 | Endpoint | Body | Response | Side effects |
 |---|---|---|---|
 | `POST /api/ai/brief` | `{ code }` | `{ brief, briefSource: 'rapidi' \| 'numbers', rapidi: boolean, room }` | persists `enhancedBrief` / `briefSource` |
-| `POST /api/ai/finale` | `{ code }` | `{ url \| null, imageError?, prompt, brief, briefSource, rapidi, room }` | persists brief + `finaleImageUrl` |
+| `POST /api/ai/room-concept` | `{ code }` | `{ url \| null, imageError?, prompt, room }` | appends to `roomConceptUrls`; sets `finaleImageUrl` if first |
+| `POST /api/ai/compose-brief` | `{ code }` | `{ brief, briefSource: 'rapidi' \| 'numbers', rapidi: boolean, room }` | persists `enhancedBrief` / `briefSource` |
 | `POST /api/ai/table-render` | `{ tableId: 1..7 }` | `{ url \| null, imageError?, prompt, tableId, functionName, room }` | persists `tables[tableId].imageUrl` on success |
 
 All three return 400 on `aggregate.totalCoins <= 0` (finale/brief) or zero stake on the table (table-render). All three read from `platform?.env` (Workers bindings) and `$env/dynamic/private` (build-time/secrets). The `code` field in every body is the LIVE room constant — the server ignores it.
@@ -2180,8 +2183,7 @@ The current R3 experience is *correct* but *cold*. The user removes chips but th
 These are Phase 7 additions, not the refactored drop-in. The drop-in is the polish; Phase 7 is the *story*.
 
 ## State management
-
-- **`$lib/state/session`** — the only sync surface. Exposes: `room`, `connected`, `busy`, `error`, `code`, `phase`, `tables`, `analysisOpen`, `round`, `updatedAt`, plus actions `boot`, `refresh`, `ensure`, `setConfig`, `setTables`, `boardDelta`, `clearCell`, `submitTable` (default `seal: true`), `lockTable`/`unlockTable`, `joinTable`/`tablePhysicallyDone`, `advance`/`retreat`, `generateBrief`, `generateRoomConcept`, `generateTableRender`, `generateWorkspaceDesignSheet`, `generateZyetaIPackage`, `selectRoomConcept`/`removeRoomConcept`, `updateBrief` (**persists via `POST /api/ai/brief-edit`**).
+- **`$lib/state/session`** — the only sync surface. Exposes: `room`, `connected`, `busy`, `error`, `code`, `phase`, `tables`, `analysisOpen`, `round`, `updatedAt`, plus actions `boot`, `refresh`, `ensure`, `setConfig`, `setTableCount`, `boardDelta`, `clearCell`, `submitTable` (default `seal: true`), `lockTable`/`unlockTable`, `joinTable`/`tablePhysicallyDone`, `advance`/`retreat`, `generateBrief`, `generateRoomConcept`, `generateTableRender`, `generateWorkspaceDesignSheet`, `generateZyetaIPackage`, `selectRoomConcept`/`removeRoomConcept`, `updateBrief` (**persists via `POST /api/ai/brief-edit`**).
   - All mutating actions `POST` to the API, then either `applyRoom(res.room)` (whole-snapshot reference swap) or `await poll()`. `advance` and `retreat` schedule a `setTimeout(poll, 200)` to settle multi-isolate cache after the phase change.
   - `boardDelta` is a **silent no-op** on bad inputs (still 200, with the unchanged room).
 - **`$lib/state/play`** — **deleted.** The phone page derives the table from `page.params.table`; nothing read `play.tableId`. The `cg-play-LIVE` localStorage key is gone with it.
@@ -2749,9 +2751,8 @@ A17. **The `setTimeout(() => (flashRow = {}), 400)` in `FunctionBoard.svelte:68`
 A18. **The `Date.now()` in `room.updatedAt` is set inside `recompute`** — but the SSE event in D needs to fire **on every persist**, not on every recompute. Move the timestamp to the persist boundary, not the recompute. Right now a no-op read on `GET /api/room/LIVE/state` doesn't bump `updatedAt` (correct), but an in-place mutation that doesn't trigger `recompute` would also not bump it (currently impossible, but the SSE refactor needs to be careful).
 
 
-- **`Store`** is a singleton at `src/lib/server/store.ts`. Methods take a leading `_code: string` parameter that's always ignored (room is always `LIVE`). Public surface: `sync`, `persist`, `ensure`, `reset`, `snapshot`, `get`, `setTables` (table count is hard-fixed to `N_SEATS` — argument is `void`-discarded), `setConfig`, `advance`, `retreat`, `boardDelta`, `boardSet`, `clearCell`, `submitTable`, `saveTableBoard`, `lockTable`, `unlockTable`, `unlockSeat`, `setFinaleImage`, `setTableImage`, `setEnhancedBrief`. Plus the free `currentScenario(round)`.
+- **`Store`** is a singleton at `src/lib/server/store.ts`. Methods take a leading `_code: string` parameter that's always ignored (room is always `LIVE`). Public surface: `sync`, `persist`, `ensure`, `reset`, `snapshot`, `get`, `setTableCount`, `setConfig`, `advance`, `retreat`, `boardDelta`, `boardSet`, `clearCell`, `submitTable`, `saveTableBoard`, `lockTable`, `unlockTable`, `unlockSeat`, `setFinaleImage`, `setTableImage`, `setEnhancedBrief`. Plus the free `currentScenario(round)`.
 - **`recompute(room)`** is the central integrity step called after every mutation. It rebuilds `aggregate`, per-table `matrix`/`reach`/`commonGround`, `lockedThisRound`/`expectedLocks`, `tableBountyTokens`, `analysisOpen`, the numbers brief (only if `briefSource !== 'rapidi'` — never overwrite a  RapidI brief), and `upsertHistory`. `setFinaleImage`/`setTableImage`/`setEnhancedBrief` skip the recompute and just bump `updatedAt`.
-- **`setTables`** is a vestigial endpoint — the count parameter is discarded (`void count;`); it always normalises to `N_SEATS` = 7.
 - **`setConfig`** accepts only `analysisForced` and `roomBountyTokens` (clamped 1..9999). Despite the older README/CLAUDE mention of `analysisUnlocks`, that field is **not** in the store or the endpoint.
 - **Submit contract** (`applySubmitTable` / `submitTable`):
   - phase must be `lobby` or `round`, else `{ ok: false, error: 'Not accepting submissions' }`.
@@ -2772,7 +2773,7 @@ A18. **The `Date.now()` in `room.updatedAt` is set inside `recompute`** — but 
   - **`POST .../lock`** `{ tableId, board?, seal? }` → `submitTable`. `seal: true` (default) only seals on R2·R3·R5; R1/R4 only save.
   - **`POST .../unlock-table`** `{ tableId }` → `unlockTable`.
   - **`POST .../config`** `{ analysisForced?, roomBountyTokens? }` → `setConfig`. (No `analysisUnlocks`.)
-  - **`POST .../tables`** `{ count }` → `setTables`. (Count is ignored; always 7.)
+  - **`POST .../table-count`** `{ count }` → `setTableCount`. Resizes `room.tables` to `clamp(count, 1, N_SEATS)`. (The older `/tables` endpoint + `setTables()` were removed — they always normalised to N_SEATS.)
   - **`POST /api/ai/room-concept`** / **`POST /api/ai/compose-brief`** — the two halves of the old `ai/finale`: fal room render and the RapidI brief respectively. 400 if `aggregate.totalCoins <= 0`. Persist `finaleImageUrl` / `enhancedBrief` + `briefSource`.
   - **`POST /api/ai/table-render`** `{ tableId: 1..7 }` → fal image from that function's cumulative bets. 400 on bad `tableId` or zero stake. Persists `tables[tableId].imageUrl` on success.
   - **`POST /api/ai/brief`** `{ code }` → regenerate narrative brief only (no image). Persists `enhancedBrief`/`briefSource`.
@@ -3752,12 +3753,11 @@ The conditional-UPDATE pattern in Phase 3 unlocks idempotency (Phase 3), the pro
 
 | Path | Purpose |
 |---|---|
-| `src/lib/server/store.ts` | Single LIVE room, `Store` class, `recompute()`, all mutation methods. `setTables` ignores count and forces `N_SEATS`. `setConfig` accepts only `analysisForced` and `roomBountyTokens`. |
+| `src/lib/server/store.ts` | Single LIVE room, `Store` class, `recompute()`, all mutation methods. `setTableCount` clamps to `[1, N_SEATS]`. `setConfig` accepts only `analysisForced` and `roomBountyTokens`. |
 | `src/lib/server/live.ts` | Request-scoped D1 binding, `withLiveRoom` (sync + mutate + persist) and `readLiveRoom` (seed-on-empty). |
 | `src/lib/server/room-store.ts` | D1 table `room (id, data, updated_at)`, single row id `'LIVE'`, `INSERT … ON CONFLICT(id) DO UPDATE`. `ensureSchema` runs once per isolate. `loadRoom`/`saveRoom` swallow errors with `console.error` prefix. |
-| `src/lib/server/ai/rapidi.ts` | Thin wrapper around `PROMPTS.brief` — runs the chat model with the JSON-defined system prompt and the renderer-defined user message. Returns `null` on no binding / no stake / short reply / failure; caller falls back to `buildEnhancedBrief`. Exported `AiBinding` type used by `app.d.ts`. The brand-voice text is in `prompts/brief.system.json`, not here. |
-| `src/lib/server/ai/fal.ts` | Thin wrapper around `PROMPTS.roomRender` / `PROMPTS.tableRender` — runs the fal image model with the JSON-defined prompt and the renderer-defined substitutions. `ImageResult = { url } \| { url: null, error: 'no_key' \| 'failed' }`. |
-| `src/lib/server/ai/prompts/` | **The prompts/ folder.** `_schema.ts` (PromptMeta, ChatPrompt, ImagePrompt), `brief.system.json` (brand-voice sections + meta + model), `brief.user.json` (slot text), `brief.user.ts` (renderer: `buildBriefFacts(room) → BriefFacts`, `renderUserPrompt(facts)`), `image.finale.json` / `image.finale.ts` (room-render prompt + renderer), `image.table.json` / `image.table.ts` (per-function prompt + renderer), `registry.ts` (typed `PROMPTS` map + `promptHash(meta, system)` for cache/regen diffs), `index.ts` (barrel). See "Prompts as data, not code" in [AI integration]. |
+| `src/lib/server/ai/rapidi.ts` | Thin wrapper around the chat model — system prompt + user-message prompt with priority mix, lead/fault/blind, surprise, journey, verdict. Returns `null` on no binding / no stake / short reply / failure; caller falls back to `buildEnhancedBrief`. Exported `AiBinding` type used by `app.d.ts`. The four prompt strings live in `src/lib/server/ai/prompts.ts` (`finalePrompt`, `tableFunctionPrompt`, `briefFactsForRapidi`, `designCardsJsonForRapidi`). |
+| `src/lib/server/ai/fal.ts` | Thin wrapper around the fal image model. `ImageResult = { url } \| { url: null, error: 'no_key' \| 'failed' }`. Prompt construction lives in `src/lib/server/ai/prompts.ts`. |
 | `src/lib/state/session.svelte.ts` | Polling client. `INTERVAL = 500`, `If-None-Match` conditional polls, serialized `pollChain`, `$state.raw<RoomState>`, per-call `Idempotency-Key` with one same-key network retry, 409 → resync, post-advance poll +200 ms, refresh on `visibilitychange`. |
 | `src/lib/state/present.svelte.ts` | `TOTAL = 5`, `screen` (1..5), `next`/`prev`/`setScreen`/`enterAnalysis`. |
 | `src/lib/state/host.svelte.ts` | `tableCount` + `roomBountyTokens` drafts, `syncOnce(room)`, `resync(room)`. |
@@ -3937,7 +3937,7 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 **Recovery**:
 1. Force-refresh the presenter page.
 2. Check `wrangler tail` for the `setEnhancedBrief` log (post-Phase 3) and verify the persist succeeded.
-3. The fix is in the server: ensure `await withLiveRoom(() => { store.setEnhancedBrief(...); if (url) store.setFinaleImage(...); })` is the LAST line of the endpoint, after the AI call. Currently the order is correct (`src/routes/api/ai/finale/+server.ts:29-32`). The bug is more likely a stale `room` snapshot.
+3. The fix is in the server: ensure `await withLiveRoom(() => { store.setEnhancedBrief(...); if (url) store.setFinaleImage(...); })` is the LAST line of the endpoint, after the AI call. The order is correct in `src/routes/api/ai/compose-brief/+server.ts` (and the equivalent persist block in `room-concept`). The bug is more likely a stale `room` snapshot.
 
 ### F10. The session can't reconnect after a long disconnect
 
@@ -4056,7 +4056,7 @@ bun run build fails             │ read the error; usually Svelte rune
 1. **One room only.** `SESSION = 'LIVE'` is hard-coded everywhere. `[code]` route segments exist but every `Store` method and endpoint ignores the value. Don't add multi-room features without reworking `Store` + every `+server.ts`.
 2. **Persona order = tableId.** `PERSONAS[]` in `src/lib/game/config.ts` is the source of truth: 1=Real Estate, 2=HR, 3=IT, 4=Finance, 5=Operations, 6=Marketing, 7=C-Suite. README's "Workplace Exp / Biz Leaders" seat list is stale; do not regenerate it.
 3. **D1 is the source of truth across colos**, but `Store` is a process-local singleton. If the binding is missing or `saveRoom` fails, state stays in-memory only and vanishes on redeploy or isolate drift. `loadRoom`/`saveRoom` swallow errors with a `console.error` prefix.
-4. **Render needs a key.** `POST /api/ai/finale` and `POST /api/ai/table-render` return `url: null` (with `imageError: 'no_key'`) when `FAL_API_KEY`/`FAL_KEY` is unset — the UI surfaces this in toast text. Brief still works (Workers AI binding `AI`).
+4. **Render needs a key.** `POST /api/ai/room-concept` and `POST /api/ai/table-render` return `url: null` (with `imageError: 'no_key'`) when `FAL_API_KEY`/`FAL_KEY` is unset — the UI surfaces this in toast text. Brief still works (Workers AI binding `AI`).
 5. **Brief needs stake.** `aggregate.totalCoins <= 0` → 400 on finale and brief endpoints. `buildEnhancedBrief` returns `''` (no invented mandate). The UI's "no stake" empty state shows on the relevant screens.
 6. **History is round-aware.** Evolution R2/R3/R5 only populates after those rounds have been advanced through; retreat prunes snapshots for rounds past the current one. `roomInsights` adds a **live** point for the current round if not yet in history, so the journey chart never blanks mid-round.
 7. **Phones show round number + scenario question + hint** (in `MobileHeader`/`RoundQuestion`). Scenario copy is also broadcast on the presenter side; phone is the only place that requires the user to read it on-device.
@@ -4064,8 +4064,7 @@ bun run build fails             │ read the error; usually Svelte rune
 9. **Two `workers-types` versions coexist** in `bun.lock` (root `5.20260721.1` vs adapter-pinned `4.20260702.1`); import bindings via `$lib/server/ai/rapidi` for the `AiBinding` type, not the workers-types namespace.
 10. **Single chip is $10M.** `CHIP_DENOMS` has exactly one entry (`{ red, value: 10 }`); `CHIP_DELTAS = [10, -10]`. The board endpoint's server validation **only accepts ±10** and 400s on anything else — despite the client `session.boardDelta` signature saying `delta: 1 | -1` (stale). The previous blue/green chip story is gone from code; `types.ts` still has a stale comment + the `$10M/$5M/$2M` legend in the `BoardSheet` print. Edit comments rather than the store.
 11. **`session.boardDelta` is a silent no-op** (still `200`) on phase ≠ `round` (or `lobby`), locked table, wrong seat, out-of-range priority, `delta: 0`, `NaN` priority, over-budget add, or remove-round positive delta. Clients should treat the response as informational, not authoritative. `boardSet` is also a no-op on locked/wrong-seat/bad-priority but clamps to budget on the happy path.
-12. **`setTables` is a no-op.** The endpoint accepts `{ count }` but `Store.setTables` discards it (`void count;`) and always normalises to `N_SEATS = 7`. The host UI doesn't expose it.
-13. **`setConfig` ignores `analysisUnlocks`.** The endpoint body type and `setConfig` patch type only accept `analysisForced` and `roomBountyTokens` (1..9999, clamped). The README/CLAUDE mention of `analysisUnlocks` is stale.
+13. **`setConfig` ignores `analysisUnlocks`.** The endpoint body type and `setConfig` patch type only accept `analysisForced` and `roomBountyTokens` (1..9999, clamped). The README/CLAUDE mention of `analysisUnlocks` is stale. (The `setTables` method + `/api/room/[code]/tables` endpoint were removed — `setTableCount` is the only table-count entry point.)
 14. **LinkedIn share fallback origin** is hard-coded to `https://common-ground-phygital.rdtect.workers.dev` in `MobileRender.svelte`; the real `window.location.origin` is preferred when available. `MobileRender.svelte` uses a file-input camera (`<input type="file" accept="image/*" capture="user">`) — this is a voluntary selfie for the LinkedIn frame, **not** board-reading vision (the README "no vision" claim still holds for gameplay).
 15. **`session.updateBrief(text)` persists.** It POSTs to `/api/ai/brief-edit`, which sets `enhancedBrief` with `briefSource: 'manual'` — and `recompute()` never overwrites a `manual` or `rapidi` brief with the numbers skeleton. (Earlier revisions of this doc called it local-only; that is stale.)
 16. **`$lib/client/index.ts` has been deleted.** It used to re-export `$lib/state`. Import from `$lib/state` directly.

@@ -42,6 +42,16 @@ describe('sanitizePersonaPatch', () => {
 		expect(out.color).toBe('#E0A458');
 		expect(out.bias).toEqual([1, 2, 0, 2, 1, 0, 3]);
 	});
+	// Regression: the original SAFE_TEXT regex excluded non-Latin scripts, so a
+	// host could not localise a persona name to Cyrillic / Greek / CJK.
+	it.each(['Недвижимость', 'Χρηματοοικονομικά', '財務', 'العقارات'])(
+		'accepts a non-Latin persona name: %s',
+		(name) => {
+			const out = sanitizePersonaPatch({ name });
+			expect(out.name).toBe(name);
+		}
+	);
+
 
 	it('drops unknown keys silently', () => {
 		const out = sanitizePersonaPatch({
