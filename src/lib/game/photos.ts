@@ -99,13 +99,6 @@ export function groupArchive(
 	return groups;
 }
 
-/** @deprecated use groupArchive — kept for any external callers */
-export function groupArchiveByDate(
-	items: readonly ArchivedImage[]
-): Array<[string, ArchivedImage[]]> {
-	return groupArchive(items, 'newest').map((g) => [g.sessionDate, g.items]);
-}
-
 export function collectLiveAsArchive(room: RoomState | null | undefined): ArchivedImage[] {
 	if (!room) return [];
 	const now = Date.now();

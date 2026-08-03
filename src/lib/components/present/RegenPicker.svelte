@@ -1,11 +1,38 @@
 <script lang="ts">
 	import Modal from '$lib/components/Modal.svelte';
 	import ZyetaI from '$lib/components/ZyetaI.svelte';
-	import { LOOK_REGEN_OPTIONS } from '$lib/game';
 	import type { ZyetaIRunMode } from '$lib/game';
 	import { session } from '$lib/state';
 
-	/** "What should ZyetaI redo?" picker. Pure presentation over LOOK_REGEN_OPTIONS. */
+	/** Regen choices for the Look (analysis) screen — no workspace design. */
+	const LOOK_REGEN_OPTIONS: Array<{
+		mode: Exclude<ZyetaIRunMode, 'design'>;
+		label: string;
+		hint: string;
+	}> = [
+		{
+			mode: 'full',
+			label: 'Full pipeline (1→5)',
+			hint: 'Lenses → brief → zones → images (room then lenses) → lookbook.'
+		},
+		{
+			mode: 'brief',
+			label: 'Brief only (1→3, 5)',
+			hint: 'Refresh brief + zones + lookbook; keep concept images.'
+		},
+		{
+			mode: 'images',
+			label: 'Images only (4→5)',
+			hint: 'New room concept + any missing function stills, then recompose lookbook.'
+		},
+		{
+			mode: 'lookbook',
+			label: 'Lookbook only (5)',
+			hint: 'Recompose brief/DBR from current images; no new fal calls.'
+		}
+	];
+
+	/** "What should ZyetaI redo?" picker. */
 	let {
 		open,
 		hasData,

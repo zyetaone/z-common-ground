@@ -1,11 +1,15 @@
 <script lang="ts">
 	import ZyetaI from '$lib/components/ZyetaI.svelte';
-	import { ZYETAI_STEPS } from '$lib/game';
 
-	/**
-	 * Non-dismissible generation overlay for ZyetaI.
-	 * mode: pipeline (steps 1–5) | room (single Common Ground concept)
-	 */
+	/** ZyetaI concept pipeline — 5 stages. Lives in the consumer that renders it.
+	 *  Only id/label/desc are rendered; the old key/short fields went unused. */
+	const ZYETAI_STEPS = [
+		{ id: 1, label: 'Lenses', desc: 'Read each function’s priority shape.' },
+		{ id: 2, label: 'Brief', desc: 'Write the analysis brief from the room mix.' },
+		{ id: 3, label: 'Zones', desc: 'Map multi-zone spatial requirements.' },
+		{ id: 4, label: 'Images', desc: 'Room concept, then each function still — in order.' },
+		{ id: 5, label: 'Lookbook', desc: 'Compose brief + DBR after images exist.' }
+	] as const;
 	let {
 		open = false,
 		mode = 'pipeline',

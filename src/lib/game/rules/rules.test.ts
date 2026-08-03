@@ -406,10 +406,42 @@ describe('roomRoundStory — assumed / protected / reprioritised', () => {
 });
 
 describe('emulate allocateWeightedChips', () => {
+	// Backs the host console's "Emulate all tables" button. The allocator is
+	// largest-remainder: floor every weighted share, then hand the leftover
+	// chips to the biggest fractions. Both invariants below are easy to break
+	// in a refactor and silently produce off-budget demo boards.
 	it('sums exactly to target total', () => {
 		const row = allocateWeightedChips([3, 1, 0, 1, 2, 0, 1], 100, 42);
 		expect(row.reduce((a, b) => a + b, 0)).toBe(100);
 		expect(row.every((v) => v % 10 === 0)).toBe(true);
+	});
+
+	it('hits the total across many seeds and budgets', () => {
+		// The remainder loop is where an off-by-one hides — one seed can pass by
+		// luck when the shares happen to floor evenly.
+		for (const total of [10, 50, 100, 250, 700]) {
+			for (let seed = 0; seed < 25; seed++) {
+				const row = allocateWeightedChips([3, 1, 0, 1, 2, 0, 1], total, seed);
+				expect(row.reduce((a, b) => a + b, 0)).toBe(total);
+			}
+		}
+	});
+
+	it('never allocates a negative or non-chip amount', () => {
+		const row = allocateWeightedChips([0, 0, 0, 0, 0, 0, 0], 100, 7);
+		expect(row.every((v) => v >= 0 && v % 10 === 0)).toBe(true);
+		expect(row.reduce((a, b) => a + b, 0)).toBe(100);
+	});
+
+	it('returns an empty row for a zero budget', () => {
+		expect(allocateWeightedChips([3, 1, 0, 1, 2, 0, 1], 0, 1)).toEqual([0, 0, 0, 0, 0, 0, 0]);
+	});
+
+	it('is deterministic for a given seed', () => {
+		// The host may re-run Emulate; same seed must reproduce the same board.
+		const a = allocateWeightedChips([3, 1, 0, 1, 2, 0, 1], 100, 99);
+		const b = allocateWeightedChips([3, 1, 0, 1, 2, 0, 1], 100, 99);
+		expect(a).toEqual(b);
 	});
 });
 
