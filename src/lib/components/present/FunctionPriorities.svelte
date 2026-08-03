@@ -158,7 +158,7 @@ import {
 				class="card"
 				style="--fn:{r.color}; --i:{ri}"
 				onclick={() => openTable(r.tableId)}
-				aria-label="Open {r.name} profile"
+				aria-label="{r.name} — open profile"
 			>
 				<header>
 					<span class="dot"></span>
