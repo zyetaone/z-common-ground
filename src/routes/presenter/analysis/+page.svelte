@@ -67,6 +67,7 @@ const isRevealable = $derived(
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
+	<meta name="theme-color" content="#10160f" />
 	<title>Analysis · LIVE</title>
 	<meta
 		name="description"
@@ -151,6 +152,7 @@ const isRevealable = $derived(
 			}}
 			ongo={goScreen}
 		/>
+		<p class="cg-kicker kb-hint">← → to move · A on live to advance</p>
 	{/if}
 </main>
 
@@ -167,6 +169,7 @@ const isRevealable = $derived(
 	.topbar {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 10px;
 		padding: 8px 12px;
 		border-radius: var(--radius-lg);
@@ -189,6 +192,11 @@ const isRevealable = $derived(
 		gap: 4px;
 		flex: 1;
 		justify-content: center;
+	}
+	@media (max-width: 640px) {
+		.tb-rungs {
+			display: none;
+		}
 	}
 	.rung {
 		font-family: var(--font-mono);
@@ -271,6 +279,13 @@ const isRevealable = $derived(
 		display: flex;
 		flex-direction: column;
 	}
+	.kb-hint {
+		margin: 0;
+		padding: 4px 0 2px;
+		text-align: center;
+		--k-track: 0.08em;
+		--k-weight: 500;
+	}
 	.screen-hero {
 		margin: 0 0 4px;
 		font-family: var(--font-display);
@@ -286,7 +301,7 @@ const isRevealable = $derived(
 		min-height: 0;
 		display: flex;
 		flex-direction: column;
-		animation: pane-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+		animation: pane-in var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)) both;
 	}
 	@keyframes pane-in {
 		from { opacity: 0; transform: translateY(8px); }

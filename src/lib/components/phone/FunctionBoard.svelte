@@ -103,7 +103,10 @@
 </script>
 
 <div class="seat-board" class:uneditable={!editable} class:remove={removeOnly} style="--seat:{color}">
-	<div class="spend-line" aria-live="polite">
+	<!-- No aria-live here: use:countUp rewrites textContent every frame, which would
+	     make screen readers announce a stream of intermediate values. Row-level
+	     aria-labels report the truth on focus instead. -->
+	<div class="spend-line">
 		<span class="spent-label">Spent</span>
 		<span class="spent-val t-tabular" use:countUp={total}>{total > 0 ? formatUsdFull(total) : '—'}</span>
 		<span class="of">of</span>

@@ -6,28 +6,49 @@
 		type PhotoRow
 	} from '$lib/game';
 	import { session } from '$lib/state';
+	import ExpandImage from '$lib/components/ExpandImage.svelte';
 
 	let photoTab = $state<'live' | 'archive'>('live');
 	let archiveSort = $state<ArchiveSort>('newest');
+	let archiving = $state(false);
 
 	const st = $derived(session.room);
 	const livePhotos = $derived(livePhotosFromRoom(st));
 	const archivePhotos = $derived(st?.imageArchive ?? []);
 	const archiveGroups = $derived(groupArchive(archivePhotos, archiveSort));
 
-	function downloadImage(url: string, name: string) {
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = name;
-		a.target = '_blank';
-		a.rel = 'noopener';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
+	let expandOpen = $state(false);
+	let expandSrc = $state('');
+	let expandTitle = $state('');
+	let expandKind = $state<'room' | 'function'>('room');
+
+	function openExpand(src: string, title: string, kind: 'room' | 'function') {
+		expandSrc = src;
+		expandTitle = title;
+		expandKind = kind;
+		expandOpen = true;
+	}
+
+	/** fetch → blob so cross-origin fal URLs download instead of navigating. */
+	async function downloadImage(url: string, name: string) {
+		try {
+			const res = await fetch(url, { mode: 'cors' });
+			const blob = await res.blob();
+			const objUrl = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = objUrl;
+			a.download = name;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(objUrl);
+		} catch {
+			window.open(url, '_blank', 'noopener');
+		}
 	}
 
 	function downloadAll(rows: PhotoRow[]) {
-		rows.forEach((u, i) => setTimeout(() => downloadImage(u.url, u.file), i * 400));
+		rows.forEach((u, i) => setTimeout(() => void downloadImage(u.url, u.file), i * 400));
 	}
 
 	function groupAsRows(items: typeof archivePhotos, prefix: string): PhotoRow[] {
@@ -39,9 +60,14 @@
 	}
 
 	async function archiveLivePhotos() {
-		if (livePhotos.length === 0) return;
-		await session.archiveGeneratedImages();
-		photoTab = 'archive';
+		if (livePhotos.length === 0 || archiving) return;
+		archiving = true;
+		try {
+			await session.archiveGeneratedImages();
+			photoTab = 'archive';
+		} finally {
+			archiving = false;
+		}
 	}
 </script>
 
@@ -67,11 +93,11 @@
 				</button>
 				<button
 					type="button"
-					disabled={session.busy}
+					disabled={archiving}
 					onclick={archiveLivePhotos}
 					class="rounded-xl border border-line px-4 py-2 font-display text-xs font-bold text-muted hover:border-gold hover:text-gold-ink disabled:opacity-40"
 				>
-					{session.busy ? 'Archiving…' : 'Archive & clear live'}
+					{archiving ? 'Archiving…' : 'Archive & clear live'}
 				</button>
 			{/if}
 		</div>
@@ -111,18 +137,26 @@
 			<div class="grid gap-2">
 				{#each livePhotos as row (row.url + row.file)}
 					<div class="flex items-center gap-3 rounded-xl border border-line bg-bg p-2.5">
-						<img
-							src={row.url}
-							alt={row.label}
-							class="h-14 w-24 shrink-0 rounded-lg border border-line object-cover"
-							loading="lazy"
-						/>
+						<button
+							type="button"
+							onclick={() =>
+								openExpand(row.url, row.label, row.file.startsWith('table-') ? 'function' : 'room')}
+							class="shrink-0 cursor-zoom-in rounded-lg"
+							title="Expand image"
+						>
+							<img
+								src={row.url}
+								alt={row.label}
+								class="h-14 w-24 rounded-lg border border-line object-cover"
+								loading="lazy"
+							/>
+						</button>
 						<div class="flex-1 min-w-0">
 							<div class="font-display font-bold text-xs truncate">{row.label}</div>
 						</div>
 						<button
 							type="button"
-							onclick={() => downloadImage(row.url, row.file)}
+							onclick={() => void downloadImage(row.url, row.file)}
 							class="shrink-0 rounded-lg border border-line px-2.5 py-1 text-[10px] font-bold hover:border-gold"
 						>
 							Save
@@ -191,12 +225,20 @@
 					<div class="grid gap-2">
 						{#each g.items as a, i (`${g.key}-${a.url}-${i}`)}
 							<div class="flex items-center gap-3 rounded-xl border border-line bg-bg p-2.5">
-								<img
-									src={a.url}
-									alt={a.label}
-									class="h-14 w-24 shrink-0 rounded-lg border border-line object-cover"
-									loading="lazy"
-								/>
+								<button
+									type="button"
+									onclick={() =>
+										openExpand(a.url, a.label, a.kind === 'table' ? 'function' : 'room')}
+									class="shrink-0 cursor-zoom-in rounded-lg"
+									title="Expand image"
+								>
+									<img
+										src={a.url}
+										alt={a.label}
+										class="h-14 w-24 rounded-lg border border-line object-cover"
+										loading="lazy"
+									/>
+								</button>
 								<div class="flex-1 min-w-0">
 									<div class="font-display font-bold text-xs truncate">{a.label}</div>
 									<div class="text-[10px] text-muted font-mono">
@@ -207,7 +249,7 @@
 								<button
 									type="button"
 									onclick={() =>
-										downloadImage(
+										void downloadImage(
 											a.url,
 											`${g.sessionId || g.sessionDate}-${a.kind}-${i + 1}.png`
 										)}
@@ -223,3 +265,5 @@
 		</div>
 	{/if}
 </section>
+
+<ExpandImage src={expandSrc} title={expandTitle} kind={expandKind} bind:open={expandOpen} />

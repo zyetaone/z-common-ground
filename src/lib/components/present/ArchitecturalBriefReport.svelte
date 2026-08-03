@@ -367,6 +367,15 @@
 		gap: 8px;
 		margin-top: 8px;
 	}
+	/* 44px-tall hit slot on the ← → arrows (StageNav dot pattern) */
+	.draw-nav > .btn {
+		position: relative;
+	}
+	.draw-nav > .btn::after {
+		content: '';
+		position: absolute;
+		inset: -7px -5px;
+	}
 	.thumbs {
 		flex: 1;
 		display: flex;

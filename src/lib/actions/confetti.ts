@@ -1,9 +1,22 @@
 import type { Action } from 'svelte/action';
 
+type ConfettiOpts = { count?: number; key?: string };
+
 /** Short boardroom confetti burst (seal / celebrate). */
-export const confetti: Action<HTMLElement, { count?: number } | undefined> = (node, opts) => {
+export const confetti: Action<HTMLElement, ConfettiOpts | undefined> = (node, opts) => {
 	if (typeof window === 'undefined') return {};
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return {};
+
+	// Once-guard: remounts (e.g. a reload mid-sealed-round) must not re-celebrate.
+	if (opts?.key) {
+		try {
+			const k = `cg-confetti-${opts.key}`;
+			if (sessionStorage.getItem(k)) return {};
+			sessionStorage.setItem(k, '1');
+		} catch {
+			/* storage unavailable — fire anyway */
+		}
+	}
 
 	const count = opts?.count ?? 14;
 	const c = document.createElement('canvas');
@@ -11,7 +24,7 @@ export const confetti: Action<HTMLElement, { count?: number } | undefined> = (no
 		position: 'fixed',
 		inset: '0',
 		pointerEvents: 'none',
-		zIndex: '70'
+		zIndex: '90'
 	});
 	document.body.appendChild(c);
 	const ctx = c.getContext('2d');
@@ -21,10 +34,14 @@ export const confetti: Action<HTMLElement, { count?: number } | undefined> = (no
 	}
 	c.width = innerWidth;
 	c.height = innerHeight;
-	const colors = ['#B8932E', '#1F8B78', '#E0665A', '#3FB6A2', '#E0A458'];
+	// Origin: the host node's centre, not mid-viewport.
+	const rect = node.getBoundingClientRect();
+	const ox = rect.left + rect.width / 2;
+	const oy = rect.top + rect.height / 2;
+	const colors = ['#B8932E', '#1F8B78'];
 	const parts = Array.from({ length: count }, () => ({
-		x: innerWidth / 2,
-		y: innerHeight * 0.35,
+		x: ox,
+		y: oy,
 		vx: (Math.random() - 0.5) * 14,
 		vy: -6 - Math.random() * 8,
 		r: 3 + Math.random() * 4,

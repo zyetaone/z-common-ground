@@ -212,7 +212,7 @@
 	</section>
 
 	{#if err}
-		<p class="err">{err}</p>
+		<p class="cg-error">{err}</p>
 	{/if}
 </div>
 
@@ -244,7 +244,7 @@
 						<img src={selfieUrl} alt="Your selfie" class="cover" />
 						<label class="retake">
 							Retake
-							<input type="file" accept="image/*" capture="user" class="hidden" onchange={handleSelfie} />
+							<input type="file" accept="image/*" capture="user" class="sr-file" onchange={handleSelfie} />
 						</label>
 					{:else}
 						<label class="selfie-cta">
@@ -252,7 +252,7 @@
 							<span class="gold">Selfie with stage</span>
 							<span class="hint">Pose with presenter screen behind you</span>
 							<span class="pill">Open camera</span>
-							<input type="file" accept="image/*" capture="user" class="hidden" onchange={handleSelfie} />
+							<input type="file" accept="image/*" capture="user" class="sr-file" onchange={handleSelfie} />
 						</label>
 					{/if}
 				</div>
@@ -436,11 +436,6 @@
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
 	.btn-row {
 		display: flex;
 		gap: 8px;
@@ -472,11 +467,6 @@
 		font-size: 0.8rem;
 		cursor: pointer;
 		white-space: nowrap;
-	}
-	.err {
-		color: var(--color-red);
-		font-size: 12px;
-		text-align: center;
 	}
 	.li-root {
 		position: fixed;
@@ -585,8 +575,19 @@
 		font-family: var(--font-mono);
 		cursor: pointer;
 	}
-	.hidden {
-		display: none;
+	/* Keyboard-reachable file input: stays focusable (unlike display:none),
+	   and the wrapping label shows the focus ring via :focus-within below. */
+	.sr-file {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+	}
+	.selfie-cta:focus-within,
+	.retake:focus-within {
+		outline: 2px solid var(--color-gold);
+		outline-offset: 2px;
 	}
 	.li-help {
 		font-size: 11px;

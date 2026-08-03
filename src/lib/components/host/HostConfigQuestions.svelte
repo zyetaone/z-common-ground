@@ -118,9 +118,10 @@
 						<span class="text-[10px] font-semibold text-muted uppercase">Emoji</span>
 						<input
 							type="text"
+							maxlength={2}
 							value={get(round, 'emoji')}
 							oninput={(e: Event) => set(round, 'emoji', (e.target as HTMLInputElement).value)}
-							class="w-full rounded-lg border border-line bg-bg px-3 py-1.5 text-sm outline-none focus:border-gold"
+							class="w-16 rounded-lg border border-line bg-bg px-3 py-1.5 text-sm text-center outline-none focus:border-gold"
 						/>
 					</label>
 				</div>

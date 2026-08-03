@@ -278,6 +278,7 @@
 				{counts}
 				color={persona.color}
 				labels={priorityLabels}
+				{tableId}
 			/>
 		</MobileWaitStage>
 	{:else if phase === 'lobby'}

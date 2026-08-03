@@ -22,7 +22,7 @@
 
 <div class="see">
 	{#if !i.hasData}
-		<p class="empty">Waiting for priorities…</p>
+		<p class="empty">Waiting for stake — tables place chips, the analysis builds here.</p>
 	{:else}
 		<header class="hdr">
 			<span class="hdr-sub">7 personas · 7 priorities · one $100M wallet each</span>

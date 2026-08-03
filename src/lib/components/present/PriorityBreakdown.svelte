@@ -40,13 +40,14 @@
 		<span class="lg-reach">Backed by</span>
 	</header>
 
-	<section class="list" role="list" aria-label="Priorities ranked by share of room stake">
+	<section class="list stagger" role="list" aria-label="Priorities ranked by share of room stake">
 		{#each mix as m, rank (m.priority)}
 			{@const reach = reachMap[m.priority] ?? 0}
 			<div
 				class="row"
 				class:lead={rank === 0}
 				class:blind={m.name === i.blind}
+				style="--i:{rank}"
 			>
 				<span class="rank" class:lead={rank === 0}>{rank + 1}</span>
 				<span class="pdot" style="background:{m.color}"></span>
@@ -250,5 +251,17 @@
 	}
 	.sum-note {
 		opacity: 0.7;
+	}
+	/* Narrow screens: drop the bar-track column — name / % / reach breathe */
+	@media (max-width: 720px) {
+		.legend,
+		.row {
+			grid-template-columns: 24px 10px minmax(0, 1fr) 64px 36px 64px;
+			gap: 8px;
+		}
+		.pbar-track,
+		.lg-bar {
+			display: none;
+		}
 	}
 </style>

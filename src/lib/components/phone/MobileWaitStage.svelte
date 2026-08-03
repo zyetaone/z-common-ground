@@ -152,13 +152,4 @@
 		border-color: color-mix(in srgb, var(--color-teal) 45%, var(--color-line));
 		background: color-mix(in srgb, var(--color-teal) 6%, var(--color-panel));
 	}
-	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.35;
-		}
-	}
 </style>

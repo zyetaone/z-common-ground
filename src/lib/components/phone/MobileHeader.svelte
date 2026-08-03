@@ -33,7 +33,7 @@
 	);
 </script>
 
-<section class="top" aria-live="polite">
+<section class="top">
 	<div class="topbar">
 		<div class="fn" style="--c:{persona.color}">
 			<span class="dot"></span>
@@ -51,7 +51,7 @@
 					R{roundLabel}/{roundCount}{#if moveVerb} · {moveVerb}{/if}
 				{/if}
 			</span>
-			<span class="badge-question">
+			<span class="badge-question" aria-live="polite">
 				{#if phase === 'lobby'}
 					Session ready — presenter will begin shortly.
 				{:else if scenario}
@@ -76,7 +76,7 @@
 	{:else if isFinale}
 		<div class="qcompact finale">
 			<span class="badge-tag">Final</span>
-			<span class="badge-question">We found common ground — your cumulative results</span>
+			<span class="badge-question" aria-live="polite">We found common ground — your cumulative results</span>
 		</div>
 	{/if}
 </section>

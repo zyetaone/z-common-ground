@@ -166,6 +166,8 @@
 	<p class="wait">
 		Generate concept images and finalise the brief, then create the workspace design collage.
 	</p>
+{:else}
+	<p class="wait">Waiting for stake — tables place chips, the analysis builds here.</p>
 {/if}
 
 <style>

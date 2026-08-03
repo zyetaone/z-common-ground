@@ -32,11 +32,17 @@
 				? 'Rendering Common Ground…'
 				: (ZYETAI_STEPS[activeIdx]?.desc ?? 'Working…'))
 	);
+
+	// Non-dismissible by design, but keyboard/AT users still need initial focus.
+	let card = $state<HTMLDivElement>();
+	$effect(() => {
+		if (open) card?.focus();
+	});
 </script>
 
 {#if open}
 	<div class="overlay" role="alertdialog" aria-modal="true" aria-busy="true" aria-labelledby="zi-gen-title">
-		<div class="card">
+		<div class="card" bind:this={card} tabindex="-1">
 			<header class="head">
 				<ZyetaI variant="hero" tagline />
 				<div class="spin" aria-hidden="true"></div>
@@ -44,7 +50,7 @@
 
 			{#if mode === 'pipeline'}
 				<h2 id="zi-gen-title" class="title">Generating concepts</h2>
-				<p class="status">{statusLine}</p>
+				<p class="status" aria-live="polite">{statusLine}</p>
 
 				<div class="track" aria-hidden="true">
 					<div class="fill" style="width:{pct}%"></div>
@@ -76,7 +82,7 @@
 				</ol>
 			{:else}
 				<h2 id="zi-gen-title" class="title">Common Ground concept</h2>
-				<p class="status">{statusLine}</p>
+				<p class="status" aria-live="polite">{statusLine}</p>
 				<div class="track" aria-hidden="true">
 					<div class="fill anim" style="width:{pct}%"></div>
 				</div>
@@ -104,7 +110,7 @@
 		padding: 20px;
 		background: rgba(8, 12, 18, 0.72);
 		backdrop-filter: blur(12px);
-		animation: fade-in 200ms ease both;
+		animation: fade-in var(--dur-fast, 180ms) ease both;
 	}
 	.card {
 		width: min(420px, 100%);
@@ -115,7 +121,11 @@
 		box-shadow:
 			0 0 0 1px color-mix(in srgb, var(--color-teal) 12%, transparent),
 			0 28px 80px rgba(0, 0, 0, 0.35);
-		animation: card-in 280ms var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)) both;
+		animation: card-in var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)) both;
+	}
+	/* Programmatic focus target only — suppress the ring. */
+	.card:focus {
+		outline: none;
 	}
 	.head {
 		display: flex;
@@ -160,7 +170,7 @@
 		height: 100%;
 		border-radius: 99px;
 		background: linear-gradient(90deg, var(--color-teal), var(--color-gold));
-		transition: width 400ms var(--ease-out-quart, ease);
+		transition: width var(--dur-slow, 480ms) var(--ease-out-quart, ease);
 	}
 	.fill.anim {
 		animation: pulse-w 1.4s ease-in-out infinite;
@@ -184,9 +194,9 @@
 		background: transparent;
 		opacity: 0.42;
 		transition:
-			opacity 200ms ease,
-			border-color 200ms ease,
-			background 200ms ease;
+			opacity var(--dur-fast, 180ms) ease,
+			border-color var(--dur-fast, 180ms) ease,
+			background var(--dur-fast, 180ms) ease;
 	}
 	.step.done {
 		opacity: 0.78;
@@ -270,11 +280,6 @@
 		text-align: center;
 	}
 
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
 	@keyframes ping {
 		0% {
 			box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-gold) 45%, transparent);

@@ -59,7 +59,8 @@
 					: `No image returned for ${name} — check FAL key and try again.`;
 			}
 		} catch (e) {
-			futureUi.err = e instanceof Error ? e.message : `Generate failed for ${name}`;
+			console.error('[LensRail] generate failed:', e);
+			futureUi.err = 'Generation failed — try again.';
 		} finally {
 			busyById = { ...busyById, [tableId]: false };
 		}
@@ -243,6 +244,12 @@
 	.lens-regen:hover:not(:disabled) {
 		border-color: var(--color-teal);
 	}
+	/* 44×44 hit slot over the 20px face (StageNav dot pattern) */
+	.lens-regen::after {
+		content: '';
+		position: absolute;
+		inset: -12px;
+	}
 	.lens-regen:disabled {
 		opacity: 0.5;
 		cursor: default;
@@ -268,10 +275,5 @@
 	.spinner {
 		animation: spin 1s linear infinite;
 		display: inline-block;
-	}
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
 	}
 </style>

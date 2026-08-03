@@ -3,6 +3,18 @@ import { formatUsdFull } from '$lib/game';
 
 /** Animate a token total as compact USD (spend bar). */
 export const countUp: Action<HTMLElement, number> = (node, value) => {
+	// Duration from the --dur-base design token, read once at init (fallback 280ms).
+	let dur = 280;
+	if (typeof window !== 'undefined') {
+		const raw = getComputedStyle(document.documentElement).getPropertyValue('--dur-base').trim();
+		const ms = raw.endsWith('ms')
+			? parseFloat(raw)
+			: raw.endsWith('s')
+				? parseFloat(raw) * 1000
+				: NaN;
+		if (Number.isFinite(ms) && ms > 0) dur = ms;
+	}
+
 	// Last value actually rendered — mid-flight updates continue from here,
 	// not from the last completed animation (avoids a visible backward jump).
 	let displayed = 0;
@@ -20,7 +32,6 @@ export const countUp: Action<HTMLElement, number> = (node, value) => {
 			return;
 		}
 		const start = performance.now();
-		const dur = 280;
 		const tick = (now: number) => {
 			const t = Math.min(1, (now - start) / dur);
 			const eased = 1 - Math.pow(1 - t, 3);
@@ -34,7 +45,11 @@ export const countUp: Action<HTMLElement, number> = (node, value) => {
 		raf = requestAnimationFrame(tick);
 	}
 
-	animate(0, value);
+	// First paint snaps to the current value — a remount (render tab back,
+	// {#key} remount in the deck) must not re-sweep from $0. Only update()
+	// animates.
+	node.textContent = formatUsdFull(value);
+	displayed = value;
 
 	return {
 		update(next: number) {

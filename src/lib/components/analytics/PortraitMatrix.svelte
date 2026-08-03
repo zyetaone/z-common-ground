@@ -53,7 +53,7 @@
 
 <div class="pm" aria-label="Common board — functions × priorities">
 	{#if !model.hasData}
-		<div class="blank cg-empty">Waiting for priorities…</div>
+		<div class="blank cg-empty">Waiting for stake — tables place chips, the analysis builds here.</div>
 	{:else}
 		<div
 			class="grid"
@@ -175,8 +175,8 @@
 		padding: 2px;
 		border: 1px solid rgba(255, 255, 255, 0.04);
 		transition:
-			background-color 0.55s ease,
-			border-color 0.55s ease;
+			background-color var(--dur-slow, 480ms) var(--ease-out-quart, ease),
+			border-color var(--dur-slow, 480ms) var(--ease-out-quart, ease);
 	}
 	.num {
 		font-weight: 800;
@@ -208,7 +208,7 @@
 		font-size: 12px;
 		color: var(--color-gold-ink);
 		opacity: 0;
-		animation: cg-fade 0.55s ease 0.8s forwards;
+		animation: cg-fade var(--dur-slow, 480ms) var(--ease-out-quart, ease) var(--dur-stage, 800ms) forwards;
 	}
 	.cg-callout b {
 		color: var(--color-ink);

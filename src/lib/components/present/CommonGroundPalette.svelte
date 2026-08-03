@@ -50,7 +50,8 @@
 					: 'No image returned — check FAL key and try again.';
 			}
 		} catch (e) {
-			futureUi.err = e instanceof Error ? e.message : 'Generate failed';
+			console.error('[CommonGroundPalette] generate failed:', e);
+			futureUi.err = 'Generation failed — try again.';
 		} finally {
 			busy = false;
 		}
@@ -61,7 +62,8 @@
 		try {
 			await session.selectRoomConcept(url);
 		} catch (e) {
-			futureUi.err = e instanceof Error ? e.message : 'Select failed';
+			console.error('[CommonGroundPalette] select failed:', e);
+			futureUi.err = 'Select failed — try again.';
 		}
 	}
 
@@ -71,7 +73,8 @@
 		try {
 			await session.removeRoomConcept(primaryUrl);
 		} catch (e) {
-			futureUi.err = e instanceof Error ? e.message : 'Remove failed';
+			console.error('[CommonGroundPalette] remove failed:', e);
+			futureUi.err = 'Remove failed — try again.';
 		} finally {
 			busy = false;
 		}
@@ -194,6 +197,7 @@
 		gap: 6px;
 	}
 	.icon-btn {
+		position: relative;
 		width: 26px;
 		height: 26px;
 		border-radius: var(--radius-sm);
@@ -206,6 +210,12 @@
 		display: grid;
 		place-items: center;
 		padding: 0;
+	}
+	/* 44×44 hit slot over the 26px face (StageNav dot pattern) */
+	.icon-btn::after {
+		content: '';
+		position: absolute;
+		inset: -9px;
 	}
 	.icon-btn.plus:hover:not(:disabled) {
 		border-color: var(--color-teal);

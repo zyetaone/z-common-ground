@@ -108,7 +108,7 @@ import {
 
 <div class="fp">
 	{#if !hasData}
-		<p class="empty">Waiting for priorities…</p>
+		<p class="empty">Waiting for stake — tables place chips, the analysis builds here.</p>
 	{:else}
 		<!-- ── Executive Function Insights Header ── -->
 		<header class="fp-hdr">
@@ -151,12 +151,12 @@ import {
 			<span class="rs-cap">Room mix</span>
 		</section>
 
-	<div class="grid">
-		{#each rows as r (r.tableId)}
+	<div class="grid stagger">
+		{#each rows as r, ri (r.tableId)}
 			<button
 				type="button"
 				class="card"
-				style="--fn:{r.color}"
+				style="--fn:{r.color}; --i:{ri}"
 				onclick={() => openTable(r.tableId)}
 				aria-label="Open {r.name} profile"
 			>

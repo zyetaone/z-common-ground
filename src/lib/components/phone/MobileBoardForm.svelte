@@ -107,7 +107,7 @@
 							: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
 			</button>
 			{#if submitError}
-				<p class="hint-cap err">{submitError}</p>
+				<p class="cg-error">{submitError}</p>
 			{/if}
 		{:else}
 			<button
@@ -173,9 +173,5 @@
 	.hint-cap.req.met {
 		color: var(--color-muted);
 		font-weight: 500;
-	}
-	.hint-cap.err {
-		color: var(--color-red);
-		font-weight: 600;
 	}
 </style>

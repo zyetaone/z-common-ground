@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import {
 		advanceLabel,
 		canAdvance,
@@ -57,12 +58,13 @@
 	}
 
 	onMount(() => {
-		// Deep-link ?s=N → redirect to the dedicated analysis route.
+		// Deep-link ?s=N → redirect to the dedicated analysis route (client-side,
+		// no full reload flash on the projector).
 		// Plain visit → keep the operational view (lobby + submissions + scenario).
 		const sp = new URL(window.location.href).searchParams;
 		const raw = Number(sp.get('s'));
 		if (raw >= 1 && raw <= present.total) {
-			window.location.assign('/presenter/analysis?s=' + raw);
+			goto(`/presenter/analysis?s=${raw}`, { replaceState: true });
 		}
 	});
 </script>
@@ -70,6 +72,7 @@
 <svelte:window onkeydown={onKey} />
 
 <svelte:head>
+	<meta name="theme-color" content="#10160f" />
 	<title>Present · LIVE</title>
 	<meta
 		name="description"
@@ -242,6 +245,7 @@
 	.topbar {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 10px;
 		padding: 8px 12px;
 		border-radius: var(--radius-lg);
@@ -279,6 +283,11 @@
 		gap: 4px;
 		flex: 1;
 		justify-content: center;
+	}
+	@media (max-width: 640px) {
+		.tb-rungs {
+			display: none;
+		}
 	}
 	.rung {
 		font-family: var(--font-mono);
@@ -446,12 +455,12 @@
 		background: var(--color-panel);
 		padding: 16px;
 		text-align: center;
-		transition: border-color 0.2s;
+		transition: border-color var(--dur-fast, 180ms) var(--ease-out-quart, ease);
 	}
 	.sub-card.locked {
 		border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line));
 		background: color-mix(in srgb, var(--color-teal) 8%, var(--color-panel));
-		animation: lock-pop 0.35s ease-out;
+		animation: lock-pop var(--dur-base, 280ms) var(--ease-out-quart, ease-out);
 	}
 	.sub-card.joined-card {
 		border-color: color-mix(in srgb, var(--color-teal) 55%, transparent);

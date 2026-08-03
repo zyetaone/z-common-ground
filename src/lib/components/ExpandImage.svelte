@@ -196,7 +196,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 12px;
-		animation: in 0.2s ease both;
+		animation: in var(--dur-fast, 180ms) var(--ease-out-quart, ease) both;
 	}
 	@keyframes in {
 		from {

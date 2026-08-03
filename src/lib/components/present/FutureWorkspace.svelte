@@ -134,7 +134,7 @@
 				{ mode, onStep: (n) => futureUi.markStep(n) }
 			);
 			if (res && 'imageError' in res && res.imageError === 'no_key') {
-				futureUi.err = 'Images need FAL_API_KEY — brief may still be ready.';
+				futureUi.err = "Image generation isn't configured on this deployment — the brief still works.";
 			}
 			const r = session.room;
 			if (r?.enhancedBrief) {
@@ -180,7 +180,7 @@
 	</header>
 
 	{#if futureUi.err}
-		<p class="err">{futureUi.err}</p>
+		<p class="cg-error">{futureUi.err}</p>
 	{/if}
 
 	<div class="split" role="group" aria-label="Lenses and Common Ground palette">
@@ -307,15 +307,6 @@
 	.ghost.link {
 		display: inline-flex;
 		align-items: center;
-	}
-	.err {
-		margin: 0;
-		font-size: 11px;
-		color: var(--color-red);
-		border: 1px solid color-mix(in srgb, var(--color-red) 40%, transparent);
-		background: color-mix(in srgb, var(--color-red) 8%, transparent);
-		border-radius: var(--radius-sm);
-		padding: 6px 10px;
 	}
 
 	.split {

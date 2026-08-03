@@ -180,6 +180,7 @@
 		gap: 8px;
 	}
 	.nb {
+		position: relative;
 		width: 28px;
 		height: 28px;
 		border-radius: var(--radius-sm);
@@ -187,6 +188,12 @@
 		background: var(--color-panel);
 		cursor: pointer;
 		font-weight: 800;
+	}
+	/* 44×44 hit slot over the 28px face (StageNav dot pattern) */
+	.nb::after {
+		content: '';
+		position: absolute;
+		inset: -8px;
 	}
 	.nb:disabled {
 		opacity: 0.35;

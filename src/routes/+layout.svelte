@@ -24,6 +24,11 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 	<meta name="theme-color" content="#FDF8ED" />
+	<title>Common Ground</title>
+	<meta name="description" content="Imagine the future of the workplace." />
+	<meta property="og:title" content="Common Ground" />
+	<meta property="og:description" content="Imagine the future of the workplace." />
+	<meta property="og:type" content="website" />
 </svelte:head>
 
 {@render children()}

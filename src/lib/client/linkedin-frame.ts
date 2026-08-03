@@ -38,9 +38,9 @@ function loadImg(src: string): Promise<HTMLImageElement> {
 	});
 }
 
-/** Share caption — CoreNet + ZyetaI celebration. */
-export function linkedInShareText(functionName: string, tokens: number): string {
-	return `We found common ground at CoreNet with ZyetaI! ${functionName} · ${formatUsdFull(tokens)}. #WeFoundCommonGround #CoreNet #ZyetaI`;
+/** Share caption — event + ZyetaI celebration. */
+export function linkedInShareText(functionName: string, tokens: number, event = 'CoreNet'): string {
+	return `We found common ground at ${event} with ZyetaI! ${functionName} · ${formatUsdFull(tokens)}. #WeFoundCommonGround #${event.replace(/\s+/g, '')} #ZyetaI`;
 }
 
 export function openLinkedInShare(pageUrl: string) {
@@ -62,10 +62,12 @@ export async function downloadLinkedInFrame(opts: {
 	selfieDataUrl?: string;
 	functionName: string;
 	tokens: number;
+	/** Event name for headline, header hashtag, and filename */
+	event?: string;
 	/** Optional extra table/room renders for mosaic strip under AI hero */
 	tableImageUrls?: string[];
 }): Promise<void> {
-	const { aiImageUrl, selfieDataUrl, functionName, tokens, tableImageUrls = [] } = opts;
+	const { aiImageUrl, selfieDataUrl, functionName, tokens, event = 'CoreNet', tableImageUrls = [] } = opts;
 	const canvas = document.createElement('canvas');
 	canvas.width = 1200;
 	canvas.height = 630;
@@ -85,17 +87,17 @@ export async function downloadLinkedInFrame(opts: {
 	ctx.fillRect(12, 12, 1176, 4);
 
 	ctx.fillStyle = '#1F8B78';
-	ctx.font = 'bold 16px monospace';
+	ctx.font = '700 16px ui-monospace, monospace';
 	ctx.textAlign = 'left';
-	ctx.fillText('ZYETAI  ·  #WeFoundCommonGround  ·  #CoreNet', 40, 48);
+	ctx.fillText(`ZYETAI  ·  #WeFoundCommonGround  ·  #${event.replace(/\s+/g, '')}`, 40, 48);
 
 	ctx.fillStyle = '#111A14';
-	ctx.font = 'bold 32px sans-serif';
-	ctx.fillText(`We found common ground at CoreNet`, 40, 96);
+	ctx.font = '700 44px "Playfair Display", Georgia, serif';
+	ctx.fillText(`We found common ground at ${event}`, 40, 104);
 
 	ctx.fillStyle = '#B8932E';
-	ctx.font = 'bold 20px sans-serif';
-	ctx.fillText(`${functionName} · ${formatUsdFull(tokens)} · powered by ZyetaI`, 40, 128);
+	ctx.font = '700 20px ui-monospace, monospace';
+	ctx.fillText(`${functionName} · ${formatUsdFull(tokens)} · powered by ZyetaI`, 40, 138);
 
 	const extras = tableImageUrls.filter(Boolean).slice(0, 6);
 	const [aiImg, selfieImg, ...extraImgs] = await Promise.all([
@@ -109,19 +111,15 @@ export async function downloadLinkedInFrame(opts: {
 	const mainY = 150;
 
 	if (selfieImg) {
-		drawCover(ctx, selfieImg, 40, mainY, 550, mainH);
+		drawCover(ctx, selfieImg, 40, mainY, 540, mainH);
 	} else {
+		// No selfie — leave a quiet empty well (no instruction copy in a downloaded artifact)
 		ctx.fillStyle = 'rgba(17, 26, 20, 0.06)';
-		ctx.fillRect(40, mainY, 550, mainH);
-		ctx.fillStyle = '#B8932E';
-		ctx.font = 'bold 20px sans-serif';
-		ctx.textAlign = 'center';
-		ctx.fillText('Add selfie for full frame', 315, mainY + mainH / 2);
-		ctx.textAlign = 'left';
+		ctx.fillRect(40, mainY, 540, mainH);
 	}
 	ctx.strokeStyle = 'rgba(31, 139, 120, 0.45)';
 	ctx.lineWidth = 3;
-	ctx.strokeRect(40, mainY, 550, mainH);
+	ctx.strokeRect(40, mainY, 540, mainH);
 
 	if (!aiImg) {
 		throw new Error('AI image blocked by CORS — use Expand and screenshot, or try again.');
@@ -148,13 +146,13 @@ export async function downloadLinkedInFrame(opts: {
 	}
 
 	ctx.fillStyle = '#5A6A5E';
-	ctx.font = 'bold 13px monospace';
+	ctx.font = '700 13px ui-monospace, monospace';
 	ctx.textAlign = 'right';
-	ctx.fillText('ZyetaI · Imagine the future of the workplace', 1160, hasMosaic ? 600 : 590);
+	ctx.fillText('ZyetaI · Imagine the future of the workplace', 1160, 600);
 
 	const dataUrl = canvas.toDataURL('image/png');
 	const link = document.createElement('a');
-	link.download = `CommonGround_${functionName.replace(/\s+/g, '_')}_CoreNet.png`;
+	link.download = `CommonGround_${functionName.replace(/\s+/g, '_')}_${event.replace(/\s+/g, '_')}.png`;
 	link.href = dataUrl;
 	link.click();
 }

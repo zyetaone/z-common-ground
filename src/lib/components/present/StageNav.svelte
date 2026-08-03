@@ -100,15 +100,16 @@
 		height: 10px;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--color-ink) 14%, transparent);
+		/* Active dot stretches via transform, not width — no layout reflow. */
 		transition:
-			width var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)),
+			transform var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)),
 			background var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1));
 	}
 	.dot:disabled {
 		cursor: default;
 	}
 	.dot.on::after {
-		width: 28px;
+		transform: scaleX(2.8);
 		background: var(--color-teal);
 	}
 	.dot:focus-visible {

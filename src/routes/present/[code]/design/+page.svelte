@@ -6,6 +6,7 @@
 </script>
 
 <svelte:head>
+	<meta name="theme-color" content="#10160f" />
 	<title>Workspace design · ZyetaI · {SESSION}</title>
 	<meta
 		name="description"

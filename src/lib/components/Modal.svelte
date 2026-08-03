@@ -4,15 +4,20 @@
 	// Native <dialog>: focus-trap, Escape, inert background, top-layer stacking.
 	let {
 		open = $bindable(false),
-		label = 'Dialog',
+		label,
 		class: klass = '',
 		onclose,
+		header,
 		children
 	}: {
 		open?: boolean;
-		label?: string;
+		/** Accessible name for the dialog — required, no generic default. */
+		label: string;
 		class?: string;
 		onclose?: () => void;
+		/** Custom header; when supplied it must provide its own close affordance
+		 *  (the default ✕ close button is skipped). */
+		header?: Snippet;
 		children?: Snippet;
 	} = $props();
 
@@ -34,6 +39,11 @@
 </script>
 
 <dialog bind:this={dialog} onclose={onClose} onclick={onClick} aria-label={label}>
+	{#if header}
+		{@render header()}
+	{:else}
+		<button type="button" class="close" aria-label="Close" onclick={() => dialog?.close()}>✕</button>
+	{/if}
 	<div class="panel {klass}">
 		{@render children?.()}
 	</div>
@@ -55,9 +65,33 @@
 			both;
 	}
 	dialog::backdrop {
-		background: rgba(0, 0, 0, 0.85);
-		backdrop-filter: blur(10px);
+		background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+		backdrop-filter: blur(6px);
 		animation: backdrop-in var(--dur-base, 280ms) ease both;
+	}
+	/* Default close — 44×44 hit area, absolute top-right of the dialog.
+	   Suppressed when the caller passes a `header` snippet with its own close. */
+	.close {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		z-index: 2;
+		width: 44px;
+		height: 44px;
+		border-radius: 999px;
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+		color: var(--color-muted);
+		font-size: 16px;
+		line-height: 1;
+		display: grid;
+		place-items: center;
+		cursor: pointer;
+		padding: 0;
+	}
+	.close:hover {
+		color: var(--color-ink);
+		border-color: var(--color-border-strong);
 	}
 	.panel {
 		max-height: inherit;

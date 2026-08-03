@@ -112,7 +112,7 @@
 	.f-chip {
 		display: inline-flex;
 		margin-left: -6px;
-		animation: chip-in 0.4s var(--ease-out-quart, ease) both;
+		animation: chip-in var(--dur-slow, 480ms) var(--ease-out-quart, ease) both;
 	}
 	.f-chip:first-child {
 		margin-left: 0;

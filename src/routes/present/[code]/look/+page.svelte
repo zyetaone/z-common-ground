@@ -6,6 +6,7 @@
 </script>
 
 <svelte:head>
+	<meta name="theme-color" content="#10160f" />
 	<title>Concepts · ZyetaI · {SESSION}</title>
 	<meta
 		name="description"
@@ -25,7 +26,10 @@
 	{#if !room}
 		<p class="wait">Connecting…</p>
 	{:else if room.aggregate.totalCoins <= 0}
-		<p class="wait">Waiting for priorities…</p>
+		<div class="empty-card">
+			<p class="empty-title">Waiting for stake</p>
+			<p class="empty-sub">Waiting for stake — tables place chips, the analysis builds here.</p>
+		</div>
 	{:else}
 		<div class="body">
 			<FutureWorkspace room={room} />
@@ -78,6 +82,27 @@
 		text-align: center;
 		color: var(--color-muted);
 		font-size: 14px;
+	}
+	.empty-card {
+		margin: auto;
+		padding: 48px 24px;
+		text-align: center;
+		max-width: 480px;
+		border-radius: 16px;
+		background: var(--color-panel);
+		border: 1px solid var(--color-line);
+	}
+	.empty-title {
+		font-family: var(--font-display);
+		font-size: 20px;
+		font-weight: 800;
+		color: var(--color-ink);
+		margin: 0 0 8px;
+	}
+	.empty-sub {
+		font-size: 13px;
+		color: var(--color-muted);
+		margin: 0;
 	}
 	.body {
 		flex: 1;

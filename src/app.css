@@ -221,6 +221,18 @@ body::before {
 	text-align: center;
 }
 
+/* Shared error surface — replaces the forked per-component .err styles. */
+.cg-error {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--color-danger);
+	background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+	border-radius: var(--radius-sm);
+	padding: 8px 12px;
+	text-align: center;
+}
+
 /* Shared back/nav link chrome — the presenter routes had four near-identical
  * back-link designs (serif wordmark, mono pill, bordered chip). One pattern:
  * mono 11px pill, muted border, "← Back" text supplied by the caller. */
@@ -254,6 +266,22 @@ body::before {
 	to {
 		opacity: 1;
 		transform: none;
+	}
+}
+
+/* Shared ambient keyframes — one definition, used by phone + present components. */
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.35;
+	}
+}
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
 	}
 }
 

@@ -156,9 +156,9 @@
 			<span class="ch-net">NET</span>
 		</header>
 
-		<section class="rows" aria-label="Per-function cut and rebuild">
-			{#each moves as m (m.seat)}
-				<div class="row" class:up={m.net > 0} class:dn={m.net < 0} class:still={m.cut.length === 0 && m.build.length === 0}>
+		<section class="rows stagger" aria-label="Per-function cut and rebuild">
+			{#each moves as m, mi (m.seat)}
+				<div class="row" style="--i:{mi}" class:up={m.net > 0} class:dn={m.net < 0} class:still={m.cut.length === 0 && m.build.length === 0}>
 					<header class="rh">
 						<span class="dot" style="background:{m.color}"></span>
 						<span class="fname">{m.name}</span>

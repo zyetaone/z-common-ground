@@ -124,7 +124,7 @@
 	</header>
 
 	{#if futureUi.err}
-		<p class="err">{futureUi.err}</p>
+		<p class="cg-error">{futureUi.err}</p>
 	{/if}
 
 	<section class="gate">
@@ -318,14 +318,6 @@
 		color: var(--color-muted);
 		font-weight: 600;
 	}
-	.err {
-		margin: 0;
-		padding: 10px 14px;
-		border-radius: 10px;
-		background: color-mix(in srgb, var(--color-red) 12%, var(--color-panel));
-		color: var(--color-red);
-		font-size: 13px;
-	}
 	.gate {
 		padding: 16px;
 		border-radius: var(--radius-lg);
@@ -355,6 +347,10 @@
 		border-color: color-mix(in srgb, var(--color-teal) 40%, transparent);
 		color: var(--color-teal-ink);
 		background: color-mix(in srgb, var(--color-teal) 10%, transparent);
+	}
+	/* State must not be color-only */
+	.chk.on::before {
+		content: '✓ ';
 	}
 	.gen {
 		width: 100%;
@@ -456,6 +452,7 @@
 		margin-top: 10px;
 	}
 	.nb {
+		position: relative;
 		width: 36px;
 		height: 36px;
 		border-radius: var(--radius-sm);
@@ -464,6 +461,12 @@
 		font-weight: 800;
 		cursor: pointer;
 		color: var(--color-ink);
+	}
+	/* 44×44 hit slot over the 36px face (StageNav dot pattern) */
+	.nb::after {
+		content: '';
+		position: absolute;
+		inset: -4px;
 	}
 	.nb:disabled {
 		opacity: 0.35;
@@ -526,6 +529,12 @@
 	.sheet-regen:hover:not(:disabled) {
 		background: color-mix(in srgb, var(--color-teal) 18%, var(--color-panel));
 		border-color: var(--color-teal);
+	}
+	/* 44×44 hit slot over the 20px face (StageNav dot pattern) */
+	.sheet-regen::after {
+		content: '';
+		position: absolute;
+		inset: -12px;
 	}
 	.sheet-regen:disabled {
 		opacity: 0.5;

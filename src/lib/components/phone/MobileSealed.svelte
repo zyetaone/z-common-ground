@@ -10,13 +10,15 @@
 		totalTokens,
 		counts,
 		color,
-		labels
+		labels,
+		tableId
 	}: {
 		roundLabel: number;
 		totalTokens: number;
 		counts: Vec7;
 		color: string;
 		labels?: string[];
+		tableId?: number;
 	} = $props();
 
 	onMount(() => {
@@ -30,7 +32,7 @@
 	});
 </script>
 
-<div class="sealed" use:confetti={{ count: 14 }}>
+<div class="sealed" use:confetti={{ count: 14, key: `${tableId ?? 't'}-${roundLabel}` }}>
 	<div class="sealbadge">
 		<span class="tick">✓</span>
 		<div>
@@ -65,7 +67,7 @@
 		display: grid;
 		place-items: center;
 		font-weight: 800;
-		animation: stamp 0.35s var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)) both;
+		animation: stamp var(--dur-base, 280ms) var(--ease-out-quart, cubic-bezier(0.22, 1, 0.36, 1)) both;
 	}
 	.sk {
 		margin: 0;
@@ -93,15 +95,6 @@
 		border-radius: 50%;
 		background: var(--color-gold);
 		animation: pulse 1.2s ease infinite;
-	}
-	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0.35;
-		}
 	}
 	@keyframes stamp {
 		from {

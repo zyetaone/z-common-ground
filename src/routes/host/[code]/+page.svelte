@@ -34,7 +34,14 @@
 	let lockingAll = $state(false);
 	let sealMsg = $state('');
 	let emulateBusy = $state(false);
-	let emulateMsg = $state('');
+	let emulateMsg = $state<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
+	// Seal feedback is round-scoped — drop it when the room moves on.
+	$effect(() => {
+		void st?.phase;
+		void st?.round;
+		sealMsg = '';
+	});
 
 	async function resetSession() {
 		if (resetConfirm !== 'LIVE') return;
@@ -93,18 +100,21 @@
 	/** Solo demo: random bias-weighted boards for every table this round. */
 	async function runEmulate() {
 		emulateBusy = true;
-		emulateMsg = '';
+		emulateMsg = null;
 		try {
 			const res = await session.emulateDemoPlay(Date.now());
 			if (!res.ok) {
-				emulateMsg = 'Busy — another action is running. Try again in a moment.';
+				emulateMsg = { kind: 'ok', text: 'Busy — another action is running. Try again in a moment.' };
 				return;
 			}
-			emulateMsg = captureRound
-				? 'Demo boards sealed for all tables. Open Presenter → analysis.'
-				: 'Demo boards saved (no seal this round). Advance or open analysis as needed.';
+			emulateMsg = {
+				kind: 'ok',
+				text: captureRound
+					? 'Demo boards sealed for all tables. Open Presenter → analysis.'
+					: 'Demo boards saved (no seal this round). Advance or open analysis as needed.'
+			};
 		} catch (e) {
-			emulateMsg = e instanceof Error ? e.message : 'Emulate failed';
+			emulateMsg = { kind: 'err', text: e instanceof Error ? e.message : 'Emulate failed' };
 		} finally {
 			emulateBusy = false;
 		}
@@ -239,8 +249,13 @@
 					{emulateBusy ? 'Emulating…' : 'Emulate all tables'}
 				</Button>
 				{#if emulateMsg}
-					<p class="text-xs" class:text-teal-ink={!emulateMsg.includes('fail') && !emulateMsg.includes('need')} class:text-red={emulateMsg.includes('fail') || emulateMsg.includes('need')}>
-						{emulateMsg}
+					<p
+						class="text-xs"
+						class:text-teal-ink={emulateMsg.kind === 'ok'}
+						class:text-red={emulateMsg.kind === 'err'}
+						aria-live="polite"
+					>
+						{emulateMsg.text}
 					</p>
 				{/if}
 			</section>
@@ -280,7 +295,7 @@
 					</div>
 				</div>
 				{#if sealMsg}
-					<p class="text-xs text-red mb-2">{sealMsg}</p>
+					<p class="text-xs text-red mb-2" aria-live="polite">{sealMsg}</p>
 				{/if}
 				<div class="grid gap-2.5">
 					{#each st?.tables ?? [] as t (t.id)}

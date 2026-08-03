@@ -305,7 +305,7 @@
 		height: 100%;
 		border-radius: 99px;
 		background: var(--fn);
-		transition: width 0.4s var(--ease-out-quart, ease);
+		transition: width var(--dur-slow, 480ms) var(--ease-out-quart, ease);
 	}
 	.trait-hint {
 		margin: 0;
