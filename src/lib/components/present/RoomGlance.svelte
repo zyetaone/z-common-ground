@@ -56,7 +56,10 @@
 				<span class="cg-kicker m-label">Overlooked</span>
 				<span class="m-val">{i.blind}</span>
 			</div>
-			<div class="dots" aria-label="{sealed} of {tables} sealed">
+			<!-- role="img" so the aria-label is legal and the dot row is announced as
+			     one summary ("3 of 7 sealed") rather than seven unlabelled spans.
+			     aria-label on a bare <div> is prohibited — it has no role to label. -->
+			<div class="dots" role="img" aria-label="{sealed} of {tables} sealed">
 				{#each i.tables as t (t.id)}
 					<span
 						class="dot"
