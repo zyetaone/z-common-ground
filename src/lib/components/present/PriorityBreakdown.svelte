@@ -130,7 +130,10 @@
 		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 80px 44px 88px;
 		align-items: center;
 		gap: 10px;
-		padding: 8px 12px;
+		/* Seven rows at 39px used ~270px of a 739px stage and left the bottom
+		   half blank. Vertical padding scales the rows into the space instead of
+		   stretching the bar, which would exaggerate the differences. */
+		padding: 14px 12px;
 		border-radius: 10px;
 		background: var(--color-panel);
 		border: 1px solid var(--color-line);
@@ -162,7 +165,7 @@
 	}
 	.pname {
 		font-family: var(--font-display);
-		font-size: 14px;
+		font-size: 18px;
 		font-weight: 700;
 		color: var(--color-ink);
 		text-transform: capitalize;
@@ -172,7 +175,10 @@
 	}
 	.pbar-track {
 		position: relative;
-		height: 16px;
+		/* 16px was a hairline on a 739px stage with only 7 rows to fill. Taller
+		   bars are the point of this screen — it is the one place the room sees
+		   relative spend as length rather than as a printed percentage. */
+		height: 28px;
 		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
 		border-radius: var(--radius-sm);
 		overflow: hidden;
@@ -192,7 +198,7 @@
 	}
 	.ppct {
 		font-family: var(--font-mono);
-		font-size: 13px;
+		font-size: 18px;
 		font-weight: 800;
 		text-align: right;
 		font-variant-numeric: tabular-nums;
@@ -204,11 +210,14 @@
 	}
 	.reach-dots {
 		display: inline-flex;
-		gap: 2px;
+		gap: 3px;
 	}
 	.reach-dot {
-		width: 6px;
-		height: 6px;
+		/* 6px is invisible from the back of a room. Reach is the field that
+		   separates broad support from one function's concentrated bet, so it
+		   has to survive the projector. */
+		width: 10px;
+		height: 10px;
 		border-radius: 50%;
 		background: color-mix(in srgb, var(--fn) 25%, transparent);
 		border: 1px solid color-mix(in srgb, var(--fn) 40%, transparent);
