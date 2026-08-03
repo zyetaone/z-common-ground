@@ -114,17 +114,23 @@ describe('PRIORITY_COLORS', () => {
 		}
 	});
 
-	it('stays visible as a fill on the cream background', () => {
+	it('stays visible as a fill on both themes', () => {
+		// The deck renders on .stage-dark (#10160f), the phone and host on cream.
+		// A fill has to read as a distinct block on either.
 		for (let i = 0; i < PRIORITY_COLORS.length; i++) {
-			const c = contrast(PRIORITY_COLORS[i], '#fdf8ed');
-			expect(c, `${PRIORITIES[i]} washes out on cream`).toBeGreaterThan(1.4);
+			const light = contrast(PRIORITY_COLORS[i], '#fdf8ed');
+			const dark = contrast(PRIORITY_COLORS[i], '#18221a');
+			expect(light, `${PRIORITIES[i]} washes out on cream`).toBeGreaterThan(1.4);
+			expect(dark, `${PRIORITIES[i]} washes out on the dark stage`).toBeGreaterThan(3);
 		}
 	});
 
 	it('carries a readable percentage label on every fill', () => {
-		// The stacked bars print a 10px dark-ink % inside each segment. White was
-		// used first and failed AA on all seven fills (1.59:1 on Talent), which
-		// only showed up once the page was rendered in a real browser.
+		// The stacked bars print a 10px % inside each segment. Two wrong answers
+		// were shipped before this bound existed: white (1.59:1 on Talent), then
+		// var(--color-ink) — which looks right but resolves to CREAM inside
+		// .stage-dark, failing all seven again at 1.35:1. The label is a literal
+		// dark value because the fills are pale in both themes.
 		for (let i = 0; i < PRIORITY_COLORS.length; i++) {
 			const c = contrast(PRIORITY_COLORS[i], '#111a14');
 			expect(c, `${PRIORITIES[i]} label unreadable at ${c.toFixed(2)}:1`).toBeGreaterThan(4.5);

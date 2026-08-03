@@ -338,10 +338,12 @@
 	.seg-lab {
 		font-size: 10px;
 		font-weight: 700;
-		/* Dark ink, not white: the priority fills are mid-to-pale, so white at this
-		   size failed AA on all seven (as low as 1.59:1 on Talent). Ink clears 4.5:1
-		   on every fill — see the contrast test in priority-colors.test.ts. */
-		color: var(--color-ink);
+		/* Literal dark, NOT var(--color-ink): this deck renders inside
+		   .stage-dark, where that token flips to cream and fails on all seven
+		   fills (1.35:1 on Talent). The fills are pale in both themes, so the
+		   label must stay dark regardless of theme. Clears 4.5:1 on every one —
+		   asserted in priority-colors.test.ts. */
+		color: #111a14;
 		padding: 0 4px;
 		white-space: nowrap;
 	}
