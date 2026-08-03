@@ -133,8 +133,19 @@
 				},
 				{ mode, onStep: (n) => futureUi.markStep(n) }
 			);
-			if (res && 'imageError' in res && res.imageError === 'no_key') {
+			if (res && 'cancelled' in res && res.cancelled) {
+				// Stopped on purpose. Whatever finished before the stop is saved —
+				// say so, so the operator doesn't assume the run was lost.
+				futureUi.err = 'Stopped. Everything generated before you stopped is saved.';
+			} else if (res && 'imageError' in res && res.imageError === 'no_key') {
 				futureUi.err = "Image generation isn't configured on this deployment — the brief still works.";
+			} else if (res && 'failedStages' in res && res.failedStages?.length) {
+				// A stage died but the others still ran and persisted. Naming the
+				// stage tells the operator which single part to re-run rather than
+				// repeating the whole package and re-paying for every image.
+				const s = res.failedStages;
+				const label = s.length === 1 ? `The ${s[0]} stage` : `These stages (${s.join(', ')})`;
+				futureUi.err = `${label} didn't finish — everything else is saved. Re-run just that from Regenerate.`;
 			} else if (res && 'failedTables' in res && res.failedTables?.length) {
 				// The rest of the run completed and is saved. Name the tables so the
 				// operator can retry just those from the lens rail instead of
@@ -143,15 +154,20 @@
 				const names = ids.map((id) => tablePersona(id, room).name).join(', ');
 				futureUi.err = `${names} ${ids.length === 1 ? 'concept' : 'concepts'} didn't render — everything else is saved. Retry ${ids.length === 1 ? 'it' : 'them'} from the lens rail.`;
 			}
-			const r = session.room;
-			if (r?.enhancedBrief) {
-				session.updateBrief(withLensSection(r.enhancedBrief, r));
-			} else if (r) {
-				const full = withLensSection(r.enhancedBrief ?? '', r);
-				if (full.trim()) session.updateBrief(full);
+			const stopped = !!(res && 'cancelled' in res && res.cancelled);
+			// Don't claim a finished run after a stop: marking step 5 and opening
+			// the brief would tell the operator the package completed.
+			if (!stopped) {
+				const r = session.room;
+				if (r?.enhancedBrief) {
+					session.updateBrief(withLensSection(r.enhancedBrief, r));
+				} else if (r) {
+					const full = withLensSection(r.enhancedBrief ?? '', r);
+					if (full.trim()) session.updateBrief(full);
+				}
+				futureUi.markStep(5);
+				if (mode === 'lookbook' || mode === 'brief') futureUi.openBrief();
 			}
-			futureUi.markStep(5);
-			if (mode === 'lookbook' || mode === 'brief') futureUi.openBrief();
 		} catch (e) {
 			futureUi.err = e instanceof Error ? e.message : 'ZyetaI pipeline failed';
 		} finally {
@@ -231,6 +247,7 @@
 	step={futureUi.step}
 	completedThrough={futureUi.completedThrough}
 	progress={futureUi.progress}
+	oncancel={() => session.cancelZyetaI()}
 />
 
 <RegenPicker

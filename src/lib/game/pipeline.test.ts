@@ -98,3 +98,77 @@ describe('renderTablesTolerantly', () => {
 		expect(failedTables).toEqual([]);
 	});
 });
+
+describe('renderTablesTolerantly — cancellation', () => {
+	// The full run is 2-4 minutes of paid calls. Before this there was no way
+	// out short of a page reload, which loses the operator's place mid-workshop.
+	it('stops starting renders once cancelled', async () => {
+		const attempted: number[] = [];
+		let cancelled = false;
+		const { rendered, stopped } = await renderTablesTolerantly(
+			[1, 2, 3, 4, 5],
+			async (id) => {
+				attempted.push(id);
+				if (id === 2) cancelled = true; // operator hits Stop during table 2
+				return { url: `u${id}` };
+			},
+			undefined,
+			() => cancelled
+		);
+
+		// 2 finished and is kept — it was already paid for.
+		expect(attempted).toEqual([1, 2]);
+		expect(rendered).toEqual([1, 2]);
+		expect(stopped).toBe(true);
+	});
+
+	it('does not mark unreached tables as failed', async () => {
+		let cancelled = false;
+		const { failedTables } = await renderTablesTolerantly(
+			[1, 2, 3, 4],
+			async (id) => {
+				if (id === 1) cancelled = true;
+				return null;
+			},
+			undefined,
+			() => cancelled
+		);
+		// 2, 3 and 4 never ran. Reporting them as failures would send the
+		// operator to "retry failed" for work that was simply never attempted.
+		expect(failedTables).toEqual([]);
+	});
+
+	it('treats a cancel during an in-flight render as a stop, not a failure', async () => {
+		let cancelled = false;
+		const { failedTables, stopped } = await renderTablesTolerantly(
+			[1, 2, 3],
+			async (id) => {
+				if (id === 1) {
+					cancelled = true; // cancel arrives, then the request errors out
+					throw new Error('aborted mid-flight');
+				}
+				return null;
+			},
+			undefined,
+			() => cancelled
+		);
+		expect(failedTables).toEqual([]);
+		expect(stopped).toBe(true);
+	});
+
+	it('reports stopped:false on a normal run', async () => {
+		const { stopped } = await renderTablesTolerantly(
+			[1, 2],
+			async () => null,
+			undefined,
+			() => false
+		);
+		expect(stopped).toBe(false);
+	});
+
+	it('still works with no shouldStop supplied', async () => {
+		const { rendered, stopped } = await renderTablesTolerantly([1, 2], async () => null);
+		expect(rendered).toEqual([1, 2]);
+		expect(stopped).toBe(false);
+	});
+});

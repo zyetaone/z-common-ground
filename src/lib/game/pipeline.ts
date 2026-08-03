@@ -93,24 +93,31 @@ export const REGEN_OPTIONS = LOOK_REGEN_OPTIONS;
  *
  * Lives here rather than inline in the runes module so it is importable and
  * testable without a browser.
+ *
+ * `shouldStop` is polled before each render so an operator cancel takes effect
+ * within one image instead of at the end of the loop. Tables not reached are
+ * neither rendered nor reported failed — they simply did not run.
  */
 export async function renderTablesTolerantly<T>(
 	tableIds: number[],
 	render: (tableId: number, index: number) => Promise<T>,
-	onResult?: (tableId: number, result: T) => void
-): Promise<{ rendered: number[]; failedTables: number[] }> {
+	onResult?: (tableId: number, result: T) => void,
+	shouldStop?: () => boolean
+): Promise<{ rendered: number[]; failedTables: number[]; stopped: boolean }> {
 	const rendered: number[] = [];
 	const failedTables: number[] = [];
 	for (let i = 0; i < tableIds.length; i++) {
+		if (shouldStop?.()) return { rendered, failedTables, stopped: true };
 		const id = tableIds[i]!;
 		try {
 			const res = await render(id, i);
 			onResult?.(id, res);
 			rendered.push(id);
 		} catch (err) {
+			if (shouldStop?.()) return { rendered, failedTables, stopped: true };
 			failedTables.push(id);
 			console.error(`[zyetai] table ${id} render failed:`, err);
 		}
 	}
-	return { rendered, failedTables };
+	return { rendered, failedTables, stopped: false };
 }

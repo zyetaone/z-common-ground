@@ -16,6 +16,15 @@ let timer: ReturnType<typeof setInterval> | null = null;
 let booted = false;
 /** Serialize polls so advance never skips a fetch. */
 let pollChain: Promise<void> = Promise.resolve();
+/**
+ * Set by session.cancelZyetaI() to abort the long AI pipeline.
+ *
+ * The run is a 2-4 minute chain of paid calls with no way out short of a
+ * page reload, which loses the operator's place. The flag is checked between
+ * stages and between table renders — the in-flight fetch is left to settle so
+ * whatever it paid for is still persisted, we just stop starting new work.
+ */
+let zyetaiCancelled = false;
 
 function applyRoom(next: RoomState | null | undefined) {
 	if (!next || typeof next !== 'object') return;
@@ -628,6 +637,7 @@ export const session = {
 		const mode = opts?.mode ?? 'full';
 		busy = true;
 		error = '';
+		zyetaiCancelled = false;
 		const report = (m: string) => onProgress?.(m);
 		const step = (n: 1 | 2 | 3 | 4 | 5 | 6) => opts?.onStep?.(n);
 
@@ -655,6 +665,29 @@ export const session = {
 		let designCount: number | undefined;
 		/** Tables whose render failed — reported so the operator can retry just those. */
 		const failedTables: number[] = [];
+		/** Stages that failed. Each stage persists server-side as it completes, so a
+		 *  later stage failing must not throw away the earlier ones. */
+		const failedStages: string[] = [];
+
+		/**
+		 * Run one stage, keeping whatever the earlier stages already saved.
+		 *
+		 * Every stage writes to D1 as it completes, so throwing out of the middle
+		 * of the pipeline discards nothing on the server but leaves the operator
+		 * with one opaque error and no idea which stage died or what survived.
+		 * Compose in particular is worth continuing past: the images are the
+		 * expensive part and they are already paid for.
+		 */
+		async function stage(name: string, run: () => Promise<void>): Promise<void> {
+			if (zyetaiCancelled) return;
+			try {
+				await run();
+			} catch (e) {
+				if (zyetaiCancelled) return; // an abort is not a failure
+				failedStages.push(name);
+				console.error(`[zyetai] stage "${name}" failed:`, e);
+			}
+		}
 
 		// ── Stage helpers ──
 
@@ -713,7 +746,8 @@ export const session = {
 					if (tr.room) applyRoom(tr.room);
 					if (tr.imageError === 'no_key') lastImageError = 'no_key';
 					else if (tr.imageError && !lastImageError) lastImageError = tr.imageError;
-				}
+				},
+				() => zyetaiCancelled
 			);
 			failedTables.push(...outcome.failedTables);
 			await poll();
@@ -735,17 +769,19 @@ export const session = {
 		try {
 			// ── Design pipeline (separate page) ──
 			if (mode === 'design') {
-				step(6);
-				report('Building plan · section · elevation · collage…');
-				const design = await post<{
-					sheets: unknown[];
-					count: number;
-					imageError?: 'no_key' | 'failed';
-					room?: RoomState;
-				}>(`/api/ai/workspace-design`, { code: SESSION });
-				if (design.room) applyRoom(design.room);
-				lastImageError = design.imageError;
-				designCount = design.count;
+				await stage('drawings', async () => {
+					step(6);
+					report('Building plan · section · elevation · collage…');
+					const design = await post<{
+						sheets: unknown[];
+						count: number;
+						imageError?: 'no_key' | 'failed';
+						room?: RoomState;
+					}>(`/api/ai/workspace-design`, { code: SESSION });
+					if (design.room) applyRoom(design.room);
+					lastImageError = design.imageError;
+					designCount = design.count;
+				});
 				await poll();
 				return {
 					ok: true as const,
@@ -758,14 +794,16 @@ export const session = {
 					cardCount,
 					functionCards,
 					designCount,
-					failedTables
+					failedTables,
+					failedStages,
+					cancelled: zyetaiCancelled
 				};
 			}
 
 			// ═══ CONCEPT PIPELINE 1 → 5 ═══
 
 			if (mode === 'full' || mode === 'brief') {
-				await runBriefStage();
+				await stage('brief', runBriefStage);
 			}
 
 			// 3 · Zones — pure client map from mix
@@ -776,11 +814,11 @@ export const session = {
 			}
 
 			if (mode === 'full' || mode === 'images') {
-				await runImageStage();
+				await stage('images', runImageStage);
 			}
 
 			if (mode === 'full' || mode === 'images' || mode === 'lookbook' || mode === 'brief') {
-				await runComposeStage();
+				await stage('lookbook', runComposeStage);
 			}
 
 			await poll();
@@ -795,7 +833,9 @@ export const session = {
 				cardCount,
 				functionCards,
 				designCount,
-				failedTables
+				failedTables,
+				failedStages,
+				cancelled: zyetaiCancelled
 			};
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'ZyetaI package failed';
@@ -804,6 +844,19 @@ export const session = {
 			busy = false;
 			onProgress?.('');
 		}
+	},
+
+	/**
+	 * Stop a running ZyetaI pipeline at the next stage/table boundary.
+	 *
+	 * The in-flight request is deliberately left to settle rather than aborted:
+	 * it is already paid for and its server-side write is what persists the
+	 * image. Cancelling only stops new work from starting.
+	 */
+	cancelZyetaI() {
+		if (!busy) return false;
+		zyetaiCancelled = true;
+		return true;
 	},
 
 	/** Host: archive live AI photos then clear them from the room (not a full reset). */

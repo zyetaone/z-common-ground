@@ -11,14 +11,23 @@
 		mode = 'pipeline',
 		step = 0,
 		completedThrough = 0,
-		progress = ''
+		progress = '',
+		oncancel
 	}: {
 		open?: boolean;
 		mode?: 'pipeline' | 'room';
 		step?: number;
 		completedThrough?: number;
 		progress?: string;
+		/** Omit to keep the overlay strictly non-dismissible. */
+		oncancel?: () => void;
 	} = $props();
+
+	/** Set once Stop is pressed so the button can't be hammered. */
+	let stopping = $state(false);
+	$effect(() => {
+		if (!open) stopping = false; // reset between runs
+	});
 
 	const activeIdx = $derived(Math.max(0, Math.min(step - 1, ZYETAI_STEPS.length - 1)));
 	const pct = $derived.by(() => {
@@ -96,6 +105,23 @@
 			{/if}
 
 			<p class="foot">Please wait — this can take a moment.</p>
+
+			{#if oncancel}
+				<!-- The run is minutes of paid calls. Without this the only escape is
+				     a reload, which loses the operator's place mid-workshop. Work that
+				     already finished is persisted server-side and is kept. -->
+				<button
+					type="button"
+					class="stop"
+					disabled={stopping}
+					onclick={() => {
+						stopping = true;
+						oncancel?.();
+					}}
+				>
+					{stopping ? 'Stopping after this step…' : 'Stop'}
+				</button>
+			{/if}
 		</div>
 	</div>
 {/if}
@@ -278,6 +304,29 @@
 		font-size: 11px;
 		color: var(--color-muted);
 		text-align: center;
+	}
+	.stop {
+		display: block;
+		margin: 12px auto 0;
+		border-radius: 999px;
+		border: 1px solid var(--color-line);
+		background: transparent;
+		color: var(--color-muted);
+		font-size: 11px;
+		font-weight: 700;
+		padding: 7px 16px;
+		cursor: pointer;
+		transition:
+			border-color var(--dur-fast, 180ms) ease,
+			color var(--dur-fast, 180ms) ease;
+	}
+	.stop:hover:not(:disabled) {
+		border-color: var(--color-red);
+		color: var(--color-red);
+	}
+	.stop:disabled {
+		opacity: 0.55;
+		cursor: default;
 	}
 
 	@keyframes ping {
