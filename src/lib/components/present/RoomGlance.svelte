@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
 	import PortraitMatrix from '$lib/components/analytics/PortraitMatrix.svelte';
-	import { roomInsights, roomPriorities } from '$lib/game';
+	import { functionProfiles, roomInsights, roomPriorities } from '$lib/game';
 
 	/**
 	 * Screen 1 — Seat Matrix.
@@ -10,6 +10,8 @@
 	 * column colour also reads as "which priorities got the most love").
 	 * The two takeaway chips below are the room's lead and divide — the
 	 * only derived numbers a presenter needs to read aloud.
+	 * Below the footer, a 7-row read-aloud profile: one row per function
+	 * with the persona dot, archetype one-liner, and room-alignment score.
 	 */
 	let { room }: { room: RoomState } = $props();
 
@@ -18,6 +20,7 @@
 	const ring = $derived(Math.min(100, Math.max(0, i.index)));
 	const sealed = $derived(room.tables.filter((t) => t.lockedThisRound).length);
 	const tables = $derived(room.tables.length);
+	const profiles = $derived(functionProfiles(room));
 </script>
 
 <div class="see">
@@ -63,6 +66,28 @@
 				{/each}
 			</div>
 		</footer>
+
+		<section class="risk" aria-label="Per-function read-aloud profiles">
+			<header class="risk-hdr">
+				<span class="cg-kicker">Functions</span>
+				<span class="cg-kicker risk-hdr-right">Alignment</span>
+			</header>
+			<ul class="risk-list">
+				{#each profiles as p (p.tableId)}
+					{@const played = p.total > 0}
+					<li class="risk-row" class:muted={!played}>
+						<span class="risk-dot" style="background:{p.color}" aria-hidden="true"></span>
+						<span class="risk-name" class:muted={!played}>{p.name}</span>
+						<span class="risk-archetype" class:muted={!played}>{p.archetype}</span>
+						{#if played}
+							<span class="risk-cg" aria-label="Room alignment {p.commonGround} of 100">{p.commonGround}</span>
+						{:else}
+							<span class="risk-cg muted" aria-label="No stake placed">—</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
 	{/if}
 </div>
 
@@ -164,5 +189,77 @@
 	.dot.on {
 		background: var(--fn);
 		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fn) 25%, transparent);
+	}
+
+	/* ── Per-function risk strip (read-aloud profiles) ─────────────────── */
+	.risk {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px 14px 4px;
+		border-top: 1px solid var(--color-line);
+	}
+	.risk-hdr {
+		display: flex;
+		justify-content: space-between;
+		padding: 0 0 4px;
+		color: var(--color-muted);
+	}
+	.risk-hdr-right {
+		--k-track: 0.08em;
+	}
+	.risk-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.risk-row {
+		display: grid;
+		grid-template-columns: 14px minmax(96px, 130px) 1fr 32px;
+		align-items: baseline;
+		gap: 10px;
+		padding: 3px 0;
+		border-radius: 4px;
+	}
+	.risk-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		align-self: center;
+	}
+	.risk-name {
+		font-family: var(--font-display);
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--color-ink);
+		text-transform: capitalize;
+	}
+	.risk-archetype {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.risk-cg {
+		font-family: var(--font-display);
+		font-size: 13px;
+		font-weight: 700;
+		color: var(--color-ink);
+		font-variant-numeric: tabular-nums;
+		text-align: right;
+	}
+	.risk-row :global(.muted) {
+		opacity: 0.5;
+	}
+	.risk-row :global(.risk-cg.muted) {
+		font-weight: 400;
+		color: var(--color-muted);
 	}
 </style>
