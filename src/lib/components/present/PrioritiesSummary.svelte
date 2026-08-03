@@ -85,6 +85,16 @@
 		moves.length > 0 && moves.some((m) => m.cut.length > 0 || m.build.length > 0)
 	);
 
+	/**
+	 * Only show the net when it actually separates functions.
+	 *
+	 * R5 caps each wallet at 90% of R2's, so every table that spends to the cap
+	 * in both rounds lands on exactly the same net. In that (common) case the
+	 * column is seven identical numbers in the spot the eye reads first, which
+	 * buries the real story — which priorities each function cut and rebuilt.
+	 */
+	const netVaries = $derived(new Set(moves.map((m) => m.net)).size > 1);
+
 	const fmt = (t: number, sign: '+' | '−') => `${sign}$${t}M`;
 </script>
 
@@ -97,13 +107,15 @@
 	{:else}
 		<section class="rows stagger" aria-label="Per-function cut and rebuild">
 			{#each moves as m, mi (m.seat)}
-				<article class="row" class:up={m.net > 0} class:dn={m.net < 0}>
+				<article class="row" class:up={netVaries && m.net > 0} class:dn={netVaries && m.net < 0}>
 					<header class="rh">
 						<span class="dot" style="background:{m.color}" aria-hidden="true"></span>
 						<span class="fname">{m.name}</span>
-						<span class="net">
-							{m.net === 0 ? 'flat' : `net ${fmt(Math.abs(m.net), m.net > 0 ? '+' : '−')}`}
-						</span>
+						{#if netVaries}
+							<span class="net">
+								{m.net === 0 ? 'flat' : `net ${fmt(Math.abs(m.net), m.net > 0 ? '+' : '−')}`}
+							</span>
+						{/if}
 					</header>
 
 					<div class="line" aria-label="R3 cut and R5 rebuild">

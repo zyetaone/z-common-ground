@@ -24,6 +24,9 @@
 		move: 'add' | 'remove';
 		leadName: string;
 		leadShare: number;
+		/** Index of the lead priority. The header already prints its share, so the
+		 *  bar skips that segment's label rather than printing the number twice. */
+		leadIdx: number;
 		changed: boolean;
 	};
 
@@ -52,6 +55,7 @@
 				move,
 				leadName,
 				leadShare: shares[leadIdx] ?? 0,
+				leadIdx,
 				changed: prev !== null && prev !== leadName
 			};
 		};
@@ -115,7 +119,7 @@
 									style="width:{pct}%; background:{colors[pi]}"
 									title="{names[pi]} · {pct}%"
 								>
-									{#if pct >= 12}<span class="seg-lab">{pct}%</span>{/if}
+									{#if pct >= 12 && pi !== row.leadIdx}<span class="seg-lab">{pct}%</span>{/if}
 								</div>
 							{/if}
 						{/each}

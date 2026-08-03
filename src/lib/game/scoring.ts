@@ -89,12 +89,22 @@ export function verdicts(
  * Surprise = a function that put a real chunk (≥25%) of its money on an
  * off-type (low-bias ≤1) priority. Returns undefined when nobody broke type —
  * "no surprise" is a valid, honest outcome.
+ *
+ * `reach` (functions backing each priority) is used to disqualify consensus:
+ * if most of the room funded the same priority, one persona's low bias doesn't
+ * make it surprising. Without this the deck contradicts itself — the same
+ * function gets called the most-aligned ally on screen 5 and a surprise on
+ * screen 1, for backing the priority every function backed.
  */
 export function surpriseToken(
 	functionVectors: Vec7[],
-	personaBias: Vec7[]
+	personaBias: Vec7[],
+	reach?: Vec7
 ): { seat: number; priority: number } | undefined {
 	let best: { seat: number; priority: number; score: number; offBias: number; share: number } | undefined;
+	const active = functionVectors.filter((v) => sum(v) > 0).length;
+	// Consensus threshold: backed by more than half the funded room.
+	const consensus = Math.max(2, Math.ceil(active / 2));
 	for (let f = 0; f < functionVectors.length; f++) {
 		const v = functionVectors[f];
 		const tot = sum(v);
@@ -102,6 +112,7 @@ export function surpriseToken(
 		const bias = personaBias[f] ?? zeros();
 		for (let i = 0; i < N_PRIORITIES; i++) {
 			if (v[i] <= 0) continue;
+			if (reach && (reach[i] ?? 0) >= consensus) continue; // the room agreed — not a surprise
 			const offBias = 3 - Math.min(3, bias[i]); // 3 = they'd normally ignore it
 			const share = v[i] / tot;
 			const score = share * offBias * v[i];
@@ -133,7 +144,7 @@ export function aggregate(tables: TableState[], personaBias: Vec7[]): Aggregate 
 		alignment: v.alignment,
 		fault: v.fault,
 		blind: v.blind,
-		surprise: surpriseToken(functionVectors, personaBias),
+		surprise: surpriseToken(functionVectors, personaBias, reach),
 		totalCoins: sum(matrix),
 		tableCount: tables.length
 	};

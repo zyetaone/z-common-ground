@@ -339,6 +339,52 @@ describe('ground-up lenses', () => {
 		] as unknown as Vec7[];
 		expect(surpriseToken(offType, bias)).toEqual({ seat: 0, priority: 5 });
 	});
+
+	it('does not call a consensus priority a surprise', () => {
+		// Regression: surpriseToken only looked at the individual persona's bias,
+		// never at whether the rest of the room had funded the same priority. In a
+		// real seeded session that made the deck contradict itself — screen 1 said
+		// "Surprise: Real Estate leaned into Employee Experience" while screen 5
+		// called Real Estate the most-aligned ally, on the priority all 7 functions
+		// backed and the room's own lead.
+		const bias = [
+			[3, 0, 3, 0, 0, 0, 0], // f0: low bias on priority 1
+			[3, 0, 3, 0, 0, 0, 0],
+			[3, 0, 3, 0, 0, 0, 0],
+			[3, 0, 3, 0, 0, 0, 0]
+		] as unknown as Vec7[];
+		// Every function puts most of its money on priority 1 — a room consensus.
+		const consensusVectors = [
+			[10, 60, 10, 0, 0, 0, 0],
+			[10, 60, 10, 0, 0, 0, 0],
+			[10, 60, 10, 0, 0, 0, 0],
+			[10, 60, 10, 0, 0, 0, 0]
+		] as unknown as Vec7[];
+		const reach = [4, 4, 4, 0, 0, 0, 0] as unknown as Vec7;
+
+		// Without reach the old rule flags one of them purely on persona bias.
+		expect(surpriseToken(consensusVectors, bias)).toEqual({ seat: 0, priority: 1 });
+		// With reach, a priority the whole room funded is not a surprise.
+		expect(surpriseToken(consensusVectors, bias, reach)).toBeUndefined();
+	});
+
+	it('still flags a genuine outlier when the room did not follow', () => {
+		const bias = [
+			[3, 0, 3, 0, 0, 0, 0],
+			[3, 3, 3, 0, 0, 0, 0],
+			[3, 3, 3, 0, 0, 0, 0],
+			[3, 3, 3, 0, 0, 0, 0]
+		] as unknown as Vec7[];
+		// Only f0 backs priority 5, and it is off-type for them.
+		const vectors = [
+			[20, 20, 10, 0, 0, 50, 0],
+			[40, 30, 30, 0, 0, 0, 0],
+			[40, 30, 30, 0, 0, 0, 0],
+			[40, 30, 30, 0, 0, 0, 0]
+		] as unknown as Vec7[];
+		const reach = [4, 4, 4, 0, 0, 1, 0] as unknown as Vec7;
+		expect(surpriseToken(vectors, bias, reach)).toEqual({ seat: 0, priority: 5 });
+	});
 });
 
 describe('roomRoundStory — assumed / protected / reprioritised', () => {
