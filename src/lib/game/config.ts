@@ -87,15 +87,27 @@ export const SEAT_MISSIONS = PERSONAS.map((p) => p.mission);
 export const SEAT_BIAS: Vec7[] = PERSONAS.map((p) => p.bias);
 export const N_SEATS = PERSONAS.length;
 
-/** Priority heat / mix bars — one palette for portrait, winners, future. */
+/**
+ * Priority palette — the chart encoding, not brand chrome.
+ *
+ * Tuned for a projected stacked bar seen from across a room. Two pairs used to
+ * collide: Experience/Future at dE 15 and Brand/Innovation at dE 20 for normal
+ * vision, and Talent/Brand fell to dE 9 under deuteranopia (~6% of men), which
+ * made adjacent segments read as one block. Every pair is now >=25 dE apart
+ * under deuteranopia and >=40 for normal vision, while each hue stays within
+ * dE 18 of its original so the set still reads as the same considered palette.
+ *
+ * Cost / ROI keeps its exact red: that colour is load-bearing elsewhere
+ * (danger, the R3 cut round, the fault chip) and must not drift.
+ */
 export const PRIORITY_COLORS = [
-	'#8Fb4d6',
-	'#37b6a2',
-	'#b98cd6',
-	'#e7bd6b',
-	'#7E8CE0',
+	'#cccaeb',
+	'#1e9ca2',
+	'#d386eb',
+	'#e3c659',
+	'#4380d7',
 	'#e0554b',
-	'#6fae8f'
+	'#9dcb92'
 ] as const;
 
 /**

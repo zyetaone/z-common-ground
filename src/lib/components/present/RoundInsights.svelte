@@ -91,8 +91,21 @@
 		<p class="empty">Advance through R1 — the rebuild shows here.</p>
 	{:else}
 		<header class="head">
-			<span class="legend">Coloured by priority · lead highlighted with <span class="emph">↻</span> when it changed from the previous phase</span>
+			<span class="legend">Lead highlighted with <span class="emph">↻</span> when it changed from the previous phase</span>
 		</header>
+
+		<!-- The bars encode priority by colour alone, and any segment under 12%
+		     carries no inline label. Without a key the room sees a stripe of
+		     colours it cannot name — `title` needs a hover nobody in the audience
+		     can perform. Ordered to match the stacking order of the bars. -->
+		<ul class="key" aria-label="Priority colour key">
+			{#each names as n, i (i)}
+				<li class="key-item">
+					<span class="key-dot" style="background:{colors[i]}" aria-hidden="true"></span>
+					<span class="key-lab">{n}</span>
+				</li>
+			{/each}
+		</ul>
 
 		<section class="timeline" aria-label="Three-phase session timeline">
 			{#each phaseRows as row, i (row.label)}
@@ -186,6 +199,35 @@
 	.legend .emph {
 		color: var(--color-red);
 		font-weight: 800;
+	}
+
+	/* Colour key — the bars are colour-only, so this is what makes them readable
+	   from a seat. Wraps on narrow screens rather than scrolling. */
+	.key {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px 14px;
+		list-style: none;
+		margin: 0 0 12px;
+		padding: 0;
+	}
+	.key-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.key-dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 3px;
+		flex-shrink: 0;
+		/* Hairline keeps the palest chips (Talent, Future) off a cream ground. */
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 22%, transparent);
+	}
+	.key-lab {
+		font-size: 11px;
+		color: var(--color-muted);
+		white-space: nowrap;
 	}
 	.timeline {
 		display: flex;
