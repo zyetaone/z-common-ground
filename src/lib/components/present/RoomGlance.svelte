@@ -86,15 +86,17 @@
 						<span class="risk-dot" style="background:{p.color}" aria-hidden="true"></span>
 						<div class="risk-name-block">
 							<span class="risk-name" class:muted={!played}>{p.name}</span>
-							<span class="risk-archetype" class:muted={!played}>{p.archetype}</span>
+							<span class="risk-declared" class:muted={!played}>{p.risk ?? '—'}</span>
 						</div>
 						{#if played}
 							<span class="risk-cg" aria-label="Room alignment {p.commonGround} of 100">{p.commonGround}</span>
 						{:else}
 							<span class="risk-cg muted" aria-label="No stake placed">—</span>
 						{/if}
-							<span class="risk-name" class:muted={!played}>{p.name}</span>
-							<span class="risk-declared" class:muted={!played}>{p.risk ?? '—'}</span>
+					</li>
+				{/each}
+			</ul>
+		</section>
 	{/if}
 </div>
 
@@ -244,27 +246,27 @@
 	.risk-name-block {
 		grid-column: 2;
 		display: flex;
+		flex-direction: column;
+		gap: 0;
+		min-width: 0;
+	}
+	.risk-name {
+		font-family: var(--font-display);
+		font-size: 12px;
+		font-weight: 700;
 		color: var(--color-ink);
 		text-transform: capitalize;
 		line-height: 1.15;
+	}
 	.risk-declared {
 		font-family: var(--font-mono);
 		font-size: 10px;
 		color: var(--color-muted);
+		font-style: italic;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		line-height: 1.25;
-		font-style: italic;
-	}
-	.risk-archetype {
-		font-family: var(--font-mono);
-		font-size: 9.5px;
-		color: var(--color-muted);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		line-height: 1.2;
 	}
 	.risk-cg {
 		grid-column: 3;
