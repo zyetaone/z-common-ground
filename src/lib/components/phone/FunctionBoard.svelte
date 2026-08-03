@@ -68,6 +68,8 @@
 	let _prevCounts: Vec7 = [...ZEROS] as Vec7;
 	let _flashReady = false;
 	let _flashTimer: ReturnType<typeof setTimeout> | null = null;
+	/** Plain, not $state — read inside the effect that writes flashRow. */
+	let _flashing = false;
 
 	$effect(() => {
 		const cur = counts;
@@ -84,10 +86,22 @@
 		}
 		if (Object.keys(next).length > 0) {
 			flashRow = next;
-			if (_flashTimer) clearTimeout(_flashTimer);
-			_flashTimer = setTimeout(() => (flashRow = {}), 400);
+			_flashing = true;
 		}
 		_prevCounts = [...cur] as Vec7;
+		// Re-arm from a plain (untracked) flag rather than reading flashRow here:
+		// reading the same $state this effect writes would make it a dependency
+		// and loop. The cleanup below runs before every re-run, so an effect
+		// re-run that isn't a count change (a host label edit, say) would
+		// otherwise clear the in-flight timer without arming a new one and leave
+		// the row lit.
+		if (_flashing) {
+			if (_flashTimer) clearTimeout(_flashTimer);
+			_flashTimer = setTimeout(() => {
+				flashRow = {};
+				_flashing = false;
+			}, 400);
+		}
 		return () => {
 			if (_flashTimer) {
 				clearTimeout(_flashTimer);
