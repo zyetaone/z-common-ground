@@ -163,7 +163,10 @@ const isRevealable = $derived(
 		flex-direction: column;
 		gap: 10px;
 		padding: 6px 16px 10px;
-		background: var(--color-bg);
+		/* No `background` here. Svelte's scoped class adds specificity, so a flat
+		   colour at this level beat .stage-dark.stage-dark and silently flattened
+		   the stage gradients to a solid fill — the doubled class in app.css was
+		   written to win that fight and couldn't. The theme owns the background. */
 		color: var(--color-ink);
 	}
 	.topbar {

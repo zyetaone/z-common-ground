@@ -301,8 +301,25 @@ body::before {
 /* Doubled class — beats scoped page rules that reset `background` */
 .stage-dark.stage-dark {
 	background:
+		/* Warm gold wash from the upper-left — reads as light falling into the
+		   room rather than a flat backdrop, and ties the stage to the brand
+		   gold without putting gold near any data colour. */
+		radial-gradient(
+			70% 55% at 18% 0%,
+			color-mix(in srgb, #b8932e 9%, transparent) 0%,
+			transparent 62%
+		),
+		/* Teal counter-light from the lower-right, so the two brand hues bracket
+		   the frame and the centre stays neutral for the charts. */
+		radial-gradient(
+			62% 50% at 88% 100%,
+			color-mix(in srgb, #1f8b78 8%, transparent) 0%,
+			transparent 58%
+		),
 		radial-gradient(130% 90% at 50% 0%, #1c2a1e 0%, transparent 60%),
 		linear-gradient(180deg, #10160f 0%, #0c110a 70%, #080b07 100%);
+	/* Keeps the frame from bleaching out on a bright projector. */
+	background-attachment: fixed;
 }
 
 /* Same vanishing grid, stage variant — cream lines on dark */
