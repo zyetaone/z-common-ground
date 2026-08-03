@@ -22,6 +22,41 @@
 	const i = $derived(roomInsights(room));
 	const reachMap = $derived(room.aggregate.reach);
 	const totalCoins = $derived(room.aggregate.totalCoins);
+
+	/**
+	 * Per-priority spread across the seven tables.
+	 *
+	 * The bar and the reach dots answer "how much" and "how many", but not
+	 * "concentrated or shared" — $110M from three tables tripling down and
+	 * $110M from seven tables each placing one chip are the same bar and read
+	 * identically. That distinction is the actual boardroom question.
+	 *
+	 * Deliberately NOT a log scale. Every table is capped at the same wallet in
+	 * $10M chips, so totals span ~1.8x and cells ~3x. Log needs orders of
+	 * magnitude; on this range it would compress the only differences that
+	 * exist and flatter the chart at the data's expense.
+	 */
+	const spread = $derived.by(() => {
+		const out: Record<number, { stakes: number[]; median: number; max: number; concentrated: boolean }> = {};
+		for (let p = 0; p < labels.length; p++) {
+			const stakes = room.tables
+				.map((t) => t.matrix?.[p] ?? 0)
+				.filter((v) => v > 0)
+				.sort((a, b) => a - b);
+			if (!stakes.length) {
+				out[p] = { stakes: [], median: 0, max: 0, concentrated: false };
+				continue;
+			}
+			const mid = Math.floor(stakes.length / 2);
+			const median =
+				stakes.length % 2 ? stakes[mid] : (stakes[mid - 1] + stakes[mid]) / 2;
+			const max = stakes[stakes.length - 1];
+			// A table holding more than twice the typical stake is the signal that
+			// this priority is carried rather than shared.
+			out[p] = { stakes, median, max, concentrated: median > 0 && max > median * 2 };
+		}
+		return out;
+	});
 </script>
 
 <div class="pb">
@@ -56,7 +91,15 @@
 					<div
 						class="pbar-fill"
 						style="width:{m.pct}%; background:{m.color}"
-					></div>
+					>
+						<!-- Segment the fill by contributing table, largest last. Same total
+						     width, but now the bar shows whether the stake is shared across
+						     tables or carried by one — a distinction the bar alone hides. -->
+						{#each spread[m.priority]?.stakes ?? [] as stake, si (si)}
+							{@const w = m.tokens > 0 ? (stake / m.tokens) * 100 : 0}
+							<span class="pseg" style="width:{w}%"></span>
+						{/each}
+					</div>
 				</div>
 				<span class="pamt">{formatUsd(m.tokens)}</span>
 				<span class="ppct" style="color:{m.color}">{m.pct}%</span>
@@ -186,7 +229,14 @@
 	.pbar-fill {
 		height: 100%;
 		min-width: 1px;
+		display: flex;
 		transition: width var(--dur-base, 280ms) var(--ease-out-quart, ease);
+	}
+	/* Divider between contributing tables. A hairline of the track colour, so
+	   the bar still reads as one length while showing how many stakes compose
+	   it — wider blocks mean fewer, bigger bets. */
+	.pseg + .pseg {
+		border-left: 2px solid color-mix(in srgb, #10160f 55%, transparent);
 	}
 	.pamt {
 		font-family: var(--font-mono);
