@@ -132,7 +132,9 @@
 									style="width:{pct}%; background:{colors[pi]}"
 									title="{names[pi]} · {pct}%"
 								>
-									{#if pct >= 12 && pi !== row.leadIdx}<span class="seg-lab">{pct}%</span>{/if}
+									<!-- 6% not 12%: on a 1600px stage an 11% segment is ~170px
+									     wide and was rendering blank. The label is ~26px. -->
+									{#if pct >= 6 && pi !== row.leadIdx}<span class="seg-lab">{pct}%</span>{/if}
 								</div>
 							{/if}
 						{/each}
@@ -334,10 +336,12 @@
 		transition: width var(--dur-base, 280ms) var(--ease-out-quart, ease);
 	}
 	.seg-lab {
-		font-size: 9px;
+		font-size: 10px;
 		font-weight: 700;
-		color: #fff;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+		/* Dark ink, not white: the priority fills are mid-to-pale, so white at this
+		   size failed AA on all seven (as low as 1.59:1 on Talent). Ink clears 4.5:1
+		   on every fill — see the contrast test in priority-colors.test.ts. */
+		color: var(--color-ink);
 		padding: 0 4px;
 		white-space: nowrap;
 	}

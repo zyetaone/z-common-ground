@@ -121,6 +121,16 @@ describe('PRIORITY_COLORS', () => {
 		}
 	});
 
+	it('carries a readable percentage label on every fill', () => {
+		// The stacked bars print a 10px dark-ink % inside each segment. White was
+		// used first and failed AA on all seven fills (1.59:1 on Talent), which
+		// only showed up once the page was rendered in a real browser.
+		for (let i = 0; i < PRIORITY_COLORS.length; i++) {
+			const c = contrast(PRIORITY_COLORS[i], '#111a14');
+			expect(c, `${PRIORITIES[i]} label unreadable at ${c.toFixed(2)}:1`).toBeGreaterThan(4.5);
+		}
+	});
+
 	it('keeps Cost / ROI on the brand red', () => {
 		// Load-bearing elsewhere: danger, the R3 cut round, the fault chip.
 		expect(PRIORITY_COLORS[5].toLowerCase()).toBe('#e0554b');

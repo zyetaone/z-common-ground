@@ -99,13 +99,17 @@ export const N_SEATS = PERSONAS.length;
  *
  * Cost / ROI keeps its exact red: that colour is load-bearing elsewhere
  * (danger, the R3 cut round, the fault chip) and must not drift.
+ *
+ * Every fill also carries a 9px dark-ink percentage label in the stacked bars,
+ * so each one must clear 4.5:1 against --color-ink. That is the binding
+ * constraint on Innovation, the darkest of the set.
  */
 export const PRIORITY_COLORS = [
 	'#cccaeb',
 	'#1e9ca2',
 	'#d386eb',
 	'#e3c659',
-	'#4380d7',
+	'#4588e4',
 	'#e0554b',
 	'#9dcb92'
 ] as const;
