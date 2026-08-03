@@ -31,6 +31,34 @@
 
 			<p class="headline">{profile.headline}</p>
 
+			<!-- Authored persona copy, deliberately above the derived analysis: this
+			     is the mandate the function walked in with. Everything below is what
+			     they actually did with their money, so reading them in this order is
+			     what makes a mismatch visible. Both are optional — a host can clear
+			     them in the config editor — so each row renders independently. -->
+			{#if profile.strength || profile.risk}
+				<section class="stance">
+					{#if profile.strength}
+						<div class="stance-row good">
+							<span class="stance-mark" aria-hidden="true">+</span>
+							<div>
+								<span class="cg-kicker">Strength</span>
+								<p>{profile.strength}</p>
+							</div>
+						</div>
+					{/if}
+					{#if profile.risk}
+						<div class="stance-row bad">
+							<span class="stance-mark" aria-hidden="true">!</span>
+							<div>
+								<span class="cg-kicker">Risk</span>
+								<p>{profile.risk}</p>
+							</div>
+						</div>
+					{/if}
+				</section>
+			{/if}
+
 			{#if profile.tags.length}
 				<div class="tags" role="list">
 					{#each profile.tags as tag (tag)}
@@ -202,6 +230,55 @@
 		font-size: 14px;
 		line-height: 1.45;
 		color: var(--color-ink);
+	}
+
+	/* Stance — the persona's declared edge and blind side. Teal/red rather than
+	   the function colour: this is a good/bad read, and tinting it with --fn
+	   would collide with the per-priority palette used everywhere below. */
+	.stance {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		margin: 0 0 14px;
+	}
+	.stance-row {
+		display: flex;
+		gap: 8px;
+		align-items: flex-start;
+		padding: 10px 12px;
+		border-radius: var(--radius-lg, 12px);
+		border: 1px solid var(--color-line);
+		background: var(--color-bg-elevated);
+	}
+	.stance-row.good {
+		border-color: color-mix(in srgb, var(--color-teal) 38%, var(--color-line));
+	}
+	.stance-row.bad {
+		border-color: color-mix(in srgb, var(--color-red) 38%, var(--color-line));
+	}
+	.stance-mark {
+		font-family: var(--font-mono);
+		font-size: 14px;
+		font-weight: 800;
+		line-height: 1.25;
+		flex-shrink: 0;
+	}
+	.stance-row.good .stance-mark {
+		color: var(--color-teal-ink);
+	}
+	.stance-row.bad .stance-mark {
+		color: var(--color-red-ink);
+	}
+	.stance-row p {
+		margin: 2px 0 0;
+		font-size: 13px;
+		line-height: 1.4;
+		color: var(--color-ink);
+	}
+	@media (max-width: 640px) {
+		.stance {
+			grid-template-columns: 1fr;
+		}
 	}
 	.tags {
 		display: flex;

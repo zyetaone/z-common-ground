@@ -25,6 +25,9 @@
 	   never text. Use the *-ink tokens for text on light surfaces. */
 	--color-gold-ink: #8a6d1f; /* 4.6:1 on cream */
 	--color-teal-ink: #17695a; /* 6.1:1 on cream */
+	/* Red is already 4.6:1 on cream, so the light theme just aliases the brand
+	   colour; .stage-dark overrides this with a lifted shade. */
+	--color-red-ink: var(--color-red);
 
 	/* Dark surfaces — reserved for later phases */
 	--color-well: #0a0f1a;
@@ -288,6 +291,9 @@ body::before {
 	--color-bg-overlay: color-mix(in srgb, #10160f 75%, transparent);
 	--color-teal-ink: #3fb6a2; /* 7:1 on dark panel — same token, theme-scoped */
 	--color-gold-ink: #d9b44a; /* ~7:1 on dark panel — same token, theme-scoped */
+	/* Brand red is 2.7:1 on the dark elevated panel — below AA for text. Same
+	   hue, lifted for the dark stage, matching how teal-ink/gold-ink work. */
+	--color-red-ink: #ef8078;
 	--color-zi-bg: color-mix(in srgb, var(--color-teal) 16%, #18221a);
 	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
 	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);

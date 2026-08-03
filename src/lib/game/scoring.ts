@@ -392,6 +392,12 @@ export interface FunctionProfile {
 	color: string;
 	lens: string;
 	mission: string;
+	/** The function's declared edge and its blind side, straight from the persona.
+	 *  Authored copy, not derived — this is what the function is *for*, against
+	 *  which their actual spending reads as consistent or surprising.
+	 *  Optional: hosts can edit personas and may clear these. */
+	strength?: string;
+	risk?: string;
 	total: number;
 	commonGround: number;
 	/** Ranked mix with % of their wallet */
@@ -612,6 +618,8 @@ export function functionProfile(room: RoomState, tableId: number): FunctionProfi
 		color: persona.color,
 		lens: persona.lens,
 		mission: persona.mission,
+		strength: persona.strength,
+		risk: persona.risk,
 		total,
 		commonGround: cg,
 		mix,
