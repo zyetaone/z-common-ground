@@ -80,6 +80,8 @@
 	});
 
 	const ready = $derived(phaseRows.length > 0);
+	/** Widest phase sets the scale, so bar length is comparable across rows. */
+	const maxTotal = $derived(Math.max(1, ...phaseRows.map((r) => r.totalCoins)));
 
 	function fmtCoins(n: number): string {
 		return `$${Math.round(n / 10) * 10}M`;
@@ -124,7 +126,16 @@
 						</span>
 					</header>
 
-					<div class="bar" aria-label="{row.label} mix">
+					<!-- Bar width is scaled to the phase total, not stretched to 100%.
+					     The whole story of this screen is that the room cut a third of
+					     its money at R3 and rebuilt most of it by R5 — with every bar
+					     normalised to full width, that drop was invisible and the three
+					     phases looked identical. -->
+					<div
+						class="bar"
+						style="width:{maxTotal > 0 ? (row.totalCoins / maxTotal) * 100 : 100}%"
+						aria-label="{row.label} mix, {fmtCoins(row.totalCoins)}"
+					>
 						{#each row.shares as pct, pi (pi)}
 							{#if pct > 0}
 								<div
@@ -324,11 +335,14 @@
 	}
 	.bar {
 		position: relative;
-		height: 28px;
+		/* Taller so three stacked phases fill the stage and the length difference
+		   between them is legible from a seat. */
+		height: 52px;
 		display: flex;
 		border-radius: var(--radius-sm);
 		overflow: hidden;
 		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+		transition: width var(--dur-slow, 480ms) var(--ease-out-quart, ease);
 	}
 	.seg {
 		height: 100%;
