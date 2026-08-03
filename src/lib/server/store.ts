@@ -135,21 +135,24 @@ function makeRoom(tableCount = DEFAULT_TABLE_COUNT): RoomState {
 class Store {
 	/** Single session — not a multi-room map. */
 	private room: RoomState | null = null;
-	private syncing: Promise<boolean> | null = null;
+	private syncing: Promise<{ existed: boolean; failed: boolean }> | null = null;
 
 	/**
 	 * Pull the shared room from D1 (single primary — every colo agrees).
 	 * Call before every read/mutate on the server.
-	 * Returns whether a stored room existed (false = never created / empty DB).
+	 * Returns { existed, failed }: existed=false means no row (safe to seed);
+	 * failed=true means the read errored or the blob was invalid — callers
+	 * must NOT persist in that case (stale memory would roll back D1).
 	 */
-	async sync(db: D1Database | undefined): Promise<boolean> {
+	async sync(db: D1Database | undefined): Promise<{ existed: boolean; failed: boolean }> {
 		if (this.syncing) return this.syncing;
 		this.syncing = (async () => {
-			const stored = await loadRoom(db);
-			if (!stored) return false;
+			const loaded = await loadRoom(db);
+			if (loaded.kind === 'failed') return { existed: false, failed: true };
+			if (loaded.kind === 'empty') return { existed: false, failed: false };
 			// D1 is authoritative — always adopt it (it holds every colo's writes).
-			this.room = stored;
-			return true;
+			this.room = loaded.room;
+			return { existed: true, failed: false };
 		})().finally(() => {
 			this.syncing = null;
 		});

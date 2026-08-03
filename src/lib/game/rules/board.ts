@@ -3,6 +3,7 @@
  * Mutates table.board; caller recompute.
  */
 import {
+	MAX_CELL_TOKENS,
 	N_SEATS,
 	isCaptureRound,
 	r3RemoveTarget,
@@ -77,7 +78,7 @@ export function applyBoardDelta(
 	}
 
 	const row = table.board[fnSeat].slice();
-	row[priority] = Math.max(0, (row[priority] ?? 0) + delta);
+	row[priority] = Math.max(0, Math.min(MAX_CELL_TOKENS, (row[priority] ?? 0) + delta));
 	table.board[fnSeat] = row;
 	return true;
 }
@@ -97,7 +98,7 @@ export function applyBoardSet(
 
 	const cur = table.board[fnSeat][priority] ?? 0;
 	const rounded = Math.round(Number(value));
-	let next = Math.max(0, Math.min(99, Number.isFinite(rounded) ? rounded : 0));
+	let next = Math.max(0, Math.min(MAX_CELL_TOKENS, Number.isFinite(rounded) ? rounded : 0));
 	if (isRemoveRound(room) && next > cur) next = cur;
 	// Clamp so the whole board can never exceed the active wallet.
 	const otherSum = boardTokenSum(table.board) - cur;
@@ -146,7 +147,7 @@ export function applySubmitTable(
 	const prev = (table.board[seat] ?? Array(N_PRIORITIES).fill(0)).slice(0, N_PRIORITIES) as Vec7;
 	let row = (source[seat] ?? Array(N_PRIORITIES).fill(0))
 		.slice(0, N_PRIORITIES)
-		.map((n) => Math.max(0, Math.min(99, Math.round(Number(n) || 0)))) as Vec7;
+		.map((n) => Math.max(0, Math.min(MAX_CELL_TOKENS, Math.round(Number(n) || 0)))) as Vec7;
 
 	if (isRemoveRound(room)) {
 		row = row.map((v, i) => Math.min(v, prev[i] ?? 0)) as Vec7;

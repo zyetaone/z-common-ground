@@ -5,12 +5,14 @@ import { describe, expect, it } from 'vitest';
 import {
 	DEFAULT_ROOM_BOUNTY_TOKENS,
 	DEFAULT_TABLE_COUNT,
+	MAX_WALLET_TOKENS,
 	N_PRIORITIES,
 	N_SEATS,
 	PRIORITIES,
 	ROUND_COUNT,
 	SCENARIOS,
 	roomScenarios,
+	tableBountyTokens,
 	aggregate,
 	badgeForTable,
 	emptyMatrix,
@@ -556,6 +558,30 @@ describe('budget-scaled seal targets (host-editable room budget)', () => {
 		stakeTable1(room, [20, 0, 0, 0, 0, 0, 0]);
 		expect(applyBoardDelta(room, 1, 0, 1, 10)).toBe(false); // 30 > 27 cap
 		expect(applyBoardDelta(room, 1, 0, 1, 7)).toBe(true); // 27 = cap exactly
+	});
+});
+
+describe('wallet ceiling (C1) — huge room budgets can never wedge the R2 seal', () => {
+	it('wallet caps at 7 × 99 = 693 regardless of roomBountyTokens', () => {
+		expect(MAX_WALLET_TOKENS).toBe(693);
+		expect(tableBountyTokens(makeRoom({ roomBountyTokens: 9999 }))).toBe(693);
+		expect(tableBountyTokens(makeRoom({ roomBountyTokens: 4851 }))).toBe(693);
+		expect(tableBountyTokens(makeRoom({ roomBountyTokens: 700 }))).toBe(100); // default unchanged
+	});
+
+	it('R2 full-wallet seal stays reachable at the capped wallet', () => {
+		const room = makeRoom({ phase: 'round', round: 1, roomBountyTokens: 9999 });
+		const full = emptyMatrix();
+		full[0] = [99, 99, 99, 99, 99, 99, 99]; // 693 = capped wallet exactly
+		const hit = applySubmitTable(room, 1, full, { seal: true });
+		expect(hit.ok).toBe(true);
+		expect(hit.sealed).toBe(true);
+	});
+
+	it('applyBoardDelta clamps a cell at 99 (no silent submit truncation)', () => {
+		const room = makeRoom({ phase: 'round', round: 1, roomBountyTokens: 9999 });
+		for (let i = 0; i < 10; i++) applyBoardDelta(room, 1, 0, 0, 10); // wallet 693 — adds allowed
+		expect(room.tables[0].board[0][0]).toBe(99);
 	});
 });
 

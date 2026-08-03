@@ -117,12 +117,13 @@ async function attempt<T>(fn: () => T): Promise<T> {
 }
 
 async function readRoom(): Promise<RoomState> {
-	// Reads never clobber a live writer. But if D1 has no room yet — first
-	// request, or a fresh DB — seed it from whatever we hold so the session
-	// can't fail to start.
+	// Reads never clobber a live writer. Seed D1 from memory ONLY when the row
+	// is truly absent (first request / fresh DB). A failed or invalid read must
+	// never trigger a persist — writing stale memory over the authoritative
+	// row would silently roll back live state.
 	const d = d1Health();
-	const existed = await store.sync(d);
+	const { existed, failed } = await store.sync(d);
 	const room = store.ensure();
-	if (!existed) await store.persist(d);
+	if (!existed && !failed) await store.persist(d);
 	return room;
 }

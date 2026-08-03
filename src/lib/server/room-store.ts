@@ -29,21 +29,48 @@ async function ensureSchema(db: D1Database): Promise<void> {
 	schemaReady = true;
 }
 
-export async function loadRoom(db: D1Database | undefined): Promise<RoomState | null> {
-	if (!db) return null;
+/**
+ * Tagged load result — callers MUST distinguish "no row" (safe to seed) from
+ * "read failed / blob invalid" (NOT safe: persisting stale in-memory state
+ * would roll back the authoritative row).
+ */
+export type LoadRoomResult =
+	| { kind: 'ok'; room: RoomState }
+	| { kind: 'empty' }
+	| { kind: 'failed' };
+
+const KNOWN_PHASES = new Set(['lobby', 'round', 'reveal', 'finale']);
+
+/** Minimal nested-shape validation — a parseable-but-wrong blob must not be
+ *  adopted (it would 500 every mutation) nor treated as empty (see above). */
+function validRoomShape(data: RoomState | null): data is RoomState {
+	return (
+		!!data &&
+		typeof data.updatedAt === 'number' &&
+		Array.isArray(data.tables) &&
+		data.tables.every((t) => Array.isArray(t?.board)) &&
+		KNOWN_PHASES.has(data.phase)
+	);
+}
+
+export async function loadRoom(db: D1Database | undefined): Promise<LoadRoomResult> {
+	if (!db) return { kind: 'empty' };
 	try {
 		await ensureSchema(db);
 		const row = await db
 			.prepare('SELECT data FROM room WHERE id = ?')
 			.bind(ROOM_ID)
 			.first<{ data: string }>();
-		if (!row) return null;
+		if (!row) return { kind: 'empty' };
 		const data = JSON.parse(row.data) as RoomState;
-		if (!data || typeof data.updatedAt !== 'number' || !Array.isArray(data.tables)) return null;
-		return data;
+		if (!validRoomShape(data)) {
+			console.error('[room-store] stored blob failed shape validation — refusing to adopt');
+			return { kind: 'failed' };
+		}
+		return { kind: 'ok', room: data };
 	} catch (err) {
 		console.error('[room-store] load failed', err instanceof Error ? err.message : err);
-		return null;
+		return { kind: 'failed' };
 	}
 }
 

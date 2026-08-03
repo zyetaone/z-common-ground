@@ -283,6 +283,14 @@ export const DEFAULT_TABLE_COUNT = 7;
 export const DEFAULT_ROOM_BOUNTY_TOKENS = 700;
 export const DEFAULT_TABLE_BOUNTY_TOKENS = 100;
 
+/** Largest value a single priority cell can hold (board rules clamp here). */
+export const MAX_CELL_TOKENS = 99;
+/**
+ * Largest submittable board total (7 cells × 99). The wallet must never
+ * exceed this or the R2 full-wallet seal becomes mathematically impossible.
+ */
+export const MAX_WALLET_TOKENS = MAX_CELL_TOKENS * 7;
+
 /** Per-table wallet in tokens ($M) — room bounty split across tables. */
 export function tableBountyTokens(room: {
 	tables: unknown[];
@@ -290,7 +298,7 @@ export function tableBountyTokens(room: {
 }): number {
 	const n = Math.max(1, room.tables.length);
 	const fromRoom = Math.floor((room.roomBountyTokens || DEFAULT_ROOM_BOUNTY_TOKENS) / n);
-	return Math.max(1, fromRoom || DEFAULT_TABLE_BOUNTY_TOKENS);
+	return Math.min(MAX_WALLET_TOKENS, Math.max(1, fromRoom || DEFAULT_TABLE_BOUNTY_TOKENS));
 }
 
 /** Physical chip denomination — single $10M token. */
