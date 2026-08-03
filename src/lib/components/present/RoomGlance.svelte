@@ -43,10 +43,12 @@
 				<span class="cg-kicker m-label">Lead</span>
 				<span class="m-val">{i.lead}</span>
 			</div>
-			<div class="metric">
-				<span class="cg-kicker m-label">Divide</span>
-				<span class="m-val">{i.fault}</span>
-			</div>
+			{#if i.fault !== i.blind}
+				<div class="metric">
+					<span class="cg-kicker m-label">Divide</span>
+					<span class="m-val">{i.fault}</span>
+				</div>
+			{/if}
 			<div class="metric">
 				<span class="cg-kicker m-label">Overlooked</span>
 				<span class="m-val">{i.blind}</span>

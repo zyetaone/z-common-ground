@@ -62,9 +62,7 @@
 		{#if phase === 'round' && scenario}
 			{#if scenario.hint || scenario.modelRules}
 				<p class="budget-hint">
-					{scenario.hint ?? ''}{#if scenario.hint && scenario.modelRules}
-						·
-					{/if}{#if scenario.modelRules}<span class="rules">{scenario.modelRules}</span>{/if}
+					{scenario.hint ?? ''}{#if scenario.hint && scenario.modelRules}{' · '}{/if}{#if scenario.modelRules}<span class="rules">{scenario.modelRules}</span>{/if}
 				</p>
 			{/if}
 		{:else if persona.mission && phase === 'lobby'}

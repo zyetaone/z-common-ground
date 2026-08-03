@@ -79,49 +79,51 @@
 	/>
 
 	{#if editable}
-		{#if canCapture}
-			{#if roundLabel === 2}
-				<p class="hint-cap req" class:met={r2Ready}>
-					{r2Ready
-						? `Full ${formatUsdFull(r2Target)} wallet ready`
-						: `Needs the full ${formatUsdFull(r2Target)} wallet`}
-				</p>
-			{:else if roundLabel === 3 && removeOnly}
-				<p class="hint-cap req" class:met={r3Ready}>
-					{r3Ready
-						? `${formatUsdFull(removeTarget)} removed — target met`
-						: `Needs ${formatUsdFull(Math.max(0, removeTarget - removedTokens))} more removed`}
-				</p>
+		<div class="foot">
+			{#if canCapture}
+				{#if roundLabel === 2}
+					<p class="hint-cap req" class:met={r2Ready}>
+						{r2Ready
+							? `Full ${formatUsdFull(r2Target)} wallet ready`
+							: `Needs the full ${formatUsdFull(r2Target)} wallet`}
+					</p>
+				{:else if roundLabel === 3 && removeOnly}
+					<p class="hint-cap req" class:met={r3Ready}>
+						{r3Ready
+							? `${formatUsdFull(removeTarget)} removed — target met`
+							: `Needs ${formatUsdFull(Math.max(0, removeTarget - removedTokens))} more removed`}
+					</p>
+				{/if}
+				<button
+					type="submit"
+					class="submit"
+					disabled={busy || overCap || !r2Ready || !r3Ready || (!removeOnly && totalTokens <= 0)}
+				>
+					{busy
+						? 'Locking in…'
+						: removeOnly
+							? `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`
+							: roundLabel === 5
+								? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsdFull(tableCap)}`
+								: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
+				</button>
+				{#if submitError}
+					<p class="cg-error">{submitError}</p>
+				{/if}
+			{:else}
+				<button
+					type="button"
+					class="submit save"
+					disabled={busy || totalTokens <= 0 || overCap}
+					onclick={() => onSave()}
+				>
+					{busy ? 'Saving…' : `Save & continue · ${formatUsdFull(totalTokens)}`}
+				</button>
+				{#if totalTokens <= 0}
+					<p class="hint-cap">Place {formatUsd(CHIP_VALUE)} tokens on the board first.</p>
+				{/if}
 			{/if}
-			<button
-				type="submit"
-				class="submit"
-				disabled={busy || overCap || !r2Ready || !r3Ready || (!removeOnly && totalTokens <= 0)}
-			>
-				{busy
-					? 'Locking in…'
-					: removeOnly
-						? `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`
-						: roundLabel === 5
-							? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsdFull(tableCap)}`
-							: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
-			</button>
-			{#if submitError}
-				<p class="cg-error">{submitError}</p>
-			{/if}
-		{:else}
-			<button
-				type="button"
-				class="submit save"
-				disabled={busy || totalTokens <= 0 || overCap}
-				onclick={() => onSave()}
-			>
-				{busy ? 'Saving…' : `Save & continue · ${formatUsdFull(totalTokens)}`}
-			</button>
-			{#if totalTokens <= 0}
-				<p class="hint-cap">Place {formatUsd(CHIP_VALUE)} tokens on the board first.</p>
-			{/if}
-		{/if}
+		</div>
 	{/if}
 </form>
 
@@ -131,6 +133,16 @@
 		flex-direction: column;
 		gap: 10px;
 		padding: 4px 12px 0;
+	}
+	.foot {
+		position: sticky;
+		bottom: 0;
+		z-index: 10;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+		background: linear-gradient(to bottom, transparent, var(--color-bg) 24px);
 	}
 	.submit {
 		border: none;
@@ -142,9 +154,6 @@
 		background: var(--color-teal);
 		color: var(--color-on-teal);
 		cursor: pointer;
-		position: sticky;
-		bottom: calc(8px + env(safe-area-inset-bottom));
-		z-index: 10;
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 		touch-action: manipulation;
 	}

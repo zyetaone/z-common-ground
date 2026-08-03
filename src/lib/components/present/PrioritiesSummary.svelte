@@ -147,7 +147,10 @@
 	{/if}
 
 	{#if !ready}
-		<p class="empty">No cut or rebuild yet. Once a function trims and re-stakes, their strategy lands here.</p>
+		<div class="empty-card">
+			<p class="empty-title">No cut or rebuild yet</p>
+			<p class="empty-sub">Once a function trims and re-stakes, their strategy lands here.</p>
+		</div>
 	{:else}
 		<header class="col-headers" aria-hidden="true">
 			<span class="ch-name"></span>
@@ -261,11 +264,24 @@
 	}
 	.help .up { color: var(--color-teal-ink); font-weight: 700; }
 	.help .dn { color: var(--color-red); font-weight: 700; }
-	.empty {
+	.empty-card {
 		margin: auto;
+		padding: 40px 32px;
+		border: 1px solid var(--color-line);
+		border-radius: var(--radius-lg);
+		background: color-mix(in srgb, var(--color-panel) 60%, transparent);
+		text-align: center;
+		max-width: 560px;
+	}
+	.empty-title {
+		font-family: var(--font-display);
+		font-size: 20px;
+		font-weight: 700;
+		margin-bottom: 6px;
+	}
+	.empty-sub {
 		font-size: 13px;
 		color: var(--color-muted);
-		padding: 48px 16px;
 	}
 	.col-headers {
 		display: grid;

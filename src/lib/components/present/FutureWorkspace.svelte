@@ -167,7 +167,7 @@
 				{#if generating}
 					Generating…
 				{:else if hasFnImages || primaryUrl}
-					Regenerate…
+					Regenerate
 				{:else}
 					Generate concepts
 				{/if}

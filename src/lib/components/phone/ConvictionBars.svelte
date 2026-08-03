@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd } from '$lib/game';
+	import { PRIORITIES, formatUsd } from '$lib/game';
 	import type { Vec7 } from '$lib/game/types';
-	import Chip from '$lib/components/Chip.svelte';
 
 	/** POC-style post-submit conviction strip. */
 	let {
@@ -16,7 +15,6 @@
 
 	const max = $derived(Math.max(1, ...bets));
 	const total = $derived(bets.reduce((a, b) => a + b, 0));
-	const chipColor = $derived(CHIP_DENOMS[0].hex);
 	const rowLabels = $derived(PRIORITIES.map((def, i) => labels[i]?.trim() || def));
 </script>
 
@@ -25,22 +23,12 @@
 	<div class="bars">
 		{#each rowLabels as p, i (i)}
 			{@const v = bets[i] ?? 0}
-			{@const chipCount = Math.floor(v / CHIP_VALUE)}
 			<div class="row" class:empty={v === 0}>
 				<span class="lbl">{p}</span>
 				<div class="track">
 					<div class="fill" style="width:{(v / max) * 100}%"></div>
 				</div>
-				<div class="val-cell">
-					<span class="val">{v ? formatUsd(v) : ''}</span>
-					{#if chipCount > 0 && chipCount <= 6}
-						<span class="chips">
-							{#each { length: chipCount } as _, ci}
-								<Chip hex={chipColor} size={12} />
-							{/each}
-						</span>
-					{/if}
-				</div>
+				<span class="val">{v ? formatUsd(v) : ''}</span>
 			</div>
 		{/each}
 	</div>
@@ -71,7 +59,7 @@
 	}
 	.row {
 		display: grid;
-		grid-template-columns: 1fr 80px 72px;
+		grid-template-columns: 1fr 96px 48px;
 		align-items: center;
 		gap: 8px;
 		font-size: 12px;
@@ -96,26 +84,10 @@
 		background: var(--seat);
 		min-width: 0;
 	}
-	.val-cell {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-		justify-content: flex-end;
-	}
 	.val {
 		font-family: var(--font-mono);
 		font-size: 10px;
 		color: var(--color-muted);
-	}
-	.chips {
-		display: flex;
-		align-items: center;
-		gap: 0;
-	}
-	.chips :global(svg) {
-		margin-left: -3px;
-	}
-	.chips :global(svg:first-child) {
-		margin-left: 0;
+		text-align: right;
 	}
 </style>

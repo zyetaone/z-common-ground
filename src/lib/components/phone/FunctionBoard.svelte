@@ -108,7 +108,11 @@
 	     aria-labels report the truth on focus instead. -->
 	<div class="spend-line">
 		<span class="spent-label">Spent</span>
-		<span class="spent-val t-tabular" use:countUp={total}>{total > 0 ? formatUsdFull(total) : '—'}</span>
+		{#if total > 0}
+			<span class="spent-val t-tabular" use:countUp={total}>{formatUsdFull(total)}</span>
+		{:else}
+			<span class="spent-val t-tabular">—</span>
+		{/if}
 		<span class="of">of</span>
 		<span class="cap-val t-tabular">{formatUsdFull(capTokens)}</span>
 		{#if remaining > 0 && !removeOnly}
