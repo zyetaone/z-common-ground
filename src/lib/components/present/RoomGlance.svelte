@@ -10,9 +10,15 @@
 	 * column colour also reads as "which priorities got the most love").
 	 * The two takeaway chips below are the room's lead and divide — the
 	 * only derived numbers a presenter needs to read aloud.
-	 * Below the footer, a 7-row read-aloud profile: persona dot + name
-	 * + archetype one-liner on top, room-alignment score bottom-right.
-	 * When a function hasn't placed stake the row dims and the score is "—".
+	 * Below the footer, a 7-row read-aloud profile: persona dot + name +
+	 * declared risk (the persona's authored blind side, e.g. "Under-investment
+	 * in people and innovation") + room-alignment score. When a function
+	 * hasn't placed stake the row dims and the score is "—".
+	 *
+	 * The declared risk is the *persona-authored* copy — what the function was
+	 * meant to look out for. That's the column the slide's presenter used to
+	 * drive the read-aloud; the derived archetype (what they did) is one
+	 * glance deeper and lives in FunctionProfileSheet.
 	 */
 	let { room }: { room: RoomState } = $props();
 
@@ -87,10 +93,8 @@
 						{:else}
 							<span class="risk-cg muted" aria-label="No stake placed">—</span>
 						{/if}
-					</li>
-				{/each}
-			</ul>
-		</section>
+							<span class="risk-name" class:muted={!played}>{p.name}</span>
+							<span class="risk-declared" class:muted={!played}>{p.risk ?? '—'}</span>
 	{/if}
 </div>
 
@@ -240,17 +244,18 @@
 	.risk-name-block {
 		grid-column: 2;
 		display: flex;
-		flex-direction: column;
-		gap: 0;
-		min-width: 0;
-	}
-	.risk-name {
-		font-family: var(--font-display);
-		font-size: 12px;
-		font-weight: 700;
 		color: var(--color-ink);
 		text-transform: capitalize;
 		line-height: 1.15;
+	.risk-declared {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		line-height: 1.25;
+		font-style: italic;
 	}
 	.risk-archetype {
 		font-family: var(--font-mono);

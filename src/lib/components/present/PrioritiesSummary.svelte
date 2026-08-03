@@ -23,6 +23,8 @@
 		color: string;
 		cut: Move[];
 		build: Move[];
+		/** Net direction per priority across R2 → R5, in fixed priority order. */
+		arc: Array<{ priority: number; name: string; delta: number; color: string }>;
 		/** True R2 → R5 movement in $M. Not inferable from cut/build: those
 		 *  lists only hold R3 decreases and R5 increases, so a table that
 		 *  reallocates at R5 (moves $ off one priority onto another) has the
@@ -76,7 +78,26 @@
 			const r2Row = r2.portrait[s] ?? [];
 			const r5Row = r5.portrait[s] ?? [];
 			const net = diffByPriority(r2Row, r5Row).reduce((sum, d) => sum + d.tokens, 0);
-			out.push({ seat: s, name: p.name, color: p.color, cut, build, net });
+			/**
+			 * Per-priority direction across the whole arc, R2 → R5.
+			 *
+			 * Every delta in this game is ±$10M or ±$20M, so magnitude carries
+			 * almost no signal — what varies is *which* priority moved and which
+			 * way. This is the grid the chips can't be: seven fixed columns, so
+			 * the eye compares the same priority down the seven functions instead
+			 * of re-reading a different word order in every row.
+			 */
+			const arc = (r2Row.length ? r2Row : names.map(() => 0)).map((_, pi) => {
+				const from = r2Row[pi] ?? 0;
+				const to = r5Row[pi] ?? 0;
+				return {
+					priority: pi,
+					name: names[pi] ?? '—',
+					delta: to - from,
+					color: (PRIORITY_COLORS[pi] ?? '#999') as string
+				};
+			});
+			out.push({ seat: s, name: p.name, color: p.color, cut, build, net, arc });
 		}
 		return out;
 	});
@@ -117,6 +138,28 @@
 							</span>
 						{/if}
 					</header>
+
+					<!-- Direction grid: seven fixed columns in priority order, so the same
+					     priority sits at the same x in every function's row and the room
+					     can read a column down instead of parsing seven word-orders. Up
+					     bar = ended higher than R2, down bar = ended lower. -->
+					<div class="arc" role="img" aria-label="{m.name} net movement per priority, round 2 to round 5">
+						{#each m.arc as a (a.priority)}
+							<div class="arc-col" title="{a.name}: {a.delta === 0 ? 'no net change' : fmt(Math.abs(a.delta), a.delta > 0 ? '+' : '−')}">
+								<div class="arc-cell up">
+									{#if a.delta > 0}
+										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 3.3)}%"></span>
+									{/if}
+								</div>
+								<span class="arc-axis" style="background:{a.color}" aria-hidden="true"></span>
+								<div class="arc-cell dn">
+									{#if a.delta < 0}
+										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 3.3)}%"></span>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
 
 					<div class="line" aria-label="R3 cut and R5 rebuild">
 						<span class="side-label">cut</span>
@@ -232,6 +275,45 @@
 	}
 	.row.dn .net {
 		color: var(--color-red);
+	}
+	/* Direction grid — seven fixed columns, one per priority, diverging about a
+	   centre axis. Height is scaled from the ±$M delta but the game only ever
+	   produces ±10/±20, so this is really a direction read with a magnitude hint. */
+	.arc {
+		display: grid;
+		grid-template-columns: repeat(7, 1fr);
+		gap: 3px;
+		margin: 8px 0 10px;
+	}
+	.arc-col {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.arc-cell {
+		height: 16px;
+		width: 100%;
+		display: flex;
+		justify-content: center;
+	}
+	.arc-cell.up {
+		align-items: flex-end;
+	}
+	.arc-cell.dn {
+		align-items: flex-start;
+	}
+	.arc-bar {
+		width: 68%;
+		border-radius: 2px;
+		min-height: 3px;
+	}
+	/* Always-present centre tick keeps the axis readable even where a priority
+	   never moved, so an untouched column reads as "held", not as missing data. */
+	.arc-axis {
+		height: 2px;
+		width: 68%;
+		opacity: 0.4;
+		border-radius: 1px;
 	}
 	.line {
 		display: flex;
