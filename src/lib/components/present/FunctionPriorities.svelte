@@ -170,7 +170,10 @@ import {
 				</div>
 				<p class="archetype">{r.archetype}</p>
 				{#if r.tags.length}
-					<p class="tags" aria-label="Personality traits">
+					<!-- No aria-label here: on a <p> it REPLACES the visible tag text for
+					     screen readers, so "Explorer Future-facing Commercial" was being
+					     announced as "Personality traits". The tags speak for themselves. -->
+					<p class="tags">
 						{#each r.tags.slice(0, 3) as t (t)}
 							<span class="tag">{t}</span>
 						{/each}
