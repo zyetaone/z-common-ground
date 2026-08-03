@@ -60,7 +60,7 @@
 	{:else}
 		<div
 			class="grid"
-			style="--n:{n}; grid-template-columns: minmax(72px, 0.85fr) repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat({n}, minmax(0, 1fr));"
+			style="--n:{n}; grid-template-columns: minmax(72px, 0.85fr) repeat(7, minmax(0, 1fr)); grid-template-rows: auto repeat({n}, minmax(44px, 1fr));"
 		>
 			<div class="corner" aria-hidden="true"></div>
 			{#each names as col, ci (ci)}
@@ -135,8 +135,9 @@
 		width: 100%;
 		/* Cap the width so cells stay near-square. Full-bleed on a 1600px stage
 		   made them 191x35 — a 5.5:1 letterbox, which reads as a spreadsheet row
-		   and leaves the discs swimming in empty space. */
-		max-width: 1080px;
+		   and leaves the discs swimming in empty space. At 820px the data cells
+		   land near 95x60, close enough that a disc reads as a disc. */
+		max-width: 820px;
 		margin-inline: auto;
 	}
 	.corner {
