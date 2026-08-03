@@ -174,15 +174,18 @@ export const PRIORITY_DESIGN_ATTRS = [
 	},
 	{
 		// 4 · Innovation — War Room, Idea Hubs, Quiet Focus Zones
+		// Deliberately worded away from Productivity: that priority owns steady
+		// output at a desk, this one owns making and testing. Sharing "pods /
+		// desks / tech / focus" made the two mixes render as the same room.
 		keywords: [
-			'prototyping',
-			'labs',
-			'agile pods',
-			'experimentation',
+			'prototyping benches and maker tables',
+			'wet and dry labs',
+			'agile scrum corners with movable walls',
+			'experimentation and rapid testing',
 			'War Room — high-intensity decision and response space',
 			'Idea Hubs — ideation lounges with writable everything',
-			'Quiet Focus Zones — deep work away from the lab noise',
-			'tech-integrated desks, screens everywhere, prototyping kits'
+			'retreat nooks for solo thinking between builds',
+			'exposed prototyping kit, screens and half-built work on display'
 		],
 		materials: 'writable surfaces, modular furniture, tech-integrated desks, exposed services',
 		mood: 'experimental, agile, high-creativity, interactive',
