@@ -39,15 +39,18 @@
 		return `${personas[s.seat]?.name ?? 'A function'} leaned into ${names[s.priority]}`;
 	});
 
-	function cellBg(v: number, pri: number): string {
-		if (v <= 0) return 'var(--color-panel)';
-		const t = Math.min(1, v / model.max);
-		const mix = Math.round(18 + t * 76);
-		return `color-mix(in srgb, ${PRI_COLORS[pri]} ${mix}%, var(--color-panel))`;
-	}
-
-	function isDark(v: number): boolean {
-		return v / model.max > 0.48;
+	/**
+	 * Disc radius for a cell value, in the 40-unit viewBox.
+	 *
+	 * Radius scales with sqrt(v) so *area* is proportional to the money — the
+	 * standard for symbol maps. Using radius directly would exaggerate a 30 over
+	 * a 10 by 9x instead of 3x. Floor of 5 keeps the smallest stake visible from
+	 * the back of a room; 17 leaves a hair of gutter inside the cell.
+	 */
+	function discR(v: number): number {
+		if (v <= 0) return 0;
+		const t = Math.sqrt(Math.min(1, v / model.max));
+		return 5 + t * 12;
 	}
 </script>
 
@@ -73,14 +76,24 @@
 					{@const v = model.seatCoins[si]?.[ci] ?? 0}
 					{@const isSurprise =
 						model.surprise && model.surprise.seat === si && model.surprise.priority === ci}
-					{@const dark = isDark(v)}
 					<div
 						class="cell"
 						class:cg-surprise={isSurprise}
-						style="background:{cellBg(v, ci)}"
+						class:empty={v === 0}
 						title="{persona.name} · {names[ci]}: {formatUsd(v)}"
 					>
-						<span class="num" class:dark class:zero={v === 0}>{v || '·'}</span>
+						<!-- Magnitude is the disc AREA, not a tint. Seven different hues can't
+						     be compared by saturation — you can't rank a 43% purple against a
+						     69% teal — so the old tinted number grid encoded *which* priority
+						     but never *how much*. Area is pre-attentive and works across hues. -->
+						{#if v > 0}
+							<svg class="disc" viewBox="0 0 40 40" aria-hidden="true">
+								<circle cx="20" cy="20" r={discR(v)} fill={PRI_COLORS[ci]} />
+							</svg>
+							<span class="num">{v}</span>
+						{:else}
+							<span class="num zero">·</span>
+						{/if}
 					</div>
 				{/each}
 			{/each}
@@ -120,6 +133,11 @@
 		gap: 5px;
 		font-size: 9.5px;
 		width: 100%;
+		/* Cap the width so cells stay near-square. Full-bleed on a 1600px stage
+		   made them 191x35 — a 5.5:1 letterbox, which reads as a spreadsheet row
+		   and leaves the discs swimming in empty space. */
+		max-width: 1080px;
+		margin-inline: auto;
 	}
 	.corner {
 		min-height: 22px;
@@ -164,34 +182,48 @@
 		box-shadow: 0 0 8px color-mix(in srgb, currentColor 40%, transparent);
 	}
 	.cell {
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		position: relative;
+		display: grid;
+		place-items: center;
 		min-width: 0;
 		min-height: 0;
 		height: 100%;
 		width: 100%;
 		border-radius: 10px;
 		padding: 2px;
-		border: 1px solid rgba(255, 255, 255, 0.04);
-		transition:
-			background-color var(--dur-slow, 480ms) var(--ease-out-quart, ease),
-			border-color var(--dur-slow, 480ms) var(--ease-out-quart, ease);
+	}
+	/* The disc is the data; it sits behind the numeral and is centred on the
+	   cell so a row scans as a row of dots of varying weight. */
+	.disc {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+	.disc circle {
+		transition: r var(--dur-slow, 480ms) var(--ease-out-quart, ease);
+	}
+	.cell.empty {
+		background: color-mix(in srgb, var(--color-ink) 4%, transparent);
 	}
 	.num {
+		position: relative;
 		font-weight: 800;
-		font-size: clamp(16px, 2.2vw, 28px);
+		/* Smaller than before: the disc now carries the magnitude, so the numeral
+		   is a read-out for anyone close enough to want the exact figure. */
+		font-size: clamp(12px, 1.3vw, 16px);
 		line-height: 1.05;
 		font-family: var(--font-display);
-		color: var(--color-ink);
+		/* Literal dark, not var(--color-ink): this renders inside .stage-dark where
+		   that token flips to cream, and every disc fill is pale. */
+		color: #111a14;
 		font-variant-numeric: tabular-nums;
-	}
-	.num.dark {
-		color: #ffffff;
 	}
 	.num.zero {
 		opacity: 0.28;
 		font-weight: 600;
+		color: var(--color-muted);
 		font-size: clamp(12px, 1.2vw, 16px);
 	}
 	.cg-surprise {
