@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ConvictionBars from './ConvictionBars.svelte';
-	import { CHIP_DENOMS, CHIP_VALUE, formatUsd } from '$lib/game';
+	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd } from '$lib/game';
 	import type { Persona, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
 
@@ -23,16 +23,23 @@
 	const chipCount = $derived(Math.floor(totalTokens / CHIP_VALUE));
 	const top = $derived.by(() => {
 		let best = 0;
-		let idx = 0;
+		let idx = -1;
 		for (let i = 0; i < counts.length; i++) {
 			if ((counts[i] ?? 0) > best) {
 				best = counts[i] ?? 0;
 				idx = i;
 			}
 		}
-		const names = labels?.length ? labels : [];
-		const name = names[idx] || `Priority ${idx + 1}`;
-		const share = totalTokens > 0 ? Math.round((best / totalTokens) * 100) : 0;
+		// idx stays -1 when the table never staked. Defaulting to 0 there would
+		// print "0% on Talent" — naming a priority they never chose — because a
+		// table can reach the finale without submitting anything.
+		if (idx < 0 || totalTokens <= 0) return { name: '', share: 0, best: 0 };
+		const names = labels?.length ? labels : (PRIORITIES as unknown as string[]);
+		// Fall back to the canonical priority name, never a raw index: "56% on
+		// Priority 2" is the last thing a participant should see on the finale.
+		// Siblings (ConvictionBars, FunctionBoard) already default to PRIORITIES.
+		const name = names[idx]?.trim() || PRIORITIES[idx] || '—';
+		const share = Math.round((best / totalTokens) * 100);
 		return { name, share, best };
 	});
 </script>
@@ -41,8 +48,12 @@
 	<section class="f-card">
 		<div class="cg-kicker" style="--k-track: 0.16em; margin-bottom:8px">{persona.name}</div>
 		<div class="f-hero">
-			<span class="f-big">{top.share}%</span>
-			<span class="f-unit">on {top.name}</span>
+			{#if top.name}
+				<span class="f-big">{top.share}%</span>
+				<span class="f-unit">on {top.name}</span>
+			{:else}
+				<span class="f-unit">No stake placed this session</span>
+			{/if}
 		</div>
 		<p class="f-sub">Your mix · wallet {formatUsd(totalTokens)}</p>
 		{#if chipCount > 0}
