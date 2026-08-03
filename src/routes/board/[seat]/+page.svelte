@@ -4,9 +4,9 @@
 	import { tablePersona } from '$lib/game';
 	import { session } from '$lib/state';
 
-	const seat = Math.min(6, Math.max(0, Number(page.params.seat) || 0));
-	const roomCode = (page.url.searchParams.get('room') || 'LIVE').toUpperCase();
-	const tableId = Number(page.url.searchParams.get('table')) || seat + 1;
+	const seat = $derived(Math.min(6, Math.max(0, Number(page.params.seat) || 0)));
+	const roomCode = $derived((page.url.searchParams.get('room') || 'LIVE').toUpperCase());
+	const tableId = $derived(Number(page.url.searchParams.get('table')) || seat + 1);
 	const name = $derived(tablePersona(tableId, session.room).name);
 
 	function print() {

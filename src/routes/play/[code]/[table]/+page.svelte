@@ -33,14 +33,17 @@
 	const persona = $derived(tablePersona(tableId, session.room));
 	const seat = $derived(tableSeatIndex(tableId));
 	const table = $derived(session.tables.find((t) => t.id === tableId));
+	const serverRow = $derived((table?.board?.[seat] ?? zeros()) as Vec7);
+	// Key on this table's OWN server state — not room.updatedAt, which bumps on
+	// every actor's mutation and would wipe unsubmitted local edits mid-round.
 	const roomSyncKey = $derived(
 		[
-			session.updatedAt,
 			session.phase,
 			session.round,
 			tableId,
 			table?.lockedThisRound ? 1 : 0,
-			table?.physicallyDone ? 1 : 0
+			table?.physicallyDone ? 1 : 0,
+			serverRow.join(',')
 		].join(':')
 	);
 	const phase = $derived(session.phase);
@@ -50,7 +53,6 @@
 	const rs = $derived(roomScenarios(session.room));
 	const scenario = $derived(rs[Math.min(round, rs.length - 1)] ?? rs[0]);
 	const priorityLabels = $derived(roomPriorities(session.room));
-	const serverRow = $derived((table?.board?.[seat] ?? zeros()) as Vec7);
 	const submitted = $derived(!!table?.lockedThisRound);
 	const canCapture = $derived(phase === 'round' && isCaptureRound(roundLabel, session.room));
 	const canEditPhase = $derived(phase === 'round' && !submitted);
@@ -118,7 +120,7 @@
 		const ph = room.phase;
 		const prev = untrack(() => lastSyncKey);
 		const isSeeded = untrack(() => seeded);
-		const prevPhase = prev ? prev.split(':')[1] : null;
+		const prevPhase = prev ? prev.split(':')[0] : null;
 
 		if (prevPhase && prevPhase !== ph && (ph === 'reveal' || ph === 'finale')) {
 			tab = 'board';

@@ -67,6 +67,7 @@
 	let flashRow = $state<Record<number, boolean>>({});
 	let _prevCounts: Vec7 = [...ZEROS] as Vec7;
 	let _flashReady = false;
+	let _flashTimer: ReturnType<typeof setTimeout> | null = null;
 
 	$effect(() => {
 		const cur = counts;
@@ -83,9 +84,16 @@
 		}
 		if (Object.keys(next).length > 0) {
 			flashRow = next;
-			setTimeout(() => (flashRow = {}), 400);
+			if (_flashTimer) clearTimeout(_flashTimer);
+			_flashTimer = setTimeout(() => (flashRow = {}), 400);
 		}
 		_prevCounts = [...cur] as Vec7;
+		return () => {
+			if (_flashTimer) {
+				clearTimeout(_flashTimer);
+				_flashTimer = null;
+			}
+		};
 	});
 
 	function tap(p: number, d: number) {
