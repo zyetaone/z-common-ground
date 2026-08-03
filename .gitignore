@@ -24,3 +24,6 @@ vite.config.ts.timestamp-*
 
 # Cloudflare local secrets
 .dev.vars
+
+# Local production state snapshots (taken before deploys)
+.backups/
