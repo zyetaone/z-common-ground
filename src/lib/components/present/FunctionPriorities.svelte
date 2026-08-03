@@ -309,10 +309,13 @@ import {
 		overflow: hidden;
 	}
 	.mix-seg span {
-		font-size: 8px;
+		font-size: 9px;
 		font-weight: 700;
-		color: #fff;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+		/* Literal dark like RoundInsights .seg-lab: the fills are pale in both
+		   themes and var(--color-ink) flips to cream on stage-dark. ≥4.5:1 on
+		   every priority fill is asserted in priority-colors.test.ts. */
+		color: #111a14;
+		text-shadow: 0 1px 2px rgba(255, 255, 255, 0.35);
 		white-space: nowrap;
 		padding: 0 3px;
 	}
