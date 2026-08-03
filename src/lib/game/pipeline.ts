@@ -81,3 +81,36 @@ export const LOOK_REGEN_OPTIONS: Array<{
 
 /** @deprecated use LOOK_REGEN_OPTIONS — kept for import compatibility */
 export const REGEN_OPTIONS = LOOK_REGEN_OPTIONS;
+
+/**
+ * Render one image per table, tolerating individual failures.
+ *
+ * Each call is a paid fal request and completed ones are already persisted
+ * server-side, so a throw mid-loop is expensive: it discards the tables after
+ * it and forces a re-run that re-pays for every image already made. A table can
+ * legitimately fail — the endpoint rejects zero stake, and R3 lets a table
+ * remove all of it while a run is in flight.
+ *
+ * Lives here rather than inline in the runes module so it is importable and
+ * testable without a browser.
+ */
+export async function renderTablesTolerantly<T>(
+	tableIds: number[],
+	render: (tableId: number, index: number) => Promise<T>,
+	onResult?: (tableId: number, result: T) => void
+): Promise<{ rendered: number[]; failedTables: number[] }> {
+	const rendered: number[] = [];
+	const failedTables: number[] = [];
+	for (let i = 0; i < tableIds.length; i++) {
+		const id = tableIds[i]!;
+		try {
+			const res = await render(id, i);
+			onResult?.(id, res);
+			rendered.push(id);
+		} catch (err) {
+			failedTables.push(id);
+			console.error(`[zyetai] table ${id} render failed:`, err);
+		}
+	}
+	return { rendered, failedTables };
+}

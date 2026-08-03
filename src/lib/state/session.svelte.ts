@@ -235,16 +235,6 @@ export const session = {
 		}
 	},
 
-	async setTables(count: number) {
-		busy = true;
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/tables`, { count });
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} finally {
-			busy = false;
-		}
-	},
 
 	async setConfig(body: {
 		analysisForced?: boolean;
@@ -663,6 +653,8 @@ export const session = {
 		let cardCount: number | undefined;
 		let functionCards: number | undefined;
 		let designCount: number | undefined;
+		/** Tables whose render failed — reported so the operator can retry just those. */
+		const failedTables: number[] = [];
 
 		// ── Stage helpers ──
 
@@ -706,14 +698,24 @@ export const session = {
 			if (pending.length === 0) {
 				report('All function lenses already rendered…');
 			}
-			for (let i = 0; i < pending.length; i++) {
-				const t = pending[i]!;
-				report(`Rendering function lens ${i + 1} of ${pending.length}…`);
-				const tr = await post<ImgRes>(`/api/ai/table-render`, { tableId: t.id });
-				if (tr.room) applyRoom(tr.room);
-				if (tr.imageError === 'no_key') lastImageError = 'no_key';
-				else if (tr.imageError && !lastImageError) lastImageError = tr.imageError;
-			}
+			// One table must not sink the run. Each render is a paid fal call and
+			// completed ones are already persisted, so throwing here would discard
+			// the remaining tables and force a re-run that re-pays for every image
+			// already made. See renderTablesTolerantly for the full rationale.
+			const { renderTablesTolerantly } = await import('$lib/game');
+			const outcome = await renderTablesTolerantly(
+				pending.map((t) => t.id),
+				async (tableId, i) => {
+					report(`Rendering function lens ${i + 1} of ${pending.length}…`);
+					return post<ImgRes>(`/api/ai/table-render`, { tableId });
+				},
+				(_id, tr) => {
+					if (tr.room) applyRoom(tr.room);
+					if (tr.imageError === 'no_key') lastImageError = 'no_key';
+					else if (tr.imageError && !lastImageError) lastImageError = tr.imageError;
+				}
+			);
+			failedTables.push(...outcome.failedTables);
 			await poll();
 		}
 
@@ -755,7 +757,8 @@ export const session = {
 					rapidi: undefined,
 					cardCount,
 					functionCards,
-					designCount
+					designCount,
+					failedTables
 				};
 			}
 
@@ -791,7 +794,8 @@ export const session = {
 				rapidi: lastRapidi,
 				cardCount,
 				functionCards,
-				designCount
+				designCount,
+				failedTables
 			};
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'ZyetaI package failed';

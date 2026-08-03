@@ -135,6 +135,13 @@
 			);
 			if (res && 'imageError' in res && res.imageError === 'no_key') {
 				futureUi.err = "Image generation isn't configured on this deployment — the brief still works.";
+			} else if (res && 'failedTables' in res && res.failedTables?.length) {
+				// The rest of the run completed and is saved. Name the tables so the
+				// operator can retry just those from the lens rail instead of
+				// re-running the whole package and re-paying for every image.
+				const ids = res.failedTables;
+				const names = ids.map((id) => tablePersona(id, room).name).join(', ');
+				futureUi.err = `${names} ${ids.length === 1 ? 'concept' : 'concepts'} didn't render — everything else is saved. Retry ${ids.length === 1 ? 'it' : 'them'} from the lens rail.`;
 			}
 			const r = session.room;
 			if (r?.enhancedBrief) {
