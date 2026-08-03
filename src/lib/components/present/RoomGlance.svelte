@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
 	import PortraitMatrix from '$lib/components/analytics/PortraitMatrix.svelte';
-	import { roomInsights, roomPriorities } from '$lib/game';
+	import { functionProfiles, roomInsights, roomPriorities } from '$lib/game';
 
 	/**
 	 * Screen 1 — Seat Matrix.
@@ -10,8 +10,9 @@
 	 * column colour also reads as "which priorities got the most love").
 	 * The two takeaway chips below are the room's lead and divide — the
 	 * only derived numbers a presenter needs to read aloud.
-	 * Below the footer, a 7-row read-aloud profile: one row per function
-	 * with the persona dot, archetype one-liner, and room-alignment score.
+	 * Below the footer, a 7-row read-aloud profile: persona dot + name
+	 * + archetype one-liner on top, room-alignment score bottom-right.
+	 * When a function hasn't placed stake the row dims and the score is "—".
 	 */
 	let { room }: { room: RoomState } = $props();
 
@@ -20,6 +21,7 @@
 	const ring = $derived(Math.min(100, Math.max(0, i.index)));
 	const sealed = $derived(room.tables.filter((t) => t.lockedThisRound).length);
 	const tables = $derived(room.tables.length);
+	const profiles = $derived(functionProfiles(room));
 </script>
 
 <div class="see">
@@ -55,10 +57,7 @@
 				<span class="cg-kicker m-label">Overlooked</span>
 				<span class="m-val">{i.blind}</span>
 			</div>
-			<!-- role="img" so the aria-label is legal and the dot row is announced as
-			     one summary ("3 of 7 sealed") rather than seven unlabelled spans.
-			     aria-label on a bare <div> is prohibited — it has no role to label. -->
-			<div class="dots" role="img" aria-label="{sealed} of {tables} sealed">
+			<div class="dots" aria-label="{sealed} of {tables} sealed">
 				{#each i.tables as t (t.id)}
 					<span
 						class="dot"
@@ -68,6 +67,30 @@
 				{/each}
 			</div>
 		</footer>
+
+		<section class="risk" aria-label="Per-function read-aloud profiles">
+			<header class="risk-hdr">
+				<span class="cg-kicker">Functions</span>
+				<span class="cg-kicker risk-hdr-right">Alignment</span>
+			</header>
+			<ul class="risk-list">
+				{#each profiles as p (p.tableId)}
+					{@const played = p.total > 0}
+					<li class="risk-row" class:muted={!played}>
+						<span class="risk-dot" style="background:{p.color}" aria-hidden="true"></span>
+						<div class="risk-name-block">
+							<span class="risk-name" class:muted={!played}>{p.name}</span>
+							<span class="risk-archetype" class:muted={!played}>{p.archetype}</span>
+						</div>
+						{#if played}
+							<span class="risk-cg" aria-label="Room alignment {p.commonGround} of 100">{p.commonGround}</span>
+						{:else}
+							<span class="risk-cg muted" aria-label="No stake placed">—</span>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
 	{/if}
 </div>
 
@@ -171,4 +194,89 @@
 		box-shadow: 0 0 0 2px color-mix(in srgb, var(--fn) 25%, transparent);
 	}
 
+	/* ── Per-function risk strip (read-aloud profiles) ─────────────────── */
+	.risk {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px 14px 4px;
+		border-top: 1px solid var(--color-line);
+	}
+	.risk-hdr {
+		display: flex;
+		justify-content: space-between;
+		padding: 0 0 4px;
+		color: var(--color-muted);
+	}
+	.risk-hdr-right {
+		--k-track: 0.08em;
+	}
+	.risk-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.risk-row {
+		display: grid;
+		grid-template-columns: 14px minmax(96px, 1fr) 36px;
+		grid-template-rows: auto auto;
+		align-items: center;
+		gap: 2px 10px;
+		padding: 4px 0;
+		border-radius: 4px;
+	}
+	.risk-dot {
+		grid-row: 1 / span 2;
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		align-self: center;
+	}
+	.risk-name-block {
+		grid-column: 2;
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		min-width: 0;
+	}
+	.risk-name {
+		font-family: var(--font-display);
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--color-ink);
+		text-transform: capitalize;
+		line-height: 1.15;
+	}
+	.risk-archetype {
+		font-family: var(--font-mono);
+		font-size: 9.5px;
+		color: var(--color-muted);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		line-height: 1.2;
+	}
+	.risk-cg {
+		grid-column: 3;
+		grid-row: 1 / span 2;
+		font-family: var(--font-display);
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--color-ink);
+		font-variant-numeric: tabular-nums;
+		text-align: right;
+		align-self: center;
+	}
+	.risk-row :global(.muted) {
+		opacity: 0.5;
+	}
+	.risk-row :global(.risk-cg.muted) {
+		font-weight: 400;
+		color: var(--color-muted);
+	}
 </style>
