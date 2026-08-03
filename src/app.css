@@ -146,38 +146,14 @@ body::before {
 	font-family: var(--font-mono);
 }
 
-/* Type roles — use by meaning, not size */
-.t-display {
-	font-family: var(--font-display);
-	font-weight: 800;
-	letter-spacing: -0.025em;
-	line-height: 1.05;
-	font-optical-sizing: auto;
-}
-.t-head {
-	font-family: var(--font-display);
-	font-weight: 700;
-	letter-spacing: -0.015em;
-	line-height: 1.2;
-}
-.t-body {
-	font-family: var(--font-sans);
-	font-weight: 400;
-	line-height: 1.5;
-}
-.t-caption {
-	font-family: var(--font-sans);
-	font-weight: 500;
-	font-size: 12px;
-	line-height: 1.35;
-	color: var(--color-muted);
-	letter-spacing: 0.04em;
-}
-.t-mono {
-	font-family: var(--font-mono);
-	font-weight: 500;
-	font-feature-settings: 'tnum' 1;
-}
+/* Type role — tabular figures.
+ *
+ * The wider .t-display / .t-head / .t-body / .t-caption / .t-mono family was
+ * removed: it sat here unused while components hand-rolled the same styles,
+ * which is how the kicker ended up duplicated 58 times. .cg-kicker earned its
+ * place by being parameterised enough to adopt without a visual change; a
+ * type-role set can come back the same way, driven by real call sites.
+ */
 .t-tabular {
 	font-variant-numeric: tabular-nums;
 }
