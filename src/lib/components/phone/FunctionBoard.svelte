@@ -224,10 +224,15 @@
 						<button
 							type="button"
 							class="btn plus"
-							disabled={busy || removeOnly || remaining < CHIP_VALUE}
-							aria-label="Add {formatUsd(CHIP_VALUE)} to {name}"
+							disabled={busy || (removeOnly ? v >= base : remaining < CHIP_VALUE)}
+							aria-label={removeOnly
+								? `Put back ${formatUsd(CHIP_VALUE)} on ${name}`
+								: `Add ${formatUsd(CHIP_VALUE)} to ${name}`}
 							onclick={() => {
-								if (!busy && !removeOnly && remaining >= CHIP_VALUE) tap(p, CHIP_VALUE);
+								if (busy) return;
+								// In a remove round this only undoes a cut — capped at the row's
+								// value when the round opened, so the board can never grow.
+								if (removeOnly ? v < base : remaining >= CHIP_VALUE) tap(p, CHIP_VALUE);
 							}}
 						>
 							+

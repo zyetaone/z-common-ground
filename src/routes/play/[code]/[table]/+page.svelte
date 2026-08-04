@@ -148,7 +148,11 @@
 
 	function delta(priority: number, d: number) {
 		if (!editable || submitting || !d) return;
-		if (removeOnly && d > 0) return;
+		// A remove round means the board must END below where the round started,
+		// not that every tap is irreversible. Blocking all add-back left a table
+		// that over-cut with no way home but a page reload — and nothing on
+		// screen said so. Adding back is allowed up to this row's baseline.
+		if (removeOnly && d > 0 && (draft[priority] ?? 0) + d > (baseline[priority] ?? 0)) return;
 		if (!seeded) {
 			const row = serverRow.slice() as Vec7;
 			draft = row;
