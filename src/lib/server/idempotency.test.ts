@@ -155,4 +155,21 @@ describe('idempotency store', () => {
 		expect(await getIdempotentResponse(undefined, KEY)).toBeNull();
 		await expect(saveIdempotentResponse(undefined, KEY, 200, '{}')).resolves.toBeUndefined();
 	});
+
+	it('does not cache an oversized body', async () => {
+		// Every mutating endpoint returns the whole room (~7KB). Caching it meant
+		// two D1 writes per mutation — the room, then a verbatim copy — and D1 has
+		// one primary, so from a distant colo that was a second cross-continent
+		// round trip. Measured as an 11.7s hang on POST /api/room with 2ms of CPU.
+		const db = makeD1();
+		const big = JSON.stringify({ room: 'x'.repeat(8000) });
+		await saveIdempotentResponse(db, KEY, 200, big);
+		expect(await getIdempotentResponse(db, KEY)).toBeNull();
+	});
+
+	it('still caches a small body', async () => {
+		const db = makeD1();
+		await saveIdempotentResponse(db, KEY, 200, '{"ok":true}');
+		expect(await getIdempotentResponse(db, KEY)).toEqual({ status: 200, body: '{"ok":true}' });
+	});
 });

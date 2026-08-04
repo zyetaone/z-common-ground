@@ -20,6 +20,18 @@ const TABLE = `CREATE TABLE IF NOT EXISTS idempotency (
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * Responses larger than this are not cached.
+ *
+ * Every mutating endpoint returns the whole room (~7KB and growing with image
+ * archives), so caching the body doubled the write cost of every mutation —
+ * one D1 write for the room, another for a verbatim copy of it. D1 has a
+ * single primary, so on a distant colo that second write is another
+ * cross-continent round trip. Skipping the cache costs a replay on the rare
+ * retry path; paying it cost latency on every single call.
+ */
+const MAX_CACHED_BODY = 2048;
+
 let schemaReady = false;
 
 async function ensure(db: D1Database) {
@@ -59,6 +71,7 @@ export async function saveIdempotentResponse(
 	body: string
 ): Promise<void> {
 	if (!db) return;
+	if (body.length > MAX_CACHED_BODY) return;
 	try {
 		await ensure(db);
 		await db

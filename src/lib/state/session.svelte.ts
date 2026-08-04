@@ -156,8 +156,20 @@ export const session = {
 	boot() {
 		if (typeof window === 'undefined' || booted) return () => {};
 		booted = true;
-		session.ensure().catch(() => {});
-		poll();
+		// Poll first, and only create the room if the poll says there isn't one.
+		//
+		// This used to fire ensure() unconditionally on every page load. ensure()
+		// is a WRITE, and D1 has a single primary (SIN) — a viewer on a distant
+		// colo paid a cross-continent round trip, twice, because the idempotency
+		// layer then stored another copy of the same ~7KB room body. Observed in
+		// wrangler tail as wallTime 11.7s against cpuTime 2ms, outcome canceled:
+		// the Worker was idle on I/O while the deck sat on "Connecting…".
+		//
+		// The room is created once per session and then exists for its lifetime,
+		// so on virtually every load this write was pure latency for no change.
+		void poll().then(() => {
+			if (!room) session.ensure().catch(() => {});
+		});
 		timer = setInterval(() => {
 			poll();
 		}, INTERVAL);
