@@ -59,7 +59,11 @@ export function canDraftDelta(o: {
 	remaining: number;
 }): boolean {
 	if (!Number.isFinite(o.delta) || o.delta === 0) return false;
-	if (o.delta < 0) return o.current > 0;
+	// A removal has to fit in the cell. `current > 0` would be wrong: a cell
+	// holding less than a chip (host set-value paths can make one) would enable
+	// the minus, and the draft would then refuse to go negative — an enabled
+	// button that does nothing, which is the bug this predicate exists to kill.
+	if (o.delta < 0) return o.current + o.delta >= 0;
 	// Remove rounds: an add is only ever a put-back, never past the round's start.
 	if (o.removeOnly) return o.current + o.delta <= o.baseline;
 	return o.delta <= o.remaining;

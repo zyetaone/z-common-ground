@@ -44,9 +44,14 @@ describe('canDraftDelta', () => {
 		expect(add({ removeOnly: true, current: 10, baseline: 40, remaining: 0 })).toBe(true);
 	});
 
-	it('allows a remove only while the cell holds something', () => {
-		expect(canDraftDelta({ removeOnly: true, current: 10, baseline: 40, delta: -CHIP, remaining: 0 })).toBe(true);
-		expect(canDraftDelta({ removeOnly: true, current: 0, baseline: 40, delta: -CHIP, remaining: 0 })).toBe(false);
+	it('allows a remove only when the chip fits in the cell', () => {
+		const minus = (current: number) =>
+			canDraftDelta({ removeOnly: true, current, baseline: 40, delta: -CHIP, remaining: 0 });
+		expect(minus(10)).toBe(true);
+		expect(minus(0)).toBe(false);
+		// A part-chip cell: enabling this would render a live button that the
+		// draft then refuses, because the row cannot go negative.
+		expect(minus(5)).toBe(false);
 	});
 
 	it('rejects a zero or non-finite delta', () => {
