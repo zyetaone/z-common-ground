@@ -81,10 +81,10 @@
 			/**
 			 * Per-priority direction across the whole arc, R2 → R5.
 			 *
-			 * Each delta is bar-height-scaled (×4.5) AND printed inside the bar
-			 (±$10M / ±$20M, the actual data range). The grid's job is the
-			 comparison the chips can't be: same column for every function,
-			 so the eye compares the same priority down the seven rows.
+			 * Each delta is printed inside its bar and scaled against the largest
+			 * move in the room, so a single-chip shift fills the cell. The grid's
+			 * job is the comparison the chips can't be: same column for every
+			 * function, so the eye compares one priority down the seven rows.
 			 */
 			const arc = (r2Row.length ? r2Row : names.map(() => 0)).map((_, pi) => {
 				const from = r2Row[pi] ?? 0;
@@ -106,6 +106,17 @@
 	);
 
 	const netVaries = $derived(new Set(moves.map((m) => m.net)).size > 1);
+
+	/**
+	 * Bars scale to the largest move on screen, not a fixed multiplier. The game
+	 * only ever produces ±one chip per priority, so the old ×4.5 pinned every
+	 * bar at 45% — a magnitude encoding that encoded nothing, in a bar too short
+	 * to hold its own label.
+	 */
+	const maxDelta = $derived(
+		Math.max(1, ...moves.flatMap((m) => m.arc.map((a) => Math.abs(a.delta))))
+	);
+	const barPct = (delta: number) => Math.round((Math.abs(delta) / maxDelta) * 100);
 
 	const SHORT = ['Talent', 'Experience', 'Brand', 'Productivity', 'Innovation', 'Cost / ROI', 'Future'];
 	const shortName = (i: number, label: string) => SHORT[i] ?? label;
@@ -155,7 +166,7 @@
 							<div class="arc-col" title="{a.name}: {a.delta === 0 ? 'no net change' : fmt(Math.abs(a.delta), a.delta > 0 ? '+' : '−')}">
 								<div class="arc-cell up">
 									{#if a.delta > 0}
-										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 4.5)}%">
+										<span class="arc-bar" style="background:{a.color}; height:{barPct(a.delta)}%">
 											<span class="arc-val">+{a.delta}</span>
 										</span>
 									{/if}
@@ -163,7 +174,7 @@
 								<span class="arc-axis" style="background:{a.color}" aria-hidden="true"></span>
 								<div class="arc-cell dn">
 									{#if a.delta < 0}
-										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 4.5)}%">
+										<span class="arc-bar" style="background:{a.color}; height:{barPct(a.delta)}%">
 											<span class="arc-val">{a.delta}</span>
 										</span>
 									{/if}
@@ -338,8 +349,7 @@
 		color: var(--color-red);
 	}
 	/* Direction grid — seven fixed columns, one per priority, diverging about a
-	   centre axis. Height is scaled from the ±$M delta but the game only ever
-	   produces ±10/±20, so this is really a direction read with a magnitude hint. */
+	   centre axis. Bar height is relative to the largest move on screen. */
 	.arc {
 		display: grid;
 		grid-template-columns: repeat(7, 1fr);
@@ -352,7 +362,7 @@
 		align-items: center;
 	}
 	.arc-cell {
-		height: 26px;
+		height: 34px;
 		width: 100%;
 		display: flex;
 		justify-content: center;
@@ -377,7 +387,7 @@
 		font-family: var(--font-mono);
 		font-size: 8.5px;
 		font-weight: 800;
-	color: var(--color-ink);
+		color: var(--color-ink);
 		pointer-events: none;
 	}
 	/* Always-present centre tick keeps the axis readable even where a priority
@@ -389,6 +399,9 @@
 		border-radius: 1px;
 	}
 	.line {
+		/* Third child of a two-column .row — auto-placement put it back in the
+		   narrow label column, crushing the chips. Keep it under the arc. */
+		grid-column: 2;
 		display: flex;
 		align-items: baseline;
 		flex-wrap: wrap;
