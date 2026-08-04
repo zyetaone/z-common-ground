@@ -131,6 +131,9 @@ export const PRIORITY_COLORS = [
 	'#9dcb92'
 ] as const;
 
+/** Used when a palette lookup misses — a persona or priority index out of range. */
+export const FALLBACK_COLOR = '#999';
+
 /**
  * Design attributes when money lands on a priority (SSOT for brief + image prompts).
  * Higher stake → these keywords dominate materials, mood, and program language.

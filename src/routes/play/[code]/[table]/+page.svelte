@@ -15,7 +15,9 @@
 		formatUsd,
 		isCaptureRound,
 		ROUND_COUNT,
+		boardCap,
 		canDraftDelta,
+		sealBlocker,
 		sealTargetFor,
 		sealTargetTokens,
 		roomPriorities,
@@ -93,21 +95,26 @@
 	const sealNeed = $derived(
 		sealTargetTokens(sealTarget, { wallet: baseWallet, standing: standingCap })
 	);
-	const tableCap = $derived(
-		removeOnly
-			? Math.max(standingCap, totalTokens)
-			: sealTarget?.kind === 'cap'
-				? (sealNeed ?? baseWallet)
-				: baseWallet
-	);
+	/** The rule this round enforces — the same object shape the server reads. */
+	const rule = $derived({
+		target: sealTarget,
+		wallet: baseWallet,
+		standing: standingCap,
+		removeOnly,
+		roundLabel
+	});
+	const tableCap = $derived(boardCap(rule));
 	const overCap = $derived(totalTokens > tableCap);
 	const removedTokens = $derived(Math.max(0, standingCap - totalTokens));
 	const r3Target = $derived(sealTarget?.kind === 'remove' ? (sealNeed ?? 0) : 0);
-	const r2Ready = $derived(
-		!canCapture || sealTarget?.kind !== 'full' || totalTokens === sealNeed
-	);
-	const r3Ready = $derived(
-		!canCapture || sealTarget?.kind !== 'remove' || removedTokens >= (sealNeed ?? 0)
+	/**
+	 * Why this board can't be sealed, straight from the rules module — the same
+	 * sentence applySubmitTable would refuse with. The phone used to re-derive
+	 * `r2Ready`/`r3Ready` and paraphrase the server's wording, so the two could
+	 * disagree about the same board.
+	 */
+	const blocker = $derived(
+		canCapture ? sealBlocker({ ...rule, total: totalTokens, seal: true }) : null
 	);
 
 	function reseedFromServer() {
@@ -209,12 +216,8 @@
 	async function onSubmit(e: Event) {
 		e.preventDefault();
 		if (!editable || submitting || overCap || !canCapture) return;
-		if (!r2Ready) {
-			submitError = `R${roundLabel} needs the full ${formatUsd(sealNeed ?? 0)} budget.`;
-			return;
-		}
-		if (!r3Ready) {
-			submitError = `R${roundLabel} needs ${formatUsd(sealNeed ?? 0)} removed (you’ve cut ${formatUsd(removedTokens)}).`;
+		if (blocker) {
+			submitError = blocker;
 			return;
 		}
 		if (!removeOnly && totalTokens <= 0) return;
@@ -378,8 +381,7 @@
 			{roundLabel}
 			sealKind={sealTarget?.kind}
 			{removeOnly}
-			{r2Ready}
-			{r3Ready}
+			{blocker}
 			r2Target={sealTarget?.kind === 'full' ? (sealNeed ?? 0) : 0}
 			removeTarget={r3Target}
 			{overCap}

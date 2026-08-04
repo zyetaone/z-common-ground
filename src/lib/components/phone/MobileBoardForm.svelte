@@ -18,8 +18,7 @@
 		roundLabel,
 		sealKind = undefined,
 		removeOnly = false,
-		r2Ready = true,
-		r3Ready = true,
+		blocker = null,
 		r2Target = 0,
 		removeTarget = 0,
 		overCap = false,
@@ -44,8 +43,8 @@
 		/** Which budget rule this round enforces — drives the hint and the seal copy. */
 		sealKind?: SealTarget['kind'];
 		removeOnly?: boolean;
-		r2Ready?: boolean;
-		r3Ready?: boolean;
+		/** Why the board can't seal, from rules/sealBlocker — null when it can. */
+		blocker?: string | null;
 		/** R2 seal target in tokens — the full per-table wallet. */
 		r2Target?: number;
 		/** R3 seal target in tokens — 30% of the standing total. */
@@ -84,23 +83,23 @@
 
 	{#if editable}
 		<div class="foot">
-			{#if sealKind === 'full'}
-				<p class="hint-cap req" class:met={r2Ready}>
-					{r2Ready
-						? `Full ${formatUsdFull(r2Target)} wallet ready`
-						: `Needs the full ${formatUsdFull(r2Target)} wallet`}
-				</p>
-			{:else if sealKind === 'remove'}
-				<p class="hint-cap req" class:met={r3Ready}>
-					{r3Ready
-						? `${formatUsdFull(removeTarget)} removed — target met`
-						: `Needs ${formatUsdFull(Math.max(0, removeTarget - removedTokens))} more removed`}
+			{#if sealKind === 'full' || sealKind === 'remove'}
+				<!-- Not-met copy is the server's own sentence, so the phone can never
+				     promise a seal the seal path would refuse. -->
+				<p class="hint-cap req" class:met={!blocker}>
+					{#if blocker}
+						{blocker}
+					{:else if sealKind === 'full'}
+						Full {formatUsdFull(r2Target)} wallet ready
+					{:else}
+						{formatUsdFull(removeTarget)} removed — target met
+					{/if}
 				</p>
 			{/if}
 			<button
 				type="submit"
 				class="submit"
-				disabled={busy || overCap || !r2Ready || !r3Ready || (!removeOnly && totalTokens <= 0)}
+				disabled={busy || !!blocker || (!removeOnly && totalTokens <= 0)}
 			>
 				{busy
 					? 'Locking in…'

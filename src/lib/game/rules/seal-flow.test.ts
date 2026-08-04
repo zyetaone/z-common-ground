@@ -59,7 +59,7 @@ describe('seal gates across a session', () => {
 		const room = roomOnRound(2);
 		const over = applySubmitTable(room, TABLE, boardWith([40, 40, 30, 0, 0, 0, 0]), { seal: true });
 		expect(over.ok).toBe(false);
-		expect(!over.ok && over.error).toMatch(/over table bounty/i);
+		expect(!over.ok && over.error).toMatch(/over table budget/i);
 	});
 
 	it('R3 seals only once the removal target is met', () => {

@@ -2,7 +2,9 @@
  * How each function contributes to the Common Ground layout / room mix.
  * Pure — drives contribution graphics and architecture presentation.
  */
-import { roomPersonas, roomPriorities, tableBountyTokens, tableSeatIndex } from './config';
+import { roomPersonas, roomPriorities, tableBountyTokens, tableSeatIndex,
+	FALLBACK_COLOR
+} from './config';
 import { priorityMix, workspaceZonesFromMatrix } from './brief';
 import { formatUsd } from './money';
 import { sum } from './scoring';
@@ -55,7 +57,7 @@ export function zoneContributions(room: RoomState): ZoneContribution[] {
 				return {
 					tableId: t.id,
 					name: p?.name ?? `T${t.id}`,
-					color: p?.color ?? '#999',
+					color: p?.color ?? FALLBACK_COLOR,
 					tokens,
 					shareOfZone: roomTok > 0 ? Math.round((tokens / roomTok) * 100) : 0
 				};

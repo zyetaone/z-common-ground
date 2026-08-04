@@ -6,7 +6,8 @@ import {
 	SPACE,
 	roomPersonas,
 	roomPriorities,
-	tableBountyTokens
+	tableBountyTokens,
+	FALLBACK_COLOR
 } from './config';
 import { formatUsd } from './money';
 import { PRIORITIES } from './types';
@@ -362,7 +363,7 @@ export function functionLensDiffs(room: RoomState): FunctionLensDiff[] {
 			return {
 				tableId: t.id,
 				name: persona?.name ?? `Table ${t.id}`,
-				color: persona?.color ?? '#999',
+				color: persona?.color ?? FALLBACK_COLOR,
 				combined,
 				functionLead,
 				roomLead,

@@ -6,8 +6,9 @@ import {
 	roomInsights,
 	roomRoundStory,
 	roomThesis,
-	spatialProgramFromAggregate
-} from '$lib/game';
+	spatialProgramFromAggregate,
+		FALLBACK_COLOR
+	} from '$lib/game';
 	import { SESSION, session } from '$lib/state';
 	import ZyetaI from '$lib/components/ZyetaI.svelte';
 
@@ -253,7 +254,7 @@ import {
 			<h2>04 · Function lenses</h2>
 			<div class="fn-grid">
 				{#each fnCards as c (c.tableId ?? c.functionName)}
-					<article class="fn-card" style="--fn:{c.color ?? '#999'}">
+					<article class="fn-card" style="--fn:{c.color ?? FALLBACK_COLOR}">
 						<header>
 							<span class="dot"></span>
 							<h3>{c.functionName}</h3>

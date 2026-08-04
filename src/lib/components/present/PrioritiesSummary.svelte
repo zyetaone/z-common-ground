@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import { PRIORITY_COLORS, priorityShort, roomPersonas, roomPriorities } from '$lib/game';
+	import { PRIORITY_COLORS, priorityShort, roomPersonas, roomPriorities,
+		FALLBACK_COLOR
+	} from '$lib/game';
 
 	/**
 	 * Screen 4 — What each function did, one line per function.
@@ -48,7 +50,7 @@
 					priority: i,
 					name: shortName(i),
 					tokens: Math.abs(delta),
-					color: (PRIORITY_COLORS[i] ?? '#999') as string
+					color: (PRIORITY_COLORS[i] ?? FALLBACK_COLOR) as string
 				};
 				(delta < 0 ? gave : bought).push(side);
 			}

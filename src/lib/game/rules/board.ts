@@ -24,17 +24,87 @@ export function activeSealTarget(room: RoomState): SealTarget | undefined {
 	return sealTargetFor(roomScenarios(room)[room.round]);
 }
 
+/** Everything the budget rules need, without a RoomState — so the phone can ask too. */
+export type BoardRule = {
+	target: SealTarget | undefined;
+	/** Per-table wallet in $M. */
+	wallet: number;
+	/** Board total when the round opened (what a remove round measures against). */
+	standing: number;
+	removeOnly: boolean;
+	roundLabel: number;
+};
+
+/**
+ * Ceiling on the board total right now.
+ *
+ * The phone used to compute `removeOnly ? max(standing, total) : ...` while the
+ * server used plain `standing`, so a draft could look legal on the phone and be
+ * refused at seal. One function, one answer.
+ */
+export function boardCap(r: BoardRule): number {
+	if (r.removeOnly) return Math.max(0, r.standing);
+	if (r.target?.kind === 'cap') {
+		return sealTargetTokens(r.target, { wallet: r.wallet, standing: r.standing }) ?? r.wallet;
+	}
+	return r.wallet;
+}
+
+/**
+ * Why this board cannot be submitted, or null when it can.
+ *
+ * SSOT for three call sites that each carried their own copy: the server's seal
+ * check, the phone's `r2Ready`/`r3Ready` derivations, and the submit button's
+ * `disabled`. The client renders exactly the sentence the server would refuse
+ * with, so the two can no longer say different things about the same board.
+ */
+export function sealBlocker(r: BoardRule & { total: number; seal: boolean }): string | null {
+	const cap = boardCap(r);
+	if (r.total > cap) {
+		return r.removeOnly
+			? `Remove only — cannot add. Holding $${r.standing}M; submitted $${r.total}M.`
+			: `Over table budget: $${r.total}M > $${cap}M allowed.`;
+	}
+	if (!r.seal || !r.target) return null;
+
+	const need = sealTargetTokens(r.target, { wallet: r.wallet, standing: r.standing });
+	if (need === undefined) return null;
+	if (r.target.kind === 'full' && r.total !== need) {
+		return `R${r.roundLabel} requires the full $${need}M budget (you have $${r.total}M). Place every token, then seal.`;
+	}
+	if (r.target.kind === 'remove' && r.standing - r.total < need) {
+		const removed = r.standing - r.total;
+		return `R${r.roundLabel} requires removing $${need}M (you removed $${removed}M of $${r.standing}M). Cut more, then seal.`;
+	}
+	return null;
+}
+
+/** Read the rule in force for a table straight off the room. */
+export function boardRuleFor(room: RoomState, standing: number): BoardRule {
+	return {
+		target: activeSealTarget(room),
+		wallet: tableBountyTokens(room),
+		standing,
+		removeOnly: isRemoveRound(room),
+		roundLabel: room.phase === 'round' ? room.round + 1 : 0
+	};
+}
+
 /**
  * Wallet ceiling for the current round — the scenario's `cap` target when it has
  * one (R5 restructures to 90%), otherwise the full wallet.
  */
 export function activeTableCap(room: RoomState): number {
-	const base = tableBountyTokens(room);
-	const target = activeSealTarget(room);
-	if (target?.kind === 'cap') {
-		return sealTargetTokens(target, { wallet: base, standing: 0 }) ?? base;
-	}
-	return base;
+	// Delegates to boardCap so the add path and the seal path can't disagree.
+	// standing/removeOnly are the add-path values: this is the ceiling for
+	// placing, and a remove round refuses adds outright in applyBoardDelta.
+	return boardCap({
+		target: activeSealTarget(room),
+		wallet: tableBountyTokens(room),
+		standing: 0,
+		removeOnly: false,
+		roundLabel: room.phase === 'round' ? room.round + 1 : 0
+	});
 }
 
 /**
@@ -199,39 +269,10 @@ export function applySubmitTable(
 	nextBoard[seat] = row;
 
 	const standing = prev.reduce((a, b) => a + b, 0);
-	const cap = isRemoveRound(room) ? Math.max(0, standing) : activeTableCap(room);
 	const total = boardTokenSum(nextBoard);
-	if (total > cap) {
-		return {
-			ok: false,
-			error: isRemoveRound(room)
-				? `R3 REMOVE only — cannot add. Holding ${standing} tok; submitted ${total}.`
-				: `Over table bounty: ${total} tokens > ${cap} allowed (room total ${room.roomBountyTokens})`
-		};
-	}
-
-	// Round targets (seal path only — physical facilitation mirrors these numbers).
-	// Driven by the scenario's sealTarget, not the round number, so a host who
-	// moves a round's rule moves its target with it. Targets scale with the
-	// host-configured wallet, not the $100M default.
-	const target = activeSealTarget(room);
-	const need = sealTargetTokens(target, { wallet: tableBountyTokens(room), standing });
-	if (seal && target && need !== undefined) {
-		if (target.kind === 'full' && total !== need) {
-			return {
-				ok: false,
-				error: `R${roundLabel} requires the full $${need}M budget (you have $${total}M). Place every token, then seal.`
-			};
-		}
-		if (target.kind === 'remove' && standing - total < need) {
-			const removed = standing - total;
-			return {
-				ok: false,
-				error: `R${roundLabel} requires removing $${need}M (you removed $${removed}M of $${standing}M). Cut more, then seal.`
-			};
-		}
-		// `cap` is already enforced by the activeTableCap check above.
-	}
+	// One predicate, shared with the phone — see sealBlocker.
+	const blocker = sealBlocker({ ...boardRuleFor(room, standing), total, seal });
+	if (blocker) return { ok: false, error: blocker };
 
 	table.board = nextBoard;
 	if (seal) {
