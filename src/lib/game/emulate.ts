@@ -2,7 +2,15 @@
  * Solo / demo play — pure generators for fake table boards.
  * Host “Emulate session” uses these so analysis can run without real players.
  */
-import { CHIP_VALUE, r5CapForWallet, roomPersonas, tableBountyTokens, tableSeatIndex } from './config';
+import {
+	CHIP_VALUE,
+	roomPersonas,
+	roomScenarios,
+	sealTargetFor,
+	sealTargetTokens,
+	tableBountyTokens,
+	tableSeatIndex
+} from './config';
 import { emptyMatrix, sum } from './scoring';
 import { N_PRIORITIES } from './types';
 import type { Matrix7x7, RoomState, Vec7 } from './types';
@@ -77,28 +85,42 @@ export function emulateTableBoard(
 
 /**
  * Target standing total for emulation given round rules.
- * Scales with the per-table wallet (default $100M):
- * R1 ~30% · R2 full wallet · R3 leave ~70% · R4 add ~20% back · R5 ≤90% of wallet.
+ *
+ * Reads the round's rule from the scenario (sealTargetFor), not from its number.
+ * This was the last copy of the round rules in the codebase and it disagreed:
+ * R3 aimed at "leave 70% of standing", which only clears the ≥30% removal
+ * target when chip rounding happens to land there. At a host-shrunk $70M wallet
+ * it left 50 of 70 — a $20M cut against a $21M target — and the seal was
+ * refused, so Emulate died mid-demo on the one round it is most needed.
  */
 export function emulateTargetTotal(room: RoomState, tableId: number): number {
 	const label = room.phase === 'round' ? room.round + 1 : 5;
 	const seat = tableSeatIndex(tableId);
 	const table = room.tables.find((t) => t.id === tableId);
-	const standing = table ? sum(table.matrix?.length ? table.matrix : table.board[seat] ?? []) : 0;
+	// Measure the board, not table.matrix. applySubmitTable takes `prev` from
+	// table.board[seat], so reading anything else lets emulate aim at a target
+	// the gate isn't scoring — and matrix is a recompute artefact that can lag.
+	const standing = table ? sum(table.board[seat] ?? []) : 0;
 	const wallet = tableBountyTokens(room);
 
 	/** Round to a whole chip count, at least one chip. */
 	const toChips = (v: number) => Math.max(CHIP_VALUE, Math.round(v / CHIP_VALUE) * CHIP_VALUE);
 
-	if (label === 1) return toChips(wallet * 0.3); // opening stake
-	if (label === 2) return wallet;
-	if (label === 3) {
-		// remove-only: cut toward 70% of standing
+	const target = sealTargetFor(roomScenarios(room)[room.round]);
+	const need = sealTargetTokens(target, { wallet, standing });
+
+	if (target && need !== undefined) {
+		if (target.kind === 'full') return need;
+		if (target.kind === 'cap') return need;
+		// Remove: cut at least `need`, rounded UP to a whole chip so rounding can
+		// never leave us a chip short of the target.
+		const cut = Math.ceil(need / CHIP_VALUE) * CHIP_VALUE;
 		const base = standing > 0 ? standing : wallet;
-		return Math.max(CHIP_VALUE * 3, Math.min(base, toChips(base * 0.7)));
+		return Math.max(CHIP_VALUE, base - cut);
 	}
-	if (label === 4) return Math.min(r5CapForWallet(wallet), standing + toChips(wallet * 0.2));
-	if (label === 5) return r5CapForWallet(wallet);
+	// Freeze-only rounds seal nothing, so any total under the wallet is valid.
+	if (label === 1) return toChips(wallet * 0.3); // opening stake
+	if (label === 4) return Math.min(wallet, standing + toChips(wallet * 0.2));
 	return wallet;
 }
 
