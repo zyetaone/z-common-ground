@@ -60,8 +60,11 @@
 	<meta name="theme-color" content="#FDF8ED" />
 	<title>Common Ground</title>
 	<meta name="description" content="Imagine the future of the workplace." />
-	<meta property="og:title" content="Common Ground" />
-	<meta property="og:description" content="Imagine the future of the workplace." />
+	<meta property="og:title" content="Common Ground · LIVE" />
+	<meta
+		property="og:description"
+		content="Same $100M wallet per function. Different priorities. One Common Ground. AI shows what it looks like."
+	/>
 	<meta property="og:type" content="website" />
 	<!--
 		og:image is what makes the LinkedIn share worth taking. Without it the

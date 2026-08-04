@@ -40,12 +40,6 @@
 		name="description"
 		content="Each function has $100M. Where would they spend it? Find Common Ground — and what that workplace looks like."
 	/>
-	<meta property="og:title" content="Common Ground · LIVE" />
-	<meta
-		property="og:description"
-		content="Same $100M wallet per function. Different priorities. One Common Ground. AI shows what it looks like."
-	/>
-	<meta property="og:type" content="website" />
 </svelte:head>
 
 <main class="mx-auto min-h-screen max-w-5xl px-5 py-10">
