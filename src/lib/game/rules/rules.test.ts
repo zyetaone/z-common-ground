@@ -33,51 +33,8 @@ import {
 	applySubmitTable,
 	isRemoveRound
 } from './index';
+import { makeRoom, emptyTable } from './test-room';
 
-function emptyTable(id: number): TableState {
-	return {
-		id,
-		board: emptyMatrix(),
-		joined: false,
-		physicallyDone: false,
-		lockedThisRound: false,
-		submittedSeats: Array(N_SEATS).fill(false),
-		matrix: Array(N_PRIORITIES).fill(0),
-		reach: Array(N_PRIORITIES).fill(0),
-		commonGround: 0
-	};
-}
-
-function makeRoom(partial?: Partial<RoomState>): RoomState {
-	const tables = Array.from({ length: DEFAULT_TABLE_COUNT }, (_, i) => emptyTable(i + 1));
-	const base: RoomState = {
-		code: 'LIVE',
-		phase: 'lobby',
-		round: 0,
-		roundCount: ROUND_COUNT,
-		tables,
-		aggregate: {
-			matrix: Array(N_PRIORITIES).fill(0),
-			reach: Array(N_PRIORITIES).fill(0),
-			alignmentIndex: 0,
-			alignment: 0,
-			fault: 0,
-			blind: 0,
-			totalCoins: 0,
-			tableCount: DEFAULT_TABLE_COUNT
-		},
-		history: [],
-		evolutionRounds: [2, 3, 5],
-		analysisForced: false,
-		analysisOpen: false,
-		lockedThisRound: 0,
-		expectedLocks: DEFAULT_TABLE_COUNT,
-		roomBountyTokens: DEFAULT_ROOM_BOUNTY_TOKENS,
-		tableBountyTokens: 100,
-		updatedAt: Date.now()
-	};
-	return { ...base, ...partial, tables: partial?.tables ?? tables };
-}
 
 /** Put tokens on table 1 function seat (seat 0). */
 function stakeTable1(room: RoomState, amounts: number[]) {
