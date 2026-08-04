@@ -122,9 +122,20 @@ body {
 	background:
 		radial-gradient(120% 90% at 50% 0%, #fffaf0 0%, transparent 55%),
 		linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg2) 62%, #f2e8d0 100%);
-	background-attachment: fixed;
 	/* stacking context so the grid pseudo sits above the gradient, below content */
 	isolation: isolate;
+}
+
+/* `background-attachment: fixed` forces the compositor to repaint the gradient
+   on every scroll frame, and on mobile Safari that is the classic scroll-jank
+   source — on the one device every player uses. The phone view is barely taller
+   than the viewport, so a scrolling gradient looks the same there anyway. Keep
+   the fixed parallax where it costs nothing and reads on a projector. The grid
+   below is already `position: fixed`, which is the cheap way to do this. */
+@media (hover: hover) and (pointer: fine) {
+	body {
+		background-attachment: fixed;
+	}
 }
 
 /* Radial vanishing grid — barely-there drafting texture, dissolves outward */
