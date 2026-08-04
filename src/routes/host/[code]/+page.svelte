@@ -11,6 +11,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import HostPhotos from '$lib/components/host/HostPhotos.svelte';
+	import HostPinGate from '$lib/components/host/HostPinGate.svelte';
 	import HostGameConfig from '$lib/components/host/HostGameConfig.svelte';
 
 	const st = $derived(session.room);
@@ -125,6 +126,7 @@
 	<title>Host · LIVE</title>
 </svelte:head>
 
+<HostPinGate>
 <main class="mx-auto max-w-5xl px-5 sm:px-6 py-8 sm:py-10">
 	{#if session.error}
 		<div class="mb-4 rounded-xl border border-red/40 bg-red/10 px-4 py-3 text-sm text-red">
@@ -387,6 +389,7 @@
 	</div>
 	{/if}
 </main>
+</HostPinGate>
 
 <Modal bind:open={resetOpen} label="Reset session" onclose={() => (resetConfirm = '')}>
 	<div class="rounded-2xl border border-red/40 bg-panel p-6 max-w-md space-y-4">

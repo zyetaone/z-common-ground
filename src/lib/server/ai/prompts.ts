@@ -34,7 +34,23 @@ import type { DesignCard } from '$lib/game/brief';
  */
 const NO_TEXT_NO_CHROME = [
 	'Wide-angle 16:9 architectural photograph, 2K clarity, no charts, no UI chrome, no borders, no split frames.',
-	'No text anywhere in the image: no labels, no captions, no percentages, no annotations, no watermarks, no corporate logos — pure architecture.'
+	// Text is the failure these renders keep regressing to: signage on walls,
+	// a caption bar, a percentage floating over a zone. Name every form of it.
+	'ABSOLUTELY NO TEXT ANYWHERE IN THE IMAGE. No labels, no captions, no titles, no percentages, no numbers, no annotations, no callouts, no legends, no signage, no wall lettering, no room names, no watermarks, no corporate logos, no UI overlays. Any lettering visible in the frame is a failed render — pure architecture only.'
+];
+
+/**
+ * The realism contract, shared by both image prompts.
+ *
+ * Without it the models drift to stylised CG and illustrative massing studies —
+ * technically "renders", but they read as concept art in a boardroom rather
+ * than a photograph of a building that could exist.
+ */
+const REALISM = [
+	'Photorealistic architectural photography of a real, buildable interior — not concept art, not illustration, not a stylised 3D massing study, not a cartoon or painterly render.',
+	'Cinematic realism: physically accurate light transport, soft directional daylight with true falloff, believable shadows and contact occlusion, subtle lens character, natural colour grading.',
+	'Real materials with real imperfection — grain in the timber, weave in the textile, fingerprints of use — never plastic-perfect CG surfaces.',
+	'Shot on a full-frame camera with a 24mm tilt-shift lens, verticals corrected, natural human eye-level viewpoint from inside the space.'
 ];
 
 /** Priorities with any stake — prompts should never describe an empty zone. */
@@ -122,8 +138,9 @@ export function finalePrompt(
 		// what it is not, before describing content.
 		'A single photograph of one real interior, taken from one camera position.',
 		'NOT a collage, NOT a grid, NOT a multi-panel board, NOT a diagram, NOT an annotated floorplan, NOT a moodboard. One continuous room, one viewpoint.',
-		'Ultra high-quality photorealistic architectural interior — Common Ground room vision for Zyeta / ZyetaI.',
-		'Award-winning workplace photography: cinematic side daylight, warm timber, soft textiles, matte metal, shallow depth where natural.',
+		'Common Ground room vision for Zyeta / ZyetaI.',
+		...REALISM,
+		'Award-winning workplace photography: warm timber, soft textiles, matte metal, shallow depth where natural.',
 		'People using the space naturally — meeting, collaborating, focused work — never staring at camera.',
 		// The mix below describes what to BUILD, not what to caption. The model
 		// otherwise renders the percentages as on-image labels.
@@ -166,7 +183,8 @@ export function tableFunctionPrompt(
 		: '';
 
 	return [
-		`Ultra high-quality photorealistic workplace interior if ${functionName} set all priorities with a full ${budget} budget — ZyetaI concept lens.`,
+		`Workplace interior as it would be if ${functionName} set all priorities with a full ${budget} budget — ZyetaI concept lens.`,
+		...REALISM,
 		`Not a generic office — ${functionName} priority shape only; not the room average.`,
 		`Their mix: ${compositionLine(mix)}.`,
 		pref
