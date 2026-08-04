@@ -55,6 +55,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 		response.headers.set('Referrer-Policy', REFERRER_POLICY);
 		response.headers.set('Permissions-Policy', PERMISSIONS_POLICY);
 		response.headers.set('X-Content-Type-Options', 'nosniff');
+		/**
+		 * The page must be revalidated on every load.
+		 *
+		 * It carried no cache-control at all, only an ETag, so browsers fell back
+		 * to heuristic caching and could serve a stored copy without asking. That
+		 * copy names content-hashed chunks — which stop existing at the next
+		 * deploy — so a tab could 404 its own route imports and keep doing it
+		 * across reloads, because the reload re-served the same stale HTML.
+		 *
+		 * `no-cache` still allows the cache to be used, it just forces
+		 * revalidation first: with the ETag already present, an unchanged page is
+		 * a cheap 304. Assets keep their immutable year-long max-age — they are
+		 * content-addressed, so they are safe to keep forever.
+		 */
+		response.headers.set('Cache-Control', 'no-cache');
 	}
 	return response;
 };
