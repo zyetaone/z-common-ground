@@ -6,21 +6,22 @@
  * Screen 2 — Priority Breakdown.
  * 7 priorities ranked by share of room stake, each row shows:
  *   - rank, colour dot, name
- *   - horizontal bar (% of room)
- *   - $ amount (formatted with formatUsd)
+ *   - horizontal bar (% of room), segmented by contributing table
  *   - % of room
- *   - reach (how many of the 7 functions backed it)
  *
- * The math: $M amounts are absolute; % is share of the *room total* at the
- * current phase. So "13% of $700M = $91M" — the percentage and dollar are
- * consistent because the bar IS the share.
+ * The $ amount and a "backed by N/7" column used to sit here too. Both were
+ * restatements: $ is % of the room total printed in the header, and the reach
+ * count is exactly the number of segments in the bar. Removed rather than
+ * shown twice.
+ *
+ * The math: % is share of the *room total* at the current phase, so the bar
+ * IS the share.
  */
 	let { room }: { room: RoomState } = $props();
 
 	const labels = $derived(roomPriorities(room));
 	const mix = $derived(priorityMix(room.aggregate.matrix, labels));
 	const i = $derived(roomInsights(room));
-	const reachMap = $derived(room.aggregate.reach);
 	const totalCoins = $derived(room.aggregate.totalCoins);
 
 	/**
@@ -51,11 +52,20 @@
 			const median =
 				stakes.length % 2 ? stakes[mid] : (stakes[mid - 1] + stakes[mid]) / 2;
 			const max = stakes[stakes.length - 1];
-			// A table holding more than twice the typical stake is the signal that
-			// this priority is carried rather than shared.
 			out[p] = { stakes, median, max, concentrated: median > 0 && max > median * 2 };
 		}
 		return out;
+	});
+
+	const circ = 2 * Math.PI * 42;
+	const donutSlices = $derived.by(() => {
+		let accumPct = 0;
+		return mix.map((m) => {
+			const len = (m.pct / 100) * circ;
+			const offset = - (accumPct / 100) * circ;
+			accumPct += m.pct;
+			return { ...m, len, offset };
+		});
 	});
 </script>
 
@@ -66,18 +76,43 @@
 		</span>
 	</header>
 
-	<header class="cg-kicker legend" aria-label="Column legend">
-		<span class="lg-rank">#</span>
-		<span class="lg-name">Priority</span>
-		<span class="lg-bar">Share of room</span>
-		<span class="lg-amt">$ wagered</span>
-		<span class="lg-pct">%</span>
-		<span class="lg-reach">Backed by</span>
-	</header>
+	<div class="pb-visual-row">
+		<div class="donut-card" aria-label="Room Portfolio Mix Donut Chart">
+			<svg viewBox="0 0 120 120" class="donut-svg">
+				<circle cx="60" cy="60" r="42" fill="none" stroke="color-mix(in srgb, var(--color-ink) 8%, transparent)" stroke-width="14" />
+				{#each donutSlices as s (s.priority)}
+					{#if s.pct > 0}
+						<circle
+							cx="60"
+							cy="60"
+							r="42"
+							fill="none"
+							stroke={s.color}
+							stroke-width="14"
+							stroke-dasharray="{s.len} {circ}"
+							stroke-dashoffset={s.offset}
+							transform="rotate(-90 60 60)"
+							class="donut-slice"
+						/>
+					{/if}
+				{/each}
+			</svg>
+			<div class="donut-center">
+				<span class="donut-num">{mix.length}</span>
+				<span class="donut-sub">Priorities</span>
+			</div>
+		</div>
+
+		<div class="pb-table-wrap">
+			<header class="cg-kicker legend" aria-label="Column legend">
+				<span class="lg-rank">#</span>
+				<span class="lg-name">Priority</span>
+				<span class="lg-bar">Share of room</span>
+				<span class="lg-pct">%</span>
+			</header>
 
 	<section class="list stagger" role="list" aria-label="Priorities ranked by share of room stake">
 		{#each mix as m, rank (m.priority)}
-			{@const reach = reachMap[m.priority] ?? 0}
 			<div
 				class="row"
 				class:lead={rank === 0}
@@ -101,23 +136,12 @@
 						{/each}
 					</div>
 				</div>
-				<span class="pamt">{formatUsd(m.tokens)}</span>
 				<span class="ppct" style="color:{m.color}">{m.pct}%</span>
-				<span class="preach" aria-label="backed by {reach} of 7 functions">
-					<span class="reach-dots">
-						{#each Array(7) as _, d (d)}
-							<span
-								class="reach-dot"
-								class:on={d < reach}
-								style="--fn:{m.color}"
-							></span>
-						{/each}
-					</span>
-					<span class="reach-num">{reach}/7</span>
-				</span>
 			</div>
 		{/each}
 	</section>
+		</div>
+	</div>
 
 	<footer class="sum" aria-label="Total verification">
 		<span class="cg-kicker sum-lbl">All 7 sum to</span>
@@ -137,6 +161,69 @@
 		min-height: 0;
 		padding: 4px 4px 12px;
 	}
+	.pb-visual-row {
+		display: flex;
+		gap: 16px;
+		flex: 1;
+		min-height: 0;
+		align-items: stretch;
+	}
+	@media (max-width: 900px) {
+		.pb-visual-row {
+			flex-direction: column;
+		}
+		.donut-card {
+			display: none;
+		}
+	}
+	.donut-card {
+		width: 160px;
+		flex-shrink: 0;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		padding: 16px;
+	}
+	.donut-svg {
+		width: 130px;
+		height: 130px;
+	}
+	.donut-slice {
+		transition: stroke-dasharray 600ms ease, stroke-dashoffset 600ms ease;
+	}
+	.donut-center {
+		position: absolute;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+	}
+	.donut-num {
+		font-family: var(--font-display);
+		font-size: 22px;
+		font-weight: 800;
+		color: var(--color-ink);
+		line-height: 1;
+	}
+	.donut-sub {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 700;
+		color: var(--color-muted);
+		letter-spacing: 0.04em;
+	}
+	.pb-table-wrap {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		gap: 4px;
+	}
 	.hdr {
 		display: flex;
 		justify-content: space-between;
@@ -151,7 +238,7 @@
 		--k-size: 9px;
 		--k-track: 0.06em;
 		display: grid;
-		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 80px 44px 88px;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 64px;
 		align-items: center;
 		gap: 10px;
 		padding: 0 12px;
@@ -170,7 +257,7 @@
 	}
 	.row {
 		display: grid;
-		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 80px 44px 88px;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 64px;
 		align-items: center;
 		gap: 10px;
 		/* Seven rows at 39px used ~270px of a 739px stage and left the bottom
@@ -238,48 +325,11 @@
 	.pseg + .pseg {
 		border-left: 2px solid color-mix(in srgb, #10160f 55%, transparent);
 	}
-	.pamt {
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-weight: 700;
-		color: var(--color-ink);
-		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
 	.ppct {
 		font-family: var(--font-mono);
 		font-size: 18px;
 		font-weight: 800;
 		text-align: right;
-		font-variant-numeric: tabular-nums;
-	}
-	.preach {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-	}
-	.reach-dots {
-		display: inline-flex;
-		gap: 3px;
-	}
-	.reach-dot {
-		/* 6px is invisible from the back of a room. Reach is the field that
-		   separates broad support from one function's concentrated bet, so it
-		   has to survive the projector. */
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
-		background: color-mix(in srgb, var(--fn) 25%, transparent);
-		border: 1px solid color-mix(in srgb, var(--fn) 40%, transparent);
-	}
-	.reach-dot.on {
-		background: var(--fn);
-	}
-	.reach-num {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 700;
-		color: var(--color-muted);
 		font-variant-numeric: tabular-nums;
 	}
 	.sum {
@@ -315,7 +365,7 @@
 	@media (max-width: 720px) {
 		.legend,
 		.row {
-			grid-template-columns: 24px 10px minmax(0, 1fr) 64px 36px 64px;
+			grid-template-columns: 24px 10px minmax(0, 1fr) 1fr 48px;
 			gap: 8px;
 		}
 		.pbar-track,
