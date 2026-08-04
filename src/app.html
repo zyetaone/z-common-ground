@@ -11,7 +11,14 @@
 		/>
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover">
+	<!--
+		"tap" (pointerdown), not "hover". On hover SvelteKit preloaded each
+		route's JS and CSS on every pointer pass, and the deck is dense with
+		links the presenter sweeps over without clicking — so most preloads went
+		unused and Chrome logged one warning per wasted <link rel=preload>.
+		pointerdown still beats the click by ~100ms, which is the whole benefit.
+	-->
+	<body data-sveltekit-preload-data="tap">
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

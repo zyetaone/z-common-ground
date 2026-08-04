@@ -50,8 +50,17 @@ let zyetaiCancelled = false;
 function applyRoom(next: RoomState | null | undefined) {
 	if (!next || typeof next !== 'object') return;
 	// Never apply an older snapshot over a newer one (out-of-order mutation
-	// responses vs polls). Ties apply — same state either way.
+	// responses vs polls).
 	if (room && (next.updatedAt ?? 0) < (room.updatedAt ?? 0)) return;
+	// Nor an identical one. Ties used to "apply — same state either way", but
+	// $state.raw notifies on reference, not value: a tie swapped in a new object
+	// and invalidated every subscriber, so the whole deck re-derived
+	// functionProfiles / roomInsights / roomRoundStory for a room that had not
+	// changed. That is the `[Violation] setInterval handler took 52ms`.
+	if (room && (next.updatedAt ?? 0) === (room.updatedAt ?? 0)) {
+		connected = true;
+		return;
+	}
 	// Always replace reference so $state.raw notifies subscribers
 	room = next;
 	connected = true;
