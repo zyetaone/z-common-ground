@@ -17,6 +17,17 @@ const INTERVAL = 500;
 /** Longer than any healthy poll (measured ~320-420ms) and short enough that a
  *  stalled request costs a few ticks, not the session. */
 const POLL_TIMEOUT = 4000;
+/**
+ * Room mutations are one D1 compare-and-swap; 15s is far beyond the worst
+ * observed and still bounded. Without a bound, a single stalled POST hangs its
+ * caller forever — and because mutate() holds `busy` for the whole call, the
+ * UI stays disabled with no error and no way back but a reload. That is what
+ * wedged the emulate run: 21 sequential POSTs, any one of which could stall.
+ *
+ * AI routes pass their own — a fal render legitimately takes minutes.
+ */
+const MUTATE_TIMEOUT = 15_000;
+const AI_TIMEOUT = 300_000;
 
 let room = $state.raw<RoomState | null>(null);
 let connected = $state(false);
@@ -73,7 +84,7 @@ function applyRoom(next: RoomState | null | undefined) {
 async function post<T>(
 	url: string,
 	body?: unknown,
-	opts?: { idempotent?: boolean; idempotencyKey?: string }
+	opts?: { idempotent?: boolean; idempotencyKey?: string; timeoutMs?: number }
 ): Promise<T> {
 	const headers: Record<string, string> = { 'content-type': 'application/json' };
 	if (opts?.idempotent !== false) {
@@ -99,7 +110,11 @@ async function post<T>(
 				method: 'POST',
 				headers,
 				body: JSON.stringify(body ?? {}),
-				cache: 'no-store'
+				cache: 'no-store',
+				// A timeout surfaces as an AbortError, which the retry below treats
+				// like any network failure: replayed once with the SAME idempotency
+				// key, so a request that did land is not applied twice.
+				signal: AbortSignal.timeout(opts?.timeoutMs ?? MUTATE_TIMEOUT)
 			});
 		} catch (e) {
 			if (attempt === 0) continue; // network error — safe to replay with same key
@@ -456,7 +471,7 @@ export const session = {
 				imageError?: 'no_key' | 'failed';
 				paletteSize?: number;
 				room?: RoomState;
-			}>(`/api/ai/room-concept`, { code: SESSION, t: Date.now() });
+			}>(`/api/ai/room-concept`, { code: SESSION, t: Date.now() }, { timeoutMs: AI_TIMEOUT });
 			if (res.room) applyRoom(res.room);
 			else await poll();
 			return { ok: true as const, ...res };
@@ -502,7 +517,7 @@ export const session = {
 				tableId: number;
 				functionName?: string;
 				room?: RoomState;
-			}>(`/api/ai/table-render`, { tableId });
+			}>(`/api/ai/table-render`, { tableId }, { timeoutMs: AI_TIMEOUT });
 			if (res.room) applyRoom(res.room);
 			else await poll();
 			return res;
@@ -523,7 +538,7 @@ export const session = {
 				briefSource: 'numbers' | 'rapidi';
 				rapidi: boolean;
 				room?: RoomState;
-			}>(`/api/ai/brief`, { code: SESSION });
+			}>(`/api/ai/brief`, { code: SESSION }, { timeoutMs: AI_TIMEOUT });
 			if (res.room) applyRoom(res.room);
 			else await poll();
 			return res;
@@ -549,7 +564,7 @@ export const session = {
 				count: number;
 				imageError?: 'no_key' | 'failed';
 				room?: RoomState;
-			}>(`/api/ai/workspace-design`, { code: SESSION });
+			}>(`/api/ai/workspace-design`, { code: SESSION }, { timeoutMs: AI_TIMEOUT });
 			if (res.room) applyRoom(res.room);
 			else await poll();
 			return res;
@@ -576,7 +591,7 @@ export const session = {
 				count: number;
 				imageError?: 'no_key' | 'failed';
 				room?: RoomState;
-			}>(`/api/ai/workspace-design`, { code: SESSION, kind });
+			}>(`/api/ai/workspace-design`, { code: SESSION, kind }, { timeoutMs: AI_TIMEOUT });
 			if (res.room) applyRoom(res.room);
 			else await poll();
 			return res;
@@ -679,7 +694,7 @@ export const session = {
 				briefSource: 'numbers' | 'rapidi';
 				rapidi: boolean;
 				room?: RoomState;
-			}>(`/api/ai/brief`, { code: SESSION });
+			}>(`/api/ai/brief`, { code: SESSION }, { timeoutMs: AI_TIMEOUT });
 			if (briefRes.room) applyRoom(briefRes.room);
 			lastBrief = briefRes.brief;
 			lastSource = briefRes.briefSource;
@@ -693,7 +708,7 @@ export const session = {
 			const roomImg = await post<ImgRes>(`/api/ai/room-concept`, {
 				code: SESSION,
 				t: Date.now()
-			});
+			}, { timeoutMs: AI_TIMEOUT });
 			if (roomImg.room) applyRoom(roomImg.room);
 			lastUrl = roomImg.url;
 			if (roomImg.imageError) lastImageError = roomImg.imageError;
@@ -714,7 +729,7 @@ export const session = {
 				pending.map((t) => t.id),
 				async (tableId, i) => {
 					report(`Rendering function lens ${i + 1} of ${pending.length}…`);
-					return post<ImgRes>(`/api/ai/table-render`, { tableId });
+					return post<ImgRes>(`/api/ai/table-render`, { tableId }, { timeoutMs: AI_TIMEOUT });
 				},
 				(_id, tr) => {
 					if (tr.room) applyRoom(tr.room);
@@ -731,7 +746,7 @@ export const session = {
 			// 5 · Lookbook — compose once after images exist
 			step(5);
 			report('Composing lookbook brief…');
-			const compose = await post<ComposeRes>(`/api/ai/compose-brief`, { code: SESSION });
+			const compose = await post<ComposeRes>(`/api/ai/compose-brief`, { code: SESSION }, { timeoutMs: AI_TIMEOUT });
 			if (compose.room) applyRoom(compose.room);
 			lastBrief = compose.brief ?? lastBrief;
 			lastSource = compose.briefSource ?? lastSource;
@@ -751,7 +766,7 @@ export const session = {
 						count: number;
 						imageError?: 'no_key' | 'failed';
 						room?: RoomState;
-					}>(`/api/ai/workspace-design`, { code: SESSION });
+					}>(`/api/ai/workspace-design`, { code: SESSION }, { timeoutMs: AI_TIMEOUT });
 					if (design.room) applyRoom(design.room);
 					lastImageError = design.imageError;
 					designCount = design.count;
@@ -858,7 +873,7 @@ export const session = {
 				brief?: string;
 				briefSource?: 'numbers' | 'rapidi' | 'manual';
 				room?: RoomState;
-			}>('/api/ai/brief-edit', { brief: text, source: 'manual' });
+			}>('/api/ai/brief-edit', { brief: text, source: 'manual' }, { timeoutMs: AI_TIMEOUT });
 			if (res.room) applyRoom(res.room);
 			else await poll();
 		} catch (e) {
