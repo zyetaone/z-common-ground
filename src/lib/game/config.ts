@@ -83,6 +83,28 @@ export const PERSONAS: Persona[] = [
 export const N_SEATS = PERSONAS.length;
 
 /**
+ * Projector-length priority names, index-aligned with PRIORITIES.
+ *
+ * "Employee Experience" and "Future Readiness" don't fit a 7-column header at
+ * the back of a room. Two components had grown their own private copy of this
+ * array, so a renamed priority would have been renamed in one screen only.
+ */
+export const PRIORITY_SHORT = [
+	'Talent',
+	'Experience',
+	'Brand',
+	'Productivity',
+	'Innovation',
+	'Cost / ROI',
+	'Future'
+] as const;
+
+/** Short label for a priority index, falling back to the room's own label. */
+export function priorityShort(i: number, fallback?: string): string {
+	return PRIORITY_SHORT[i] ?? fallback ?? PRIORITIES[i] ?? '—';
+}
+
+/**
  * Priority palette — the chart encoding, not brand chrome.
  *
  * Tuned for a projected stacked bar seen from across a room. Two pairs used to

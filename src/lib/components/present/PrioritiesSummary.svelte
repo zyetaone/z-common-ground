@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import { PRIORITY_COLORS, roomPersonas, roomPriorities } from '$lib/game';
+	import { PRIORITY_COLORS, priorityShort, roomPersonas, roomPriorities } from '$lib/game';
 
 	/**
 	 * Screen 4 — What each function did, one line per function.
@@ -23,8 +23,7 @@
 	type Side = { priority: number; name: string; tokens: number; color: string };
 	type FunctionLine = { seat: number; name: string; color: string; gave: Side[]; bought: Side[] };
 
-	const SHORT = ['Talent', 'Experience', 'Brand', 'Productivity', 'Innovation', 'Cost / ROI', 'Future'];
-	const shortName = (i: number) => SHORT[i] ?? names[i] ?? '—';
+	const shortName = (i: number) => priorityShort(i, names[i]);
 
 	const lines = $derived.by((): FunctionLine[] => {
 		const hist = [...(room.history ?? [])]

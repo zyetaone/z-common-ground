@@ -3,6 +3,7 @@
 	import { N_PRIORITIES } from '$lib/game/types';
 	import {
 		PRIORITY_COLORS,
+		priorityShort,
 		formatUsd,
 		roomPersonas,
 		roomPortrait,
@@ -17,8 +18,7 @@
 	const names = $derived(roomPriorities(room));
 	const n = $derived(personas.length);
 
-	const SHORT = ['Talent', 'Experience', 'Brand', 'Productivity', 'Innovation', 'Cost / ROI', 'Future'];
-	const short = (ci: number, label: string) => SHORT[ci] ?? label;
+	const short = priorityShort;
 
 	const model = $derived.by(() => {
 		const seatCoins = roomPortrait(room.tables);
