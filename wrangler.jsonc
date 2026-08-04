@@ -1,21 +1,15 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "common-ground-phygital",
+	"name": "z-common-ground",
 	"compatibility_date": "2026-07-01",
 	"compatibility_flags": ["nodejs_compat"],
-	"main": ".svelte-kit/cloudflare/_worker.js",
-	// Every request that isn't a 304 touches D1, and D1 has ONE primary. Without
-	// this the Worker runs at the colo nearest the phone and pays a round trip
-	// per read and up to three per compare-and-swap write; smart placement runs
-	// it next to the database instead. Takes a few hundred requests to learn.
-	"placement": { "mode": "smart" },
-	// Request logs + traces in the dashboard. This app's failure mode is latency,
-	// not errors, and without this there is nothing to look at after the session.
-	"observability": { "enabled": true },
-	"assets": {
-		"binding": "ASSETS",
-		"directory": ".svelte-kit/cloudflare"
-	},
+	// Cloudflare Pages, not a Worker. The only reason is DNS: a Worker Custom
+	// Domain must live in a zone this account owns, but a Pages custom domain
+	// accepts a CNAME from a zone in someone else's Cloudflare account. That is
+	// what lets common-ground.zyeta.asia point here without Zyeta handing over
+	// their dashboard — the same route corenet and z-interact already take.
+	// Deploy with `wrangler pages deploy`; plain `wrangler deploy` no longer applies.
+	"pages_build_output_dir": ".svelte-kit/cloudflare",
 	// Workers AI — Llama 3 brief narrative (no key; uses account AI binding)
 	"ai": {
 		"binding": "AI"
@@ -29,5 +23,5 @@
 			"database_id": "7c40c4ce-932b-450c-97f4-3daab7907375"
 		}
 	]
-	// Optional: wrangler secret put FAL_API_KEY  (finale workspace image)
+	// Optional: wrangler pages secret put FAL_API_KEY  (finale workspace image)
 }

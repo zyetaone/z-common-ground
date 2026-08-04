@@ -5,7 +5,7 @@
 		drawingSetFromRoom,
 		roomInsights,
 		roomRoundStory,
-		roomThesis
+	roomThesis,
 	} from '$lib/game';
 	import { SESSION, session } from '$lib/state';
 	import ZyetaI from '$lib/components/ZyetaI.svelte';
@@ -31,6 +31,7 @@
 	const insights = $derived(roomInsights(room));
 	const story = $derived(roomRoundStory(room));
 	const thesis = $derived(roomThesis(room));
+	const program = $derived(spatialProgramFromAggregate(room.aggregate, room));
 	const narrative = $derived(room.enhancedBrief ?? '');
 
 	let drawIdx = $state(0);
@@ -84,8 +85,8 @@
 			<button type="button" class="btn ghost" onclick={onClose}>Close</button>
 		</div>
 	</header>
+<section class="sec narr">
 
-	<section class="sec narr">
 		<div class="sec-h">
 			<h2>01 · Brief</h2>
 			<div class="acts-inline">
@@ -98,10 +99,84 @@
 				{/if}
 			</div>
 		</div>
+
 		{#if editing}
 			<textarea class="edit-area" bind:value={draft} rows="12" aria-label="Edit brief"></textarea>
-		{:else if narrative}
-			<pre class="narr-body">{narrative}</pre>
+		{:else if program.hasStake}
+			<!-- Mandate — the one thing the boardroom needs to remember. Set in display
+			     type so it reads as a sentence, not a data point. -->
+			{#if program.mandate}
+				<section class="brief-mandate" aria-label="Mandate">
+					<span class="brief-kicker">Mandate</span>
+					<p class="brief-mandate-body">{program.mandate}</p>
+				</section>
+			{/if}
+
+			<!-- Shape — three labeled rows. Lead / Fault / Blind are the architectural
+			     lens vocabulary; this is the brief's "Site context" paragraph. -->
+			<section class="brief-shape" aria-label="Shape">
+				<span class="brief-kicker">Shape</span>
+				<dl class="brief-shape-list">
+					{#if program.lead}
+						<div class="brief-shape-row">
+							<dt>Lead</dt>
+							<dd>
+								<span class="brief-shape-pct">{insights.index}</span>
+							</dd>
+							<dd class="brief-shape-note">{program.lead}</dd>
+						</div>
+					{/if}
+					{#if program.resolve}
+						<div class="brief-shape-row">
+							<dt>Fault</dt>
+							<dd>
+								<strong>{insights.fault}</strong>
+							</dd>
+							<dd class="brief-shape-note">{program.resolve}</dd>
+						</div>
+					{/if}
+					{#if program.blind}
+						<div class="brief-shape-row">
+							<dt>Blind</dt>
+							<dd>
+								<strong>{insights.blind}</strong>
+							</dd>
+							<dd class="brief-shape-note">{program.blind}</dd>
+						</div>
+					{/if}
+				</dl>
+			</section>
+
+			<!-- Program — the spatial delivery list. Per priority: % of room weight,
+			     money, the spatial language from config (which attributes describe
+			     what that priority means in physical space), and 3 keywords. -->
+			<section class="brief-program" aria-label="Program">
+				<span class="brief-kicker">Program</span>
+				<ul class="brief-program-list">
+					{#each program.program as p (p.priority)}
+						<li class="brief-program-row" style="--c:{p.color}">
+							<span class="brief-program-pct" aria-label="{p.name} at {p.pct}% of room mix">{p.pct}%</span>
+							<span class="brief-program-name">{p.name}</span>
+							<span class="brief-program-money">{p.money}</span>
+							<p class="brief-program-space">{p.space}</p>
+							<p class="brief-program-keywords">
+								{#each p.keywords.slice(0, 4) as k (k)}<span>{k}</span>{/each}
+							</p>
+						</li>
+					{/each}
+				</ul>
+			</section>
+
+			<!-- AI narrative — kept as a closing epigraph rather than the spine.
+			     The structure above is the architectural document; the ZyetaI prose
+			     is the humanistic gloss the boardroom reads aloud. Smaller, italic,
+			     framed as a quote. -->
+			{#if narrative}
+				<section class="brief-epigraph" aria-label="ZyetaI read-aloud">
+					<span class="brief-kicker">ZyetaI read-aloud</span>
+					<blockquote class="brief-epigraph-body">{narrative}</blockquote>
+				</section>
+			{/if}
 		{:else}
 			<p class="muted">No brief yet — generate concepts first.</p>
 		{/if}

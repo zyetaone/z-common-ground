@@ -25,7 +25,12 @@ import type { Handle } from '@sveltejs/kit';
 
 const CSP = [
 	"default-src 'self'",
-	"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'",
+	// static.cloudflareinsights.com: Cloudflare injects its Web Analytics beacon
+	// into proxied HTML at the edge, after this header is set. Without it here
+	// the browser blocks the script and logs a CSP violation on every page load.
+	// The beacon reports to /cdn-cgi/rum on the same origin, so connect-src
+	// needs nothing extra.
+	"script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://static.cloudflareinsights.com",
 	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 	"font-src 'self' https://fonts.gstatic.com data:",
 	"img-src 'self' data: blob: https://*.fal.media https://*.fal.ai https://fal.ai",
