@@ -183,6 +183,8 @@ export function tableFunctionPrompt(
 		: '';
 
 	return [
+		'A single photograph of one real interior, taken from one camera position.',
+		'NOT a collage, NOT a grid, NOT a multi-panel board, NOT an annotated floorplan. One continuous room.',
 		`Workplace interior as it would be if ${functionName} set all priorities with a full ${budget} budget — ZyetaI concept lens.`,
 		...REALISM,
 		`Not a generic office — ${functionName} priority shape only; not the room average.`,
@@ -236,7 +238,7 @@ export function briefFactsForRapidi(agg: Aggregate, room?: RoomState | null): st
 		? [
 				`ANALYSIS (use these as truth — do not invent numbers)`,
 				`Common Ground Index: ${insights.index}/100 → verdict ${insights.verdict}.`,
-				`Lead: ${insights.lead}. Fault (divide): ${insights.fault}. Blind: ${insights.blind} (${formatUsd(insights.blindTokens)}).`,
+				`Lead: ${insights.lead}. Fault (divide): ${insights.fault}${insights.fault === insights.blind ? ' (also the blind)' : ''}. Blind: ${insights.blind} (${formatUsd(insights.blindTokens)}).`,
 				insights.arc ? `Room arc: ${insights.arc.line}` : '',
 				insights.surprise
 					? `Surprise: ${personas[insights.surprise.seat]?.name ?? 'A function'} → ${insights.surprisePriority ?? labels[insights.surprise.priority]}.`
