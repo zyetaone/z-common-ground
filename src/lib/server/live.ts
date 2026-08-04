@@ -23,6 +23,43 @@ import type { RoomState } from '$lib/game/types';
 
 const MAX_ATTEMPTS = 3;
 
+/**
+ * Ceiling on any single await in the read path.
+ *
+ * Nothing here used to have a deadline: `readLiveRoom` awaits `writeChain`,
+ * which is a module-level promise that every writer chains onto, and then
+ * awaits a D1 fetch. If either stalls rather than rejects, the request never
+ * responds — the client sees an open connection with no first byte, and every
+ * later read on that isolate queues behind it.
+ *
+ * Observed in production: static assets on the same host returned 0/8 hung
+ * while /api/room/LIVE/state hung 6/8, with TCP and TLS completing in ~150ms
+ * and TTFB never arriving. Direct D1 queries answered in ~2ms throughout, so
+ * the database was healthy and the stall was in waiting on it.
+ *
+ * 5s is well past a healthy request (~200-400ms end to end) and well inside
+ * the 500ms poll's tolerance for a skipped beat: a poll that degrades to the
+ * in-memory snapshot is invisible, a poll that never returns is a dead deck.
+ */
+const READ_DEADLINE_MS = 5_000;
+
+/**
+ * Resolve to `fallback` if `p` has not settled within `ms`.
+ *
+ * The timer is always cleared, so a slow-but-successful promise can't leave a
+ * pending timeout holding the isolate open.
+ */
+function withDeadline<T>(p: Promise<T>, ms: number, fallback: () => T, label: string): Promise<T> {
+	let timer: ReturnType<typeof setTimeout>;
+	const guard = new Promise<T>((resolve) => {
+		timer = setTimeout(() => {
+			console.warn(`[live] ${label} exceeded ${ms}ms — serving in-memory state`);
+			resolve(fallback());
+		}, ms);
+	});
+	return Promise.race([p, guard]).finally(() => clearTimeout(timer)) as Promise<T>;
+}
+
 /** The D1 binding for the current request (undefined in non-request contexts). */
 function db() {
 	return getRequestEvent().platform?.env?.common_ground_db;
@@ -88,8 +125,15 @@ export function withLiveRoom<T>(fn: () => T): Promise<T> {
 export async function readLiveRoom(): Promise<RoomState> {
 	if (writersWaiting > 0) {
 		// A write is queued or running — ride behind it so we observe its result
-		// and can't interleave with its CAS persist.
-		await writeChain.catch(() => {});
+		// and can't interleave with its CAS persist. Bounded: writeChain is a
+		// module-level promise every writer appends to, so one stalled writer
+		// would otherwise park every later read on this isolate forever.
+		await withDeadline(
+			writeChain.catch(() => {}) as Promise<void>,
+			READ_DEADLINE_MS,
+			() => undefined,
+			'read waiting on writeChain'
+		);
 	}
 	readAcquired();
 	try {
@@ -122,7 +166,15 @@ async function readRoom(): Promise<RoomState> {
 	// never trigger a persist — writing stale memory over the authoritative
 	// row would silently roll back live state.
 	const d = d1Health();
-	const { existed, failed } = await store.sync(d);
+	// A stalled D1 fetch degrades to the in-memory snapshot rather than hanging
+	// the request. `failed: true` on the timeout path is what stops the seed
+	// below from firing and overwriting D1 with possibly-stale memory.
+	const { existed, failed } = await withDeadline(
+		store.sync(d),
+		READ_DEADLINE_MS,
+		() => ({ existed: true, failed: true }),
+		'store.sync'
+	);
 	const room = store.ensure();
 	if (!existed && !failed) await store.persist(d);
 	return room;
