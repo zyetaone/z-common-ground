@@ -1,12 +1,13 @@
 <script lang="ts">
-	import type { RoomState } from '$lib/game/types';
-	import {
-		designCardsFromRoom,
-		drawingSetFromRoom,
-		roomInsights,
-		roomRoundStory,
+import type { RoomState } from '$lib/game/types';
+import {
+	designCardsFromRoom,
+	drawingSetFromRoom,
+	roomInsights,
+	roomRoundStory,
 	roomThesis,
-	} from '$lib/game';
+	spatialProgramFromAggregate
+} from '$lib/game';
 	import { SESSION, session } from '$lib/state';
 	import ZyetaI from '$lib/components/ZyetaI.svelte';
 
@@ -518,17 +519,159 @@
 		font-size: 10px;
 		color: var(--color-muted);
 	}
-	.narr-body {
-		margin: 0;
-		padding: 10px 12px;
-		border-radius: 10px;
-		border: 1px solid var(--color-line);
-		background: var(--color-panel);
-		font-family: var(--font-sans);
-		font-size: 15px;
-		line-height: 1.6;
-		white-space: pre-wrap;
-	}
+/* ── 01 Brief: architectural-brief structure ──
+   Mandate = the one sentence the boardroom must remember.
+   Shape = the three architectural lenses (lead / fault / blind) as a labelled list.
+   Program = per-priority spatial delivery (the "things on the ground").
+   Epigraph = the AI narrative as a closing quote, not the spine. */
+.brief-kicker {
+	font-family: var(--font-mono);
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--color-gold);
+	margin: 14px 0 6px;
+	display: block;
+}
+.brief-mandate {
+	padding: 12px 14px;
+	border-left: 3px solid var(--color-gold);
+	background: color-mix(in srgb, var(--color-gold) 6%, var(--color-panel));
+	border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+	margin: 0 0 6px;
+}
+.brief-mandate-body {
+	margin: 4px 0 0;
+	font-family: var(--font-display);
+	font-size: 17px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--color-ink);
+	letter-spacing: -0.01em;
+}
+.brief-shape-list {
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+.brief-shape-row {
+	display: grid;
+	grid-template-columns: 56px 1fr;
+	gap: 4px 12px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--color-panel);
+	border: 1px solid var(--color-line);
+	align-items: baseline;
+}
+.brief-shape-row dt {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--color-muted);
+}
+.brief-shape-row dd {
+	margin: 0;
+	font-size: 13px;
+	color: var(--color-ink);
+}
+.brief-shape-row dd strong {
+	font-family: var(--font-display);
+	font-weight: 700;
+}
+.brief-shape-pct {
+	display: inline-block;
+	margin-left: 8px;
+	font-family: var(--font-display);
+	font-variant-numeric: tabular-nums;
+	color: var(--color-teal-ink);
+}
+.brief-shape-note {
+	grid-column: 2;
+	font-size: 11px;
+	color: var(--color-muted);
+	font-style: italic;
+}
+.brief-program-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.brief-program-row {
+	display: grid;
+	grid-template-columns: 38px 1fr auto;
+	grid-template-rows: auto auto auto;
+	gap: 2px 12px;
+	padding: 8px 10px 10px;
+	border-radius: 8px;
+	border-left: 3px solid var(--c, var(--color-line));
+	background: color-mix(in srgb, var(--c, var(--color-line)) 4%, var(--color-panel));
+}
+.brief-program-pct {
+	grid-row: 1 / span 2;
+	font-family: var(--font-display);
+	font-size: 18px;
+	font-weight: 800;
+	color: var(--c, var(--color-ink));
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+.brief-program-name {
+	font-family: var(--font-display);
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--color-ink);
+	text-transform: capitalize;
+}
+.brief-program-money {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	color: var(--color-muted);
+	font-variant-numeric: tabular-nums;
+}
+.brief-program-space {
+	grid-column: 2 / span 2;
+	margin: 2px 0 4px;
+	font-size: 12px;
+	color: var(--color-ink);
+	line-height: 1.4;
+}
+.brief-program-keywords {
+	grid-column: 2 / span 2;
+	margin: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 3px;
+}
+.brief-program-keywords span {
+	font-family: var(--font-mono);
+	font-size: 9px;
+	padding: 1px 6px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--c) 14%, transparent);
+	color: var(--c, var(--color-ink));
+}
+.brief-epigraph {
+	margin: 16px 0 4px;
+	padding: 10px 14px;
+	border-left: 2px solid var(--color-line);
+}
+.brief-epigraph-body {
+	margin: 0;
+	font-style: italic;
+	color: var(--color-muted);
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
 	.edit-area {
 		width: 100%;
 		min-height: 180px;
