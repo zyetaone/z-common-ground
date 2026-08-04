@@ -312,6 +312,18 @@
 			actionBusy={session.busy}
 			onaction={onFreeze}
 		/>
+	{:else if phase === 'round' && !canCapture}
+		<!-- R1 and R4 don't seal, so nothing is captured from the phone: the chips
+		     move on the physical board and the next seal round records where they
+		     landed. Showing the input here invited players to type a board that
+		     was never read, and to re-type it at the next capture. -->
+		<MobileWaitStage
+			icon="target"
+			heading="Play this round on the board"
+			sub={scenario?.instruction
+				? `${scenario.instruction} Round ${roundLabel} isn't captured — your table records the board at the next seal.`
+				: `Round ${roundLabel} isn't captured — your table records the board at the next seal.`}
+		/>
 	{:else if phase === 'round'}
 		<MobileBoardForm
 			{counts}
