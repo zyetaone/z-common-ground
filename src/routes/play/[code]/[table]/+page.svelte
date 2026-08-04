@@ -314,16 +314,18 @@
 			onaction={onFreeze}
 		/>
 	{:else if phase === 'round' && !canCapture}
-		<!-- R1 and R4 don't seal, so nothing is captured from the phone: the chips
-		     move on the physical board and the next seal round records where they
-		     landed. Showing the input here invited players to type a board that
-		     was never read, and to re-type it at the next capture. -->
+		<!-- Only reachable AFTER freeze — the branch above holds the round until
+		     then. So this is the done state, not an instruction: R1 and R4 never
+		     capture, so there is nothing left for this player to do but wait. It
+		     used to say "Play this round on the board" to someone who had just
+		     frozen, and repeat the scenario question the header already shows. -->
 		<MobileWaitStage
-			icon="target"
-			heading="Play this round on the board"
-			sub={scenario?.instruction
-				? `${scenario.instruction} Round ${roundLabel} isn't captured — your table records the board at the next seal.`
-				: `Round ${roundLabel} isn't captured — your table records the board at the next seal.`}
+			icon="check"
+			heading="Round {roundLabel} frozen"
+			sub="Your board is set. Nothing to enter this round — wait for Round {Math.min(
+				roundCount,
+				roundLabel + 1
+			)}."
 		/>
 	{:else if phase === 'round'}
 		<MobileBoardForm
