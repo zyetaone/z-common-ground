@@ -27,6 +27,16 @@ import {
 import type { Aggregate, RoomState } from '$lib/game/types';
 import type { DesignCard } from '$lib/game/brief';
 
+/**
+ * Every image prompt ends the same way, and both copies have to stay in step:
+ * the day one of them loses "no text anywhere", that render comes back with
+ * percentage labels drawn on the wall.
+ */
+const NO_TEXT_NO_CHROME = [
+	'Wide-angle 16:9 architectural photograph, 2K clarity, no charts, no UI chrome, no borders, no split frames.',
+	'No text anywhere in the image: no labels, no captions, no percentages, no annotations, no watermarks, no corporate logos — pure architecture.'
+];
+
 /** Priorities with any stake — prompts should never describe an empty zone. */
 const nonZero = (mix: PriorityMix[]) => mix.filter((m) => m.pct > 0);
 
@@ -119,14 +129,17 @@ export function finalePrompt(
 		// otherwise renders the percentages as on-image labels.
 		'The following describes what to build and how much floor area each use gets. Express it purely as architecture — never as written labels, callouts or percentages drawn on the image.',
 		`Priority mix → multi-zone floorplate (same ${budget} wallets combined): ${compositionLine(mix)}.`,
-		`Preferred zones dominate the plan: ${prefZones || spatialLine(mix)}.`,
-		`Floorplate expresses capital: ${spatialLine(mix)}.`,
+		// One spatial sentence, not two. This used to emit `prefZones || spatialLine`
+		// and then `spatialLine` again, so with no preferred zones the prompt
+		// carried the identical clause twice in consecutive sentences.
+		prefZones
+			? `Preferred zones dominate the plan: ${prefZones}.`
+			: `Floorplate expresses capital: ${spatialLine(mix)}.`,
 		`Design language by priority weight: ${attrs}.`,
 		`Zone colour branding (subtle, architectural — not logos): ${zonePalette || 'warm neutrals with teal and gold accents'}.`,
 		'Higher-% priorities own largest floorplate share, focal materials, and lighting; lower-% stay secondary rooms off the main axis.',
 		'All zones are visible together in one uninterrupted wide shot, flowing into each other across the same floor — open collaboration, focus, wellness, tech and brand moments sized by weight.',
-		'Wide-angle 16:9 architectural photograph, 2K clarity, no charts, no UI chrome, no borders, no split frames.',
-		'No text anywhere in the image: no labels, no captions, no percentages, no annotations, no watermarks, no corporate logos — pure architecture.'
+		...NO_TEXT_NO_CHROME
 	].join(' ');
 }
 
@@ -156,14 +169,14 @@ export function tableFunctionPrompt(
 		`Ultra high-quality photorealistic workplace interior if ${functionName} set all priorities with a full ${budget} budget — ZyetaI concept lens.`,
 		`Not a generic office — ${functionName} priority shape only; not the room average.`,
 		`Their mix: ${compositionLine(mix)}.`,
-		`Preferred zones for this function: ${pref || spatialLine(mix, 4, true)}.`,
-		`Architecture: ${spatialLine(mix, 4, true)}.`,
+		pref
+			? `Preferred zones for this function: ${pref}.`
+			: `Architecture: ${spatialLine(mix, 4, true)}.`,
 		attrLine,
 		brand,
 		'Multi-zone floorplate in one frame — zone sizes follow their $ weight; secondary zones read smaller.',
 		'People using the space; cinematic daylight; materials and soft colour accents match the mix.',
-		'Wide-angle 16:9 architectural photo, 2K clarity, no charts, no UI chrome, no corporate logos.',
-		'No text anywhere in the image: no labels, no captions, no watermarks — pure architecture.'
+		...NO_TEXT_NO_CHROME
 	].join(' ');
 }
 
@@ -174,12 +187,14 @@ export function tableFunctionPrompt(
  * rapidi.ts: a system prompt is brand voice, and this file is the one place
  * that voice is meant to be reviewable without reading transport code.
  */
-export const BRIEF_SYSTEM = `You are ZyetaI for Zyeta Common Ground (CoreNet boardroom).
-Answer: where would each function spend their $100M, where is Common Ground, and what would that workplace look like.
+export function briefSystem(wallet = '$100M'): string {
+	return `You are ZyetaI for Zyeta Common Ground (CoreNet boardroom).
+Answer: where would each function spend their ${wallet}, where is Common Ground, and what would that workplace look like.
 Use the priority mix, lead, fault, blind, surprise, and journey facts in the user message.
 Methodology note: this is a facilitated exercise. All 7 functions carry equal weight regardless of organisational size or budget authority. Alignment (CGI) is mean pairwise cosine similarity. "Lead" uses breadth of support; "fault" uses variance; "blind" is lowest-funded. These are directional signals from a structured conversation, not deterministic conclusions. Acknowledge this framing naturally — do not over-caveat but do not present the numbers as scientific fact.
 Voice: crisp, senior, specific. No bullets of generic adjectives. Prefer one bold sentence over five hedged ones.
 Under 320 words. Sharp. Visual.`;
+}
 
 /** Complete brief after every function image exists — recombine design JSON cards. */
 export const COMPOSE_SYSTEM = `You are ZyetaI. Design JSON cards reverse-engineered from each render:
@@ -223,9 +238,9 @@ export function briefFactsForRapidi(agg: Aggregate, room?: RoomState | null): st
 						s.protected.length
 							? `Protected under cut: ${s.protected.map((p) => p.name).join(', ')}.`
 							: '',
-						s.cut.length ? `Cut: ${s.cut.map((p) => `${p.name} ${p.deltaPts}pts`).join(', ')}.` : '',
+						s.cut.length ? `Cut: ${s.cut.map((p) => `${p.name} ${p.deltaPts}%`).join(', ')}.` : '',
 						s.reprioritised.length
-							? `Reprioritised: ${s.reprioritised.map((p) => `${p.name} +${p.deltaPts}pts`).join(', ')}.`
+							? `Reprioritised: ${s.reprioritised.map((p) => `${p.name} +${p.deltaPts}%`).join(', ')}.`
 							: ''
 					]
 						.filter(Boolean)

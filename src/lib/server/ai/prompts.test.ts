@@ -7,7 +7,7 @@
  * with no test failing. These lock the output shape against known inputs.
  */
 import { describe, expect, it } from 'vitest';
-import { finalePrompt, tableFunctionPrompt, briefFactsForRapidi } from './prompts';
+import { finalePrompt, tableFunctionPrompt, briefFactsForRapidi, briefSystem } from './prompts';
 import { aggregate, emptyMatrix, personaBiasList } from '$lib/game';
 import type { Matrix7x7, RoomState, TableState } from '$lib/game/types';
 
@@ -92,5 +92,20 @@ describe('prompt parity after the game/ → server/ai/ move', () => {
 		empty.tables = empty.tables.map((t) => ({ ...t, matrix: Array(7).fill(0) }));
 		empty.aggregate = aggregate(empty.tables, personaBiasList());
 		expect(() => briefFactsForRapidi(empty.aggregate, empty)).not.toThrow();
+	});
+});
+
+describe('prompt hygiene', () => {
+	it('the system prompt quotes the wallet it was given, not a hard-coded $100M', () => {
+		expect(briefSystem('$70M')).toContain('$70M');
+		expect(briefSystem('$70M')).not.toContain('$100M');
+	});
+
+	it('an image prompt states the spatial mix once, not twice', () => {
+		const p = tableFunctionPrompt('HR', [10, 0, 0, 0, 0, 0, 0]);
+		const clause = 'emphasises';
+		const first = p.indexOf(clause);
+		// The same spatial sentence used to be emitted twice in a row.
+		expect(first === -1 || p.indexOf(clause, first + 1) === -1).toBe(true);
 	});
 });

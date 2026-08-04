@@ -3,10 +3,8 @@
  * Workers AI binding (env.AI) — model resolved server-side via the binding's primary model.
  * Returns null if no AI binding, no stake, or the call fails (caller uses numbers brief).
  */
-import {
-	type DesignCard
-} from '$lib/game';
-import { BRIEF_SYSTEM, COMPOSE_SYSTEM, briefFactsForRapidi, designCardsJsonForRapidi } from './prompts';
+import { walletLabel, type DesignCard } from '$lib/game';
+import { briefSystem, COMPOSE_SYSTEM, briefFactsForRapidi, designCardsJsonForRapidi } from './prompts';
 import type { Aggregate, RoomState } from '$lib/game/types';
 
 export type AiBinding = {
@@ -63,7 +61,9 @@ export async function generateBriefWithRapidi(
 	if (!ai) return null;
 	if (agg.totalCoins <= 0) return null;
 	const user = briefFactsForRapidi(agg, room);
-	const text = await runChat(ai, BRIEF_SYSTEM, user, 480);
+	// The wallet is host-configurable; the system prompt used to hard-code $100M
+	// and contradict the facts in the user message whenever it was changed.
+	const text = await runChat(ai, briefSystem(walletLabel(room)), user, 480);
 	return text;
 }
 
