@@ -6,25 +6,63 @@ import {
 	MAX_CELL_TOKENS,
 	N_SEATS,
 	isCaptureRound,
-	r3RemoveTarget,
-	r5CapForWallet,
 	roomScenarios,
+	sealTargetFor,
+	sealTargetTokens,
 	tableBountyTokens,
 	tableSeatIndex
 } from '../config';
 import { emptyMatrix } from '../scoring';
 import { N_PRIORITIES } from '../types';
-import type { RoomState, TableState, Vec7 } from '../types';
+import type { RoomState, SealTarget, TableState, Vec7 } from '../types';
 
 export { tableBountyTokens };
 
-/** Wallet ceiling for the current round (R5 restructure caps at 90% of the wallet). */
+/** The budget rule in force right now, or undefined outside a round. */
+export function activeSealTarget(room: RoomState): SealTarget | undefined {
+	if (room.phase !== 'round') return undefined;
+	return sealTargetFor(roomScenarios(room)[room.round]);
+}
+
+/**
+ * Wallet ceiling for the current round — the scenario's `cap` target when it has
+ * one (R5 restructures to 90%), otherwise the full wallet.
+ */
 export function activeTableCap(room: RoomState): number {
 	const base = tableBountyTokens(room);
-	if (room.phase === 'round' && room.round + 1 === 5) {
-		return r5CapForWallet(base);
+	const target = activeSealTarget(room);
+	if (target?.kind === 'cap') {
+		return sealTargetTokens(target, { wallet: base, standing: 0 }) ?? base;
 	}
 	return base;
+}
+
+/**
+ * May this draft delta land? One predicate for the three phone call sites that
+ * used to each carry their own copy — the row's `±`, the tap handler, and the
+ * button's disabled state. When they disagreed, the `+` rendered enabled and
+ * silently did nothing.
+ *
+ * Note the server's own delta endpoint is stricter: `applyBoardDelta` refuses
+ * every add in a remove round, because it has no notion of the round-open
+ * baseline. Put-back reaches the server through the draft + submit path, where
+ * `applySubmitTable` clamps each cell to its previous value.
+ */
+export function canDraftDelta(o: {
+	removeOnly: boolean;
+	/** Current value of the cell being changed. */
+	current: number;
+	/** Value that cell held when the round opened (remove rounds only). */
+	baseline: number;
+	delta: number;
+	/** Wallet headroom left on the board (adds only). */
+	remaining: number;
+}): boolean {
+	if (!Number.isFinite(o.delta) || o.delta === 0) return false;
+	if (o.delta < 0) return o.current > 0;
+	// Remove rounds: an add is only ever a put-back, never past the round's start.
+	if (o.removeOnly) return o.current + o.delta <= o.baseline;
+	return o.delta <= o.remaining;
 }
 
 export function boardTokenSum(board: number[][]): number {
@@ -169,25 +207,26 @@ export function applySubmitTable(
 	}
 
 	// Round targets (seal path only — physical facilitation mirrors these numbers).
-	// Targets scale with the host-configured wallet, not the $100M default.
-	if (seal && roundLabel === 2) {
-		const need = tableBountyTokens(room);
-		if (total !== need) {
+	// Driven by the scenario's sealTarget, not the round number, so a host who
+	// moves a round's rule moves its target with it. Targets scale with the
+	// host-configured wallet, not the $100M default.
+	const target = activeSealTarget(room);
+	const need = sealTargetTokens(target, { wallet: tableBountyTokens(room), standing });
+	if (seal && target && need !== undefined) {
+		if (target.kind === 'full' && total !== need) {
 			return {
 				ok: false,
-				error: `R2 requires the full $${need}M budget (you have $${total}M). Place every token, then seal.`
+				error: `R${roundLabel} requires the full $${need}M budget (you have $${total}M). Place every token, then seal.`
 			};
 		}
-	}
-	if (seal && roundLabel === 3 && isRemoveRound(room)) {
-		const removed = standing - total;
-		const target = r3RemoveTarget(standing);
-		if (removed < target) {
+		if (target.kind === 'remove' && standing - total < need) {
+			const removed = standing - total;
 			return {
 				ok: false,
-				error: `R3 requires removing $${target}M (you removed $${removed}M of $${standing}M). Cut more, then seal.`
+				error: `R${roundLabel} requires removing $${need}M (you removed $${removed}M of $${standing}M). Cut more, then seal.`
 			};
 		}
+		// `cap` is already enforced by the activeTableCap check above.
 	}
 
 	table.board = nextBoard;

@@ -5,6 +5,7 @@
 		CHIP_VALUE,
 		PRIORITIES,
 		R3_REMOVE_TARGET,
+		canDraftDelta,
 		formatUsd,
 		formatUsdFull,
 		r3RemoveTarget
@@ -110,13 +111,20 @@
 		};
 	});
 
+	/** Shared with the + button and the page's delta() — see canDraftDelta. */
+	function allows(p: number, d: number) {
+		return canDraftDelta({
+			removeOnly,
+			current: counts[p] ?? 0,
+			baseline: baseline?.[p] ?? 0,
+			delta: d,
+			remaining
+		});
+	}
+
 	function tap(p: number, d: number) {
 		if (busy || !editable) return;
-		// Add-back in a remove round is capped at the row's round-start value, not
-		// forbidden outright — same rule the + button and the page's delta() use.
-		// This guard used to reject every positive tap, which left the button
-		// looking live while nothing happened.
-		if (removeOnly && d > 0 && (counts[p] ?? 0) >= (baseline?.[p] ?? 0)) return;
+		if (!allows(p, d)) return;
 		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 			try {
 				navigator.vibrate(d > 0 ? 8 : [5, 30, 5]);
@@ -215,29 +223,22 @@
 						<button
 							type="button"
 							class="btn minus"
-							disabled={busy || v < CHIP_VALUE}
+							disabled={busy || !allows(p, -CHIP_VALUE)}
 							aria-label={v >= CHIP_VALUE
 								? `Remove ${formatUsd(CHIP_VALUE)} from ${name}`
 								: `No chips to remove from ${name}`}
-							onclick={() => {
-								if (!busy && v >= CHIP_VALUE) tap(p, -CHIP_VALUE);
-							}}
+							onclick={() => tap(p, -CHIP_VALUE)}
 						>
 							−
 						</button>
 						<button
 							type="button"
 							class="btn plus"
-							disabled={busy || (removeOnly ? v >= base : remaining < CHIP_VALUE)}
+							disabled={busy || !allows(p, CHIP_VALUE)}
 							aria-label={removeOnly
 								? `Put back ${formatUsd(CHIP_VALUE)} on ${name}`
 								: `Add ${formatUsd(CHIP_VALUE)} to ${name}`}
-							onclick={() => {
-								if (busy) return;
-								// In a remove round this only undoes a cut — capped at the row's
-								// value when the round opened, so the board can never grow.
-								if (removeOnly ? v < base : remaining >= CHIP_VALUE) tap(p, CHIP_VALUE);
-							}}
+							onclick={() => tap(p, CHIP_VALUE)}
 						>
 							+
 						</button>

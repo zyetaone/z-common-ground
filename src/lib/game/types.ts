@@ -176,6 +176,24 @@ export type RoundMode =
 	/** R4 — hold path to final capture. */
 	| 'hold';
 
+/**
+ * What a round demands before it can seal, and what it caps the board at.
+ *
+ * This lives on the scenario so a round's rule travels with the round. It used
+ * to be inferred from the round NUMBER (`roundLabel === 2`, `=== 3`, `+1 === 5`)
+ * in both the server rules and the phone, which meant the host could move the
+ * remove round — `move` and `mode` are both host-editable — and get the removal
+ * enforced without its target.
+ *
+ *  - `full`   board must total exactly the table wallet (R2)
+ *  - `remove` must give up ≥ `fraction` of what the table held at round open (R3)
+ *  - `cap`    board must end at ≤ `fraction` of the wallet (R5 restructure)
+ */
+export type SealTarget =
+	| { kind: 'full' }
+	| { kind: 'remove'; fraction: number }
+	| { kind: 'cap'; fraction: number };
+
 export interface Scenario {
 	/** 0-based index. */
 	round: number;
@@ -189,6 +207,12 @@ export interface Scenario {
 	mode: RoundMode;
 	/** Dominant physical move this round (board still cumulative). */
 	move: RoundMove;
+	/**
+	 * Budget rule for this round. Absent means "no target" (R1, R4 — freeze only).
+	 * Read it through `sealTargetFor`, which supplies the remove-round default so
+	 * a host-moved remove round is still enforced.
+	 */
+	sealTarget?: SealTarget;
 	/** Short instruction shown on mobile + presenter. */
 	instruction: string;
 	/** Mechanical constraints — what the game enforces (cap, direction, freeze requirement). */

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { sealTargetFor } from '$lib/game';
 	import type { Persona, Scenario } from '$lib/game/types';
 
 	let {
@@ -21,12 +22,12 @@
 		isFinale: boolean;
 	} = $props();
 
-	/** Round verb shown inside the badge — from the scenario's move/roundLabel. */
+	/** Round verb shown inside the badge — from the scenario's move and budget rule. */
 	const moveVerb = $derived(
 		phase === 'round' && scenario
 			? scenario.move === 'remove'
 				? 'REMOVE'
-				: scenario.roundLabel === 5
+				: sealTargetFor(scenario)?.kind === 'cap'
 					? 'RESTRUCTURE'
 					: 'ADD'
 			: null

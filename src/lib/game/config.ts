@@ -1,4 +1,4 @@
-import { PRIORITIES, type Persona, type Scenario, type Vec7 } from './types';
+import { PRIORITIES, type Persona, type Scenario, type SealTarget, type Vec7 } from './types';
 
 export const PERSONAS: Persona[] = [
 	{
@@ -452,6 +452,33 @@ export function r3RemoveTarget(standing: number): number {
 	return Math.ceil(Math.max(0, standing) * R3_REMOVE_FRACTION);
 }
 
+/**
+ * The budget rule in force for a scenario — SSOT for both the server seal check
+ * and the phone's disabled states.
+ *
+ * A remove round with no explicit target still gets one. `move` is host-editable
+ * (see sanitizeScenarioPatch), so without this default a host who makes some
+ * other round the remove round would have the direction enforced and the amount
+ * silently ignored — the round would seal with nothing given up.
+ */
+export function sealTargetFor(scenario: Scenario | undefined): SealTarget | undefined {
+	if (!scenario) return undefined;
+	if (scenario.sealTarget) return scenario.sealTarget;
+	if (scenario.move === 'remove') return { kind: 'remove', fraction: R3_REMOVE_FRACTION };
+	return undefined;
+}
+
+/** Resolve a target to a token count against this table's wallet and standing total. */
+export function sealTargetTokens(
+	target: SealTarget | undefined,
+	opts: { wallet: number; standing: number }
+): number | undefined {
+	if (!target) return undefined;
+	if (target.kind === 'full') return opts.wallet;
+	if (target.kind === 'remove') return Math.ceil(Math.max(0, opts.standing) * target.fraction);
+	return Math.min(opts.wallet, Math.floor(opts.wallet * target.fraction));
+}
+
 /** R5 restructure cap in tokens — 90% of the per-table wallet. */
 export function r5CapForWallet(wallet: number): number {
 	return Math.min(wallet, Math.floor(wallet * R5_CAP_FRACTION));
@@ -478,6 +505,7 @@ export const SCENARIOS: Scenario[] = [
 		round: 1,
 		roundLabel: 2,
 		title: 'R2 · AI Transformation',
+		sealTarget: { kind: 'full' },
 		emoji: '🤖',
 		question: 'AI changes how everyone works. What deserves greater investment?',
 		hint: 'Physical board = your full $100M.',
@@ -493,6 +521,7 @@ export const SCENARIOS: Scenario[] = [
 		round: 2,
 		roundLabel: 3,
 		title: 'R3 · Cost pressure: Breaking News',
+		sealTarget: { kind: 'remove', fraction: R3_REMOVE_FRACTION },
 		emoji: '✂️',
 		question:
 			'Breaking News — the AI CEO interrupts. The Board reduces your budget from $100M to $70M. Remove 30 tokens. This forces real trade-offs.',
@@ -524,6 +553,7 @@ export const SCENARIOS: Scenario[] = [
 		round: 4,
 		roundLabel: 5,
 		title: 'R5 · Final Recommendation',
+		sealTarget: { kind: 'cap', fraction: R5_CAP_FRACTION },
 		emoji: '🎯',
 		question:
 			'Your department submits ONE investment strategy to the Executive Committee. Where do you double down?',

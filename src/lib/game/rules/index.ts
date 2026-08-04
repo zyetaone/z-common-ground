@@ -13,6 +13,8 @@ export {
 	boardTokenSum,
 	canEditTable,
 	functionSeatOrNull,
+	activeSealTarget,
+	canDraftDelta,
 	isRemoveRound,
 	tableBountyTokens,
 	type SubmitTableResult

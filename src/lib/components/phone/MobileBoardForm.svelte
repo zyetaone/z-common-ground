@@ -1,7 +1,7 @@
 <script lang="ts">
 	import FunctionBoard from './FunctionBoard.svelte';
 	import { CHIP_VALUE, formatUsd, formatUsdFull } from '$lib/game';
-	import type { RoundMove, Vec7 } from '$lib/game/types';
+	import type { RoundMove, SealTarget, Vec7 } from '$lib/game/types';
 
 	/**
 	 * Presentational board + submit chrome.
@@ -16,6 +16,7 @@
 		capTokens,
 		baseline = null,
 		roundLabel,
+		sealKind = undefined,
 		removeOnly = false,
 		r2Ready = true,
 		r3Ready = true,
@@ -40,6 +41,8 @@
 		capTokens: number;
 		baseline?: Vec7 | null;
 		roundLabel: number;
+		/** Which budget rule this round enforces — drives the hint and the seal copy. */
+		sealKind?: SealTarget['kind'];
 		removeOnly?: boolean;
 		r2Ready?: boolean;
 		r3Ready?: boolean;
@@ -81,13 +84,13 @@
 
 	{#if editable}
 		<div class="foot">
-			{#if roundLabel === 2}
+			{#if sealKind === 'full'}
 				<p class="hint-cap req" class:met={r2Ready}>
 					{r2Ready
 						? `Full ${formatUsdFull(r2Target)} wallet ready`
 						: `Needs the full ${formatUsdFull(r2Target)} wallet`}
 				</p>
-			{:else if roundLabel === 3 && removeOnly}
+			{:else if sealKind === 'remove'}
 				<p class="hint-cap req" class:met={r3Ready}>
 					{r3Ready
 						? `${formatUsdFull(removeTarget)} removed — target met`
@@ -103,7 +106,7 @@
 					? 'Locking in…'
 					: removeOnly
 						? `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`
-						: roundLabel === 5
+						: sealKind === 'cap'
 							? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsdFull(tableCap)}`
 							: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
 			</button>

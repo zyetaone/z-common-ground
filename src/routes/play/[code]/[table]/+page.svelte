@@ -15,8 +15,9 @@
 		formatUsd,
 		isCaptureRound,
 		ROUND_COUNT,
-		r3RemoveTarget,
-		r5CapForWallet,
+		canDraftDelta,
+		sealTargetFor,
+		sealTargetTokens,
 		roomPriorities,
 		roomScenarios,
 		tablePersona,
@@ -83,20 +84,30 @@
 	const totalTokens = $derived(counts.reduce((a, b) => a + b, 0));
 	const standingCap = $derived(baseline.reduce((a, b) => a + b, 0));
 	const baseWallet = $derived(session.room?.tableBountyTokens ?? R2_FULL_BUDGET);
+	/**
+	 * The round's budget rule, read from the scenario rather than its number.
+	 * The server seals against this same target (rules/board.ts), so the phone's
+	 * disabled states and its error copy can't drift from what will be accepted.
+	 */
+	const sealTarget = $derived(sealTargetFor(scenario));
+	const sealNeed = $derived(
+		sealTargetTokens(sealTarget, { wallet: baseWallet, standing: standingCap })
+	);
 	const tableCap = $derived(
 		removeOnly
 			? Math.max(standingCap, totalTokens)
-			: roundLabel === 5
-				? r5CapForWallet(baseWallet)
+			: sealTarget?.kind === 'cap'
+				? (sealNeed ?? baseWallet)
 				: baseWallet
 	);
 	const overCap = $derived(totalTokens > tableCap);
 	const removedTokens = $derived(Math.max(0, standingCap - totalTokens));
-	const r2Target = $derived(baseWallet);
-	const r3Target = $derived(r3RemoveTarget(standingCap));
-	const r2Ready = $derived(!canCapture || roundLabel !== 2 || totalTokens === r2Target);
+	const r3Target = $derived(sealTarget?.kind === 'remove' ? (sealNeed ?? 0) : 0);
+	const r2Ready = $derived(
+		!canCapture || sealTarget?.kind !== 'full' || totalTokens === sealNeed
+	);
 	const r3Ready = $derived(
-		!canCapture || roundLabel !== 3 || !removeOnly || removedTokens >= r3Target
+		!canCapture || sealTarget?.kind !== 'remove' || removedTokens >= (sealNeed ?? 0)
 	);
 
 	function reseedFromServer() {
@@ -150,9 +161,19 @@
 		if (!editable || submitting || !d) return;
 		// A remove round means the board must END below where the round started,
 		// not that every tap is irreversible. Blocking all add-back left a table
-		// that over-cut with no way home but a page reload — and nothing on
-		// screen said so. Adding back is allowed up to this row's baseline.
-		if (removeOnly && d > 0 && (draft[priority] ?? 0) + d > (baseline[priority] ?? 0)) return;
+		// that over-cut with no way home but a page reload. canDraftDelta is the
+		// one copy of that rule — FunctionBoard's taps and buttons call it too.
+		if (
+			!canDraftDelta({
+				removeOnly,
+				current: draft[priority] ?? 0,
+				baseline: baseline[priority] ?? 0,
+				delta: d,
+				remaining: Math.max(0, tableCap - totalTokens)
+			})
+		) {
+			return;
+		}
 		if (!seeded) {
 			const row = serverRow.slice() as Vec7;
 			draft = row;
@@ -188,12 +209,12 @@
 	async function onSubmit(e: Event) {
 		e.preventDefault();
 		if (!editable || submitting || overCap || !canCapture) return;
-		if (roundLabel === 2 && totalTokens !== r2Target) {
-			submitError = `R2 needs the full ${formatUsd(r2Target)} budget.`;
+		if (!r2Ready) {
+			submitError = `R${roundLabel} needs the full ${formatUsd(sealNeed ?? 0)} budget.`;
 			return;
 		}
-		if (roundLabel === 3 && removeOnly && removedTokens < r3Target) {
-			submitError = `R3 needs ${formatUsd(r3Target)} removed (you’ve cut ${formatUsd(removedTokens)}).`;
+		if (!r3Ready) {
+			submitError = `R${roundLabel} needs ${formatUsd(sealNeed ?? 0)} removed (you’ve cut ${formatUsd(removedTokens)}).`;
 			return;
 		}
 		if (!removeOnly && totalTokens <= 0) return;
@@ -229,7 +250,11 @@
 	 * the opposite of the round. Verb only; the header keeps the numbers.
 	 */
 	const freezeHeading = $derived(
-		removeOnly ? 'Remove your chips' : roundLabel === 5 ? 'Restructure the board' : 'Place your chips'
+		removeOnly
+			? 'Remove your chips'
+			: sealTarget?.kind === 'cap'
+				? 'Restructure the board'
+				: 'Place your chips'
 	);
 	/**
 	 * The freeze step is the physical round: chips, table, discussion. It used to
@@ -240,7 +265,7 @@
 	const freezeAction = $derived(
 		removeOnly
 			? 'Take chips off the table board.'
-			: roundLabel === 5
+			: sealTarget?.kind === 'cap'
 				? 'Rearrange the table board into your final mix.'
 				: 'Place your chips on the table board.'
 	);
@@ -351,10 +376,11 @@
 			capTokens={tableCap}
 			baseline={removeOnly ? baseline : null}
 			{roundLabel}
+			sealKind={sealTarget?.kind}
 			{removeOnly}
 			{r2Ready}
 			{r3Ready}
-			r2Target={r2Target}
+			r2Target={sealTarget?.kind === 'full' ? (sealNeed ?? 0) : 0}
 			removeTarget={r3Target}
 			{overCap}
 			{totalTokens}
