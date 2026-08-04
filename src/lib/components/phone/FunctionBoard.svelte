@@ -112,7 +112,11 @@
 
 	function tap(p: number, d: number) {
 		if (busy || !editable) return;
-		if (removeOnly && d > 0) return;
+		// Add-back in a remove round is capped at the row's round-start value, not
+		// forbidden outright — same rule the + button and the page's delta() use.
+		// This guard used to reject every positive tap, which left the button
+		// looking live while nothing happened.
+		if (removeOnly && d > 0 && (counts[p] ?? 0) >= (baseline?.[p] ?? 0)) return;
 		if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 			try {
 				navigator.vibrate(d > 0 ? 8 : [5, 30, 5]);
