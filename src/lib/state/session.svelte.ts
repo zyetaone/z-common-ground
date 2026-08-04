@@ -24,6 +24,20 @@ let booted = false;
 /** Serialize polls so advance never skips a fetch. */
 let pollChain: Promise<void> = Promise.resolve();
 /**
+ * Polls queued but not yet finished.
+ *
+ * The chain is serialized, but the interval fired into it unconditionally. Any
+ * response slower than INTERVAL — a distant colo, a D1 write ahead of us in the
+ * queue, a phone on venue wifi — enqueued faster than the chain drained, so the
+ * backlog grew for as long as the slowness lasted and the tab spent the whole
+ * time working through stale snapshots. That is the intermittent freeze.
+ *
+ * The interval now skips its tick when work is already pending. Explicit polls
+ * (after a mutation, on visibility) still queue unconditionally — those callers
+ * await a *fresh* read and must not be coalesced away.
+ */
+let pollsPending = 0;
+/**
  * Set by session.cancelZyetaI() to abort the long AI pipeline.
  *
  * The run is a 2-4 minute chain of paid calls with no way out short of a
@@ -122,7 +136,13 @@ async function fetchStateOnce() {
 
 /** Queue polls so concurrent calls still each fetch (no dropped updates). */
 function poll(): Promise<void> {
-	pollChain = pollChain.then(fetchStateOnce).catch(() => {});
+	pollsPending += 1;
+	pollChain = pollChain
+		.then(fetchStateOnce)
+		.catch(() => {})
+		.finally(() => {
+			pollsPending -= 1;
+		});
 	return pollChain;
 }
 
@@ -207,7 +227,7 @@ export const session = {
 			if (!room) session.ensure().catch(() => {});
 		});
 		timer = setInterval(() => {
-			poll();
+			if (pollsPending === 0) poll();
 		}, INTERVAL);
 		// Refresh when tab becomes visible again
 		const onVis = () => {
