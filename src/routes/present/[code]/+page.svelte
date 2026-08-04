@@ -156,7 +156,10 @@
 	{#if !st}
 		<div class="center muted">Connecting…</div>
 	{:else}
-		<div class="lobby-wrap">
+		<!-- In reveal/finale this wrapper has no children — collapse it so the
+		     finale card's auto margins can centre it on the stage instead of it
+		     sitting on top of an empty flex:1 column. -->
+		<div class="lobby-wrap" class:collapsed={phase === 'reveal' || phase === 'finale'}>
 			{#if phase === 'lobby'}
 				<div class="submissions">
 					<div class="sub-head">
@@ -344,8 +347,47 @@
 		background: var(--color-panel);
 		flex-shrink: 0;
 	}
+	/**
+	 * The finale is a destination, not a status strip.
+	 *
+	 * Every other phase uses this bar as a running header — question on the left,
+	 * controls on the right. Once the room reaches reveal there is one thing left
+	 * to do, so it stops being a bar and becomes a centred card: the CGI line and
+	 * the single call to action stacked in the middle of the stage, where a room
+	 * looking up at a projector expects the closing slide to be.
+	 */
 	.sc-bar.finale {
 		border-color: color-mix(in srgb, var(--color-gold) 40%, var(--color-line));
+		flex-direction: column;
+		justify-content: center;
+		text-align: center;
+		gap: 18px;
+		margin-block: auto;
+		padding: clamp(24px, 4vh, 44px) 24px;
+		max-width: 900px;
+		margin-inline: auto;
+		width: 100%;
+	}
+	.sc-bar.finale .sc-left {
+		flex-direction: column;
+		gap: 10px;
+		flex: 0 1 auto;
+	}
+	.sc-bar.finale .sc-text {
+		align-items: center;
+	}
+	.sc-bar.finale .sc-emoji {
+		font-size: 26px;
+	}
+	.sc-bar.finale .sc-q {
+		font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+	}
+	.sc-bar.finale .sc-sub {
+		font-size: 15px;
+	}
+	.sc-bar.finale .sc-btn {
+		font-size: 16px;
+		padding: 12px 26px;
 	}
 	.sc-left {
 		display: flex;
@@ -423,6 +465,9 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
+	}
+	.lobby-wrap.collapsed {
+		flex: 0 0 auto;
 	}
 	.submissions {
 		width: 100%;
