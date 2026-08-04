@@ -122,6 +122,7 @@ import {
 						<div class="brief-shape-row">
 							<dt>Lead</dt>
 							<dd>
+								<strong>{insights.lead}</strong>
 								<span class="brief-shape-pct">{insights.index}</span>
 							</dd>
 							<dd class="brief-shape-note">{program.lead}</dd>
