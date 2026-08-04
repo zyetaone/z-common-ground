@@ -216,24 +216,34 @@
 	}
 
 	/**
-	 * One heading, not a per-round restatement of the goal.
+	 * The action, not a restatement of the goal.
 	 *
 	 * This was a six-way ternary spelling out "Physical board · full $100M",
-	 * "· remove $30M", "· restructure $90M" — each of which is the scenario hint
-	 * the header already shows two lines above. The stage owns the action; the
-	 * header owns the round's rule.
+	 * "· remove $30M" — the amounts the header's hint already carries. Collapsing
+	 * it to one string went too far the other way: R3 takes chips OFF the board
+	 * and R5 rearranges them, so "Place your chips" was telling the table to do
+	 * the opposite of the round. Verb only; the header keeps the numbers.
 	 */
-	const freezeHeading = 'Place your chips';
+	const freezeHeading = $derived(
+		removeOnly ? 'Remove your chips' : roundLabel === 5 ? 'Restructure the board' : 'Place your chips'
+	);
 	/**
 	 * The freeze step is the physical round: chips, table, discussion. It used to
 	 * ask "what does your physical board reflect?", which is the transcription
 	 * question and belongs on the input step — and it promised "then match
 	 * digital" on every round, including the two that never capture.
 	 */
+	const freezeAction = $derived(
+		removeOnly
+			? 'Take chips off the table board.'
+			: roundLabel === 5
+				? 'Rearrange the table board into your final mix.'
+				: 'Place your chips on the table board.'
+	);
 	const freezeSub = $derived(
 		canCapture
-			? 'Place your chips on the table board. Freeze when the round is settled — then you’ll mirror it here.'
-			: 'Place your chips on the table board. Freeze when the round is settled.'
+			? `${freezeAction} Freeze when the round is settled — then you’ll mirror it here.`
+			: `${freezeAction} Freeze when the round is settled.`
 	);
 </script>
 
