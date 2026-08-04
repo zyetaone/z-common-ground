@@ -26,9 +26,15 @@ Deploy:
 
 ```bash
 bun run build
-wrangler deploy
-# wrangler secret put FAL_API_KEY
+wrangler pages deploy
+# wrangler pages secret put FAL_API_KEY
 ```
+
+This is a Cloudflare **Pages** project, not a Worker — plain `wrangler deploy`
+and `wrangler secret put` no longer apply. The move was for DNS: a Worker
+custom domain must sit in a zone this account owns, while a Pages domain
+accepts a CNAME from a zone someone else controls, which is what lets
+`common-ground.zyeta.asia` point here.
 
 ---
 

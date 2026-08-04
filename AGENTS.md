@@ -226,8 +226,8 @@ bun run prepare      # svelte-kit sync || echo ''
 bun run check        # svelte-kit sync && svelte-check --tsconfig ./tsconfig.json   (only quality gate)
 bun run check:watch
 bun test             # vitest run (src/**/*.{test,spec}.ts, node env, $lib alias)
-wrangler deploy
-wrangler secret put FAL_API_KEY
+wrangler pages deploy            # Pages project — NOT `wrangler deploy`
+wrangler pages secret put FAL_API_KEY
 ```
 
 No test suite beyond `src/lib/game/rules/rules.test.ts`. Smoke-test `host → play → present` after changes. Reset via the host page if state is wedged.

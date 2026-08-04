@@ -107,11 +107,11 @@
 
 	async function shareLinkedIn() {
 		await copyShareText();
-		const origin =
-			typeof window !== 'undefined'
-				? window.location.origin
-				: 'https://common-ground-phygital.rdtect.workers.dev';
-		openLinkedInShare(origin);
+		// No SSR fallback origin: openLinkedInShare calls window.open, so this
+		// only ever runs in the browser. The old fallback named the retired
+		// workers.dev host, which now 404s — a hardcoded origin here can only
+		// ever be wrong after a domain move, and is unreachable besides.
+		openLinkedInShare(window.location.origin);
 	}
 
 	async function copyShareText() {

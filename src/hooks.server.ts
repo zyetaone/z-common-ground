@@ -4,9 +4,10 @@
  * external sources are allow-listed explicitly.
  *
  * Notes:
- *  - `connect-src` includes `https://*.workers.dev` for the live URL fallback
- *    share origin (src/lib/client/linkedin-frame.ts fallback) and the localhost
- *    dev server.
+ *  - `connect-src` is `self` plus the fal CDN. It used to allow
+ *    `https://*.workers.dev` for a hardcoded share-origin fallback; that
+ *    fallback named the retired workers.dev host and has been removed, so the
+ *    allowance went with it.
  *  - `img-src` allows `data:` and `blob:` for the selfie preview + downloaded
  *    LinkedIn frames, and the fal CDN. Note the CDN is `*.fal.media` (fal
  *    returns e.g. `https://v3b.fal.media/...`), which is a different domain
@@ -34,7 +35,7 @@ const CSP = [
 	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 	"font-src 'self' https://fonts.gstatic.com data:",
 	"img-src 'self' data: blob: https://*.fal.media https://*.fal.ai https://fal.ai",
-	"connect-src 'self' https://*.workers.dev https://*.fal.media https://*.fal.ai https://fal.ai wss: ws:",
+	"connect-src 'self' https://*.fal.media https://*.fal.ai https://fal.ai wss: ws:",
 	"worker-src 'self' blob:",
 	"frame-src 'none'",
 	"frame-ancestors 'none'",
