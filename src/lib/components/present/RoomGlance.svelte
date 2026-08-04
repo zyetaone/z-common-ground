@@ -4,7 +4,7 @@
 	import { functionProfiles, roomInsights, roomPriorities } from '$lib/game';
 
 	/**
-	 * Screen 1 — Seat Matrix.
+	 * Screen 1 — Function Group Matrix.
 	 * The 7×7 portrait matrix: rows = personas, columns = priorities.
 	 */
 	let { room }: { room: RoomState } = $props();

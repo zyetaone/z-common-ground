@@ -223,7 +223,7 @@ export const THESIS = {
  * Concepts → /present/LIVE/look · Architectural set → /present/LIVE/design
  */
 export const DECK_SCREENS = [
-	{ title: 'Seat Matrix', short: 'Matrix' },
+	{ title: 'Function Group Matrix', short: 'Matrix' },
 	{ title: 'Priority Breakdown', short: 'Breakdown' },
 	{ title: 'How the room evolved', short: 'Evolution' },
 	{ title: 'What each function did', short: 'Moves' },

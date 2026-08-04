@@ -163,7 +163,7 @@ body::before {
 
 /* Shared analysis chrome — avoid per-panel kicker/empty CSS.
  *
- * The micro-cap label ("SEAT MATRIX", "LEAD", "ALIGNED") is the single most
+ * The micro-cap label ("FUNCTION GROUP MATRIX", "LEAD", "ALIGNED") is the single most
  * repeated visual idea in the app: 58 near-identical rule blocks across 28
  * components, drifted into 34 signatures with 9 tracking values and 4 sizes.
  * Four variants render together on the presenter deck.
@@ -174,7 +174,7 @@ body::before {
  * the two axes that legitimately vary, so they are variables with the common
  * case as the default:
  *
- *   <p class="cg-kicker">SEAT MATRIX</p>
+ *   <p class="cg-kicker">FUNCTION GROUP MATRIX</p>
  *   <p class="cg-kicker" style="--k-color: var(--color-teal)">ALIGNED</p>
  *   <p class="cg-kicker" style="--k-track: 0.08em">Room at a glance</p>
  */
