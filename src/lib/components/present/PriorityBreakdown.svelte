@@ -2,21 +2,27 @@
 	import type { RoomState } from '$lib/game/types';
 	import { formatUsd, priorityMix, roomInsights, roomPriorities } from '$lib/game';
 
-/**
- * Screen 2 — Priority Breakdown.
- * 7 priorities ranked by share of room stake, each row shows:
- *   - rank, colour dot, name
- *   - horizontal bar (% of room), segmented by contributing table
- *   - % of room
- *
- * The $ amount and a "backed by N/7" column used to sit here too. Both were
- * restatements: $ is % of the room total printed in the header, and the reach
- * count is exactly the number of segments in the bar. Removed rather than
- * shown twice.
- *
- * The math: % is share of the *room total* at the current phase, so the bar
- * IS the share.
- */
+	/**
+	 * Screen 2 — Priority Breakdown.
+	 * 7 priorities ranked by share of room stake, each row shows:
+	 *   - rank, colour dot, name
+	 *   - horizontal bar (% of room), segmented by contributing table
+	 *   - % of room
+	 *
+	 * There used to be a donut beside this list. It plotted the same seven
+	 * shares as the same seven bars in the same seven colours, and its centre
+	 * read "7 Priorities" — a constant. Two encodings of one distribution, with
+	 * the weaker one (angle, on near-equal slices) taking a fifth of the width
+	 * from the stronger one (length, on a common baseline). Removed; the bars
+	 * take the full stage.
+	 *
+	 * The $ amount and a "backed by N/7" column also used to sit here. Both were
+	 * restatements: $ is % of the room total printed in the header, and the reach
+	 * count is exactly the number of segments in the bar.
+	 *
+	 * The math: % is share of the *room total* at the current phase, so the bar
+	 * IS the share.
+	 */
 	let { room }: { room: RoomState } = $props();
 
 	const labels = $derived(roomPriorities(room));
@@ -25,48 +31,26 @@
 	const totalCoins = $derived(room.aggregate.totalCoins);
 
 	/**
-	 * Per-priority spread across the seven tables.
+	 * Each priority's stake broken out per contributing table, smallest first.
 	 *
-	 * The bar and the reach dots answer "how much" and "how many", but not
-	 * "concentrated or shared" — $110M from three tables tripling down and
-	 * $110M from seven tables each placing one chip are the same bar and read
-	 * identically. That distinction is the actual boardroom question.
+	 * The bar length answers "how much"; the segments answer what length hides —
+	 * $110M from three tables tripling down and $110M from seven tables each
+	 * placing one chip are the same bar. Wide blocks mean few big bets, thin
+	 * ones mean the room agreed.
 	 *
 	 * Deliberately NOT a log scale. Every table is capped at the same wallet in
 	 * $10M chips, so totals span ~1.8x and cells ~3x. Log needs orders of
 	 * magnitude; on this range it would compress the only differences that
 	 * exist and flatter the chart at the data's expense.
 	 */
-	const spread = $derived.by(() => {
-		const out: Record<number, { stakes: number[]; median: number; max: number; concentrated: boolean }> = {};
-		for (let p = 0; p < labels.length; p++) {
-			const stakes = room.tables
+	const stakesByPriority = $derived(
+		labels.map((_, p) =>
+			room.tables
 				.map((t) => t.matrix?.[p] ?? 0)
 				.filter((v) => v > 0)
-				.sort((a, b) => a - b);
-			if (!stakes.length) {
-				out[p] = { stakes: [], median: 0, max: 0, concentrated: false };
-				continue;
-			}
-			const mid = Math.floor(stakes.length / 2);
-			const median =
-				stakes.length % 2 ? stakes[mid] : (stakes[mid - 1] + stakes[mid]) / 2;
-			const max = stakes[stakes.length - 1];
-			out[p] = { stakes, median, max, concentrated: median > 0 && max > median * 2 };
-		}
-		return out;
-	});
-
-	const circ = 2 * Math.PI * 42;
-	const donutSlices = $derived.by(() => {
-		let accumPct = 0;
-		return mix.map((m) => {
-			const len = (m.pct / 100) * circ;
-			const offset = - (accumPct / 100) * circ;
-			accumPct += m.pct;
-			return { ...m, len, offset };
-		});
-	});
+				.sort((a, b) => a - b)
+		)
+	);
 </script>
 
 <div class="pb">
@@ -76,71 +60,35 @@
 		</span>
 	</header>
 
-	<div class="pb-visual-row">
-		<div class="donut-card" aria-label="Room Portfolio Mix Donut Chart">
-			<svg viewBox="0 0 120 120" class="donut-svg">
-				<circle cx="60" cy="60" r="42" fill="none" stroke="color-mix(in srgb, var(--color-ink) 8%, transparent)" stroke-width="14" />
-				{#each donutSlices as s (s.priority)}
-					{#if s.pct > 0}
-						<circle
-							cx="60"
-							cy="60"
-							r="42"
-							fill="none"
-							stroke={s.color}
-							stroke-width="14"
-							stroke-dasharray="{s.len} {circ}"
-							stroke-dashoffset={s.offset}
-							transform="rotate(-90 60 60)"
-							class="donut-slice"
-						/>
-					{/if}
-				{/each}
-			</svg>
-			<div class="donut-center">
-				<span class="donut-num">{mix.length}</span>
-				<span class="donut-sub">Priorities</span>
-			</div>
-		</div>
+	<div class="pb-table-wrap">
+		<header class="cg-kicker legend" aria-label="Column legend">
+			<span class="lg-rank">#</span>
+			<span class="lg-name">Priority</span>
+			<span class="lg-bar">Share of room · one block per table</span>
+			<span class="lg-pct">%</span>
+		</header>
 
-		<div class="pb-table-wrap">
-			<header class="cg-kicker legend" aria-label="Column legend">
-				<span class="lg-rank">#</span>
-				<span class="lg-name">Priority</span>
-				<span class="lg-bar">Share of room</span>
-				<span class="lg-pct">%</span>
-			</header>
-
-	<section class="list stagger" role="list" aria-label="Priorities ranked by share of room stake">
-		{#each mix as m, rank (m.priority)}
-			<div
-				class="row"
-				class:lead={rank === 0}
-				class:blind={m.name === i.blind}
-				style="--i:{rank}"
-			>
-				<span class="rank" class:lead={rank === 0}>{rank + 1}</span>
-				<span class="pdot" style="background:{m.color}"></span>
-				<span class="pname">{m.name}</span>
-				<div class="pbar-track" aria-label="{m.name} {m.pct}% of room">
-					<div
-						class="pbar-fill"
-						style="width:{m.pct}%; background:{m.color}"
-					>
-						<!-- Segment the fill by contributing table, largest last. Same total
-						     width, but now the bar shows whether the stake is shared across
-						     tables or carried by one — a distinction the bar alone hides. -->
-						{#each spread[m.priority]?.stakes ?? [] as stake, si (si)}
-							{@const w = m.tokens > 0 ? (stake / m.tokens) * 100 : 0}
-							<span class="pseg" style="width:{w}%"></span>
-						{/each}
+		<section class="list stagger" role="list" aria-label="Priorities ranked by share of room stake">
+			{#each mix as m, rank (m.priority)}
+				<div class="row" class:lead={rank === 0} class:blind={m.name === i.blind} style="--i:{rank}">
+					<span class="rank" class:lead={rank === 0}>{rank + 1}</span>
+					<span class="pdot" style="background:{m.color}"></span>
+					<span class="pname">{m.name}</span>
+					<div class="pbar-track" aria-label="{m.name} {m.pct}% of room">
+						<div class="pbar-fill" style="width:{m.pct}%; background:{m.color}">
+							<!-- Segment the fill by contributing table, largest last. Same total
+							     width, but now the bar shows whether the stake is shared across
+							     tables or carried by one — a distinction the bar alone hides. -->
+							{#each stakesByPriority[m.priority] ?? [] as stake, si (si)}
+								{@const w = m.tokens > 0 ? (stake / m.tokens) * 100 : 0}
+								<span class="pseg" style="width:{w}%"></span>
+							{/each}
+						</div>
 					</div>
+					<span class="ppct" style="color:{m.color}">{m.pct}%</span>
 				</div>
-				<span class="ppct" style="color:{m.color}">{m.pct}%</span>
-			</div>
-		{/each}
-	</section>
-		</div>
+			{/each}
+		</section>
 	</div>
 
 	<footer class="sum" aria-label="Total verification">
@@ -160,62 +108,6 @@
 		height: 100%;
 		min-height: 0;
 		padding: 4px 4px 12px;
-	}
-	.pb-visual-row {
-		display: flex;
-		gap: 16px;
-		flex: 1;
-		min-height: 0;
-		align-items: stretch;
-	}
-	@media (max-width: 900px) {
-		.pb-visual-row {
-			flex-direction: column;
-		}
-		.donut-card {
-			display: none;
-		}
-	}
-	.donut-card {
-		width: 160px;
-		flex-shrink: 0;
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--color-line);
-		background: var(--color-panel);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		position: relative;
-		padding: 16px;
-	}
-	.donut-svg {
-		width: 130px;
-		height: 130px;
-	}
-	.donut-slice {
-		transition: stroke-dasharray 600ms ease, stroke-dashoffset 600ms ease;
-	}
-	.donut-center {
-		position: absolute;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-	.donut-num {
-		font-family: var(--font-display);
-		font-size: 22px;
-		font-weight: 800;
-		color: var(--color-ink);
-		line-height: 1;
-	}
-	.donut-sub {
-		font-family: var(--font-mono);
-		font-size: 9px;
-		font-weight: 700;
-		color: var(--color-muted);
-		letter-spacing: 0.04em;
 	}
 	.pb-table-wrap {
 		flex: 1;
@@ -238,7 +130,7 @@
 		--k-size: 9px;
 		--k-track: 0.06em;
 		display: grid;
-		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 64px;
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 2.4fr 64px;
 		align-items: center;
 		gap: 10px;
 		padding: 0 12px;
@@ -257,7 +149,9 @@
 	}
 	.row {
 		display: grid;
-		grid-template-columns: 28px 12px minmax(110px, 1fr) 1fr 64px;
+		/* Bar track takes the width the donut used to hold — this screen exists to
+		   show relative spend as length, so length gets the stage. */
+		grid-template-columns: 28px 12px minmax(110px, 1fr) 2.4fr 64px;
 		align-items: center;
 		gap: 10px;
 		/* Seven rows at 39px used ~270px of a 739px stage and left the bottom
@@ -361,7 +255,7 @@
 	.sum-note {
 		opacity: 0.7;
 	}
-	/* Narrow screens: drop the bar-track column — name / % / reach breathe */
+	/* Narrow screens: drop the bar-track column — name / % breathe */
 	@media (max-width: 720px) {
 		.legend,
 		.row {
