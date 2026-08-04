@@ -60,10 +60,13 @@
 			</span>
 		</div>
 		{#if phase === 'round' && scenario}
-			{#if scenario.hint || scenario.modelRules}
-				<p class="budget-hint">
-					{scenario.hint ?? ''}{#if scenario.hint && scenario.modelRules}{' · '}{/if}{#if scenario.modelRules}<span class="rules">{scenario.modelRules}</span>{/if}
-				</p>
+			<!-- hint only. modelRules says the same thing in every round — R1 was
+			     "First stake … ~$30M of your $100M wallet. No seal yet." followed by
+			     "Table wallet $100M. Place ~$30M. No seal yet." — so the phone
+			     printed the round's rule twice, separated by a dot. modelRules is
+			     still the host-editable rules field in session config. -->
+			{#if scenario.hint}
+				<p class="budget-hint">{scenario.hint}</p>
 			{/if}
 		{:else if persona.mission && phase === 'lobby'}
 			<p class="mission"><span class="mission-k">Lens</span> {persona.mission}</p>
@@ -198,12 +201,5 @@
 		color: var(--color-gold-ink);
 		line-height: 1.4;
 		font-weight: 600;
-	}
-	.budget-hint .rules {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.04em;
-		font-weight: 500;
-		color: var(--color-muted);
 	}
 </style>

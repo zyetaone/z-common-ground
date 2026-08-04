@@ -11,7 +11,6 @@
 	} from '$lib/components/phone';
 	import {
 		R2_FULL_BUDGET,
-		R4_ADD_BACK,
 		emptyMatrix,
 		formatUsd,
 		isCaptureRound,
@@ -216,20 +215,15 @@
 		}
 	}
 
-	// Physical board first — freeze when the round total is on the table
-	const freezeHeading = $derived(
-		roundLabel === 1
-			? `Physical board · first stake`
-			: roundLabel === 2
-				? `Physical board · full ${formatUsd(r2Target)}`
-				: roundLabel === 3
-					? `Physical board · remove ${formatUsd(r3RemoveTarget(baseWallet))}`
-					: roundLabel === 4
-						? `Physical board · +${formatUsd(R4_ADD_BACK)}`
-						: roundLabel === 5
-							? `Physical board · restructure ${formatUsd(r5CapForWallet(baseWallet))}`
-							: `Physical board · R${roundLabel}`
-	);
+	/**
+	 * One heading, not a per-round restatement of the goal.
+	 *
+	 * This was a six-way ternary spelling out "Physical board · full $100M",
+	 * "· remove $30M", "· restructure $90M" — each of which is the scenario hint
+	 * the header already shows two lines above. The stage owns the action; the
+	 * header owns the round's rule.
+	 */
+	const freezeHeading = 'Place your chips';
 	/**
 	 * The freeze step is the physical round: chips, table, discussion. It used to
 	 * ask "what does your physical board reflect?", which is the transcription
