@@ -81,11 +81,10 @@
 			/**
 			 * Per-priority direction across the whole arc, R2 → R5.
 			 *
-			 * Every delta in this game is ±$10M or ±$20M, so magnitude carries
-			 * almost no signal — what varies is *which* priority moved and which
-			 * way. This is the grid the chips can't be: seven fixed columns, so
-			 * the eye compares the same priority down the seven functions instead
-			 * of re-reading a different word order in every row.
+			 * Each delta is bar-height-scaled (×4.5) AND printed inside the bar
+			 (±$10M / ±$20M, the actual data range). The grid's job is the
+			 comparison the chips can't be: same column for every function,
+			 so the eye compares the same priority down the seven rows.
 			 */
 			const arc = (r2Row.length ? r2Row : names.map(() => 0)).map((_, pi) => {
 				const from = r2Row[pi] ?? 0;
@@ -378,8 +377,7 @@
 		font-family: var(--font-mono);
 		font-size: 8.5px;
 		font-weight: 800;
-		color: #111a14;
-		line-height: 1;
+	color: var(--color-ink);
 		pointer-events: none;
 	}
 	/* Always-present centre tick keeps the axis readable even where a priority
