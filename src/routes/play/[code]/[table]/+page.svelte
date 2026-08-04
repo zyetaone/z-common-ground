@@ -57,7 +57,16 @@
 	const canCapture = $derived(phase === 'round' && isCaptureRound(roundLabel, session.room));
 	const canEditPhase = $derived(phase === 'round' && !submitted);
 	const editable = $derived(canEditPhase && !!table);
-	const showQuestion = $derived(phase === 'lobby' || phase === 'round');
+	/**
+	 * The deck can leave the round without the clock moving: the host's "force
+	 * analysis" toggle opens the analysis deck and the finale image generation
+	 * while phase is still 'round'. Phones kept rendering the round header and
+	 * its scenario copy — a table staring at "R3 · REMOVE · cut $30M" while the
+	 * room watched its results. Analysis being open ends the round for players,
+	 * however it was opened.
+	 */
+	const analysisOpen = $derived(session.analysisOpen);
+	const showQuestion = $derived(!analysisOpen && (phase === 'lobby' || phase === 'round'));
 	const move = $derived(scenario?.move ?? 'add');
 	const removeOnly = $derived(move === 'remove');
 
@@ -69,7 +78,7 @@
 	let lastSyncKey = $state('');
 	let tab = $state<Tab>('board');
 
-	const isFinale = $derived(phase === 'reveal' || phase === 'finale');
+	const isFinale = $derived(analysisOpen || phase === 'reveal' || phase === 'finale');
 	const physicallyDone = $derived(!!table?.physicallyDone);
 	const counts = $derived(editable && seeded ? draft : serverRow);
 	const totalTokens = $derived(counts.reduce((a, b) => a + b, 0));
@@ -235,7 +244,7 @@
 </script>
 
 <svelte:head>
-	<title>R{roundLabel} · {persona.name} · LIVE</title>
+	<title>{isFinale ? 'Results' : `R${roundLabel}`} · {persona.name} · LIVE</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 </svelte:head>
 
