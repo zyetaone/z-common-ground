@@ -31,7 +31,6 @@ import {
 		name: string;
 		color: string;
 		cg: number;
-		tags: string[];
 		archetype: string;
 		topDivergence: { name: string; delta: number; color: string };
 		traits: FunctionProfileTrait[];
@@ -47,7 +46,6 @@ import {
 			if (!persona) continue;
 			const profile = functionProfile(room, id);
 			const cg = profile?.commonGround ?? 0;
-			const tags = profile?.tags ?? [];
 			const archetype = profile?.archetype ?? '—';
 			const traits = profile?.traits ?? [];
 			cards.push({
@@ -55,7 +53,6 @@ import {
 				name: persona.name,
 				color: persona.color,
 				cg,
-				tags,
 				archetype,
 				topDivergence: topDelta(id),
 				traits
@@ -129,7 +126,7 @@ import {
 						<span class="fp-tag"><Icon name="lightning" size={12} /> Independent Lens</span>
 						<strong class="fp-title">{mostDivergent.name} ({mostDivergent.cg}/100)</strong>
 						<span class="fp-sub">
-							Diverges on {mostDivergent.topDivergence.name} ({mostDivergent.topDivergence.delta > 0 ? '+' : ''}{mostDivergent.topDivergence.delta}pp)
+							Diverges on {mostDivergent.topDivergence.name} ({mostDivergent.topDivergence.delta > 0 ? '+' : ''}{mostDivergent.topDivergence.delta}%)
 						</span>
 					</div>
 				{/if}
@@ -171,19 +168,19 @@ import {
 				</div>
 				<div class="card-body-row">
 					<div class="card-info">
+						<!-- No tag chips here. Every tag is a threshold on a number the card
+						     already shows: "Sure-handed" is conviction >= 45, which is the
+						     radar's Sure spoke; "Portfolio" is breadth >= 70, the Breadth
+						     spoke; "Room-aligned" is the alignment score in the header. The
+						     archetype is the one-line read, the radar is the shape, and the
+						     tags said both again in threshold words. They still appear on the
+						     profile sheet, where the detail belongs. -->
 						<p class="archetype">{r.archetype}</p>
-						{#if r.tags.length}
-							<p class="tags">
-								{#each r.tags.slice(0, 3) as t (t)}
-									<span class="tag">{t}</span>
-								{/each}
-							</p>
-						{/if}
 						<p class="delta" style="--dc:{r.topDivergence.color}">
 							<span class="dlab">vs room</span>
 							<span class="dval"
 								>{r.topDivergence.name}
-								<b>{r.topDivergence.delta > 0 ? '+' : ''}{r.topDivergence.delta}pp</b></span
+								<b>{r.topDivergence.delta > 0 ? '+' : ''}{r.topDivergence.delta}%</b></span
 							>
 						</p>
 					</div>
@@ -455,23 +452,6 @@ import {
 		color: var(--color-ink);
 		line-height: 1.25;
 		text-transform: capitalize;
-	}
-	.tags {
-		margin: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 4px;
-	}
-	.tag {
-		font-family: var(--font-mono);
-		font-size: 9px;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		padding: 2px 6px;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--fn) 14%, transparent);
-		color: color-mix(in srgb, var(--fn) 80%, var(--color-ink));
-		border: 1px solid color-mix(in srgb, var(--fn) 35%, transparent);
 	}
 	/* ── Methodology note ── */
 	.method-note {

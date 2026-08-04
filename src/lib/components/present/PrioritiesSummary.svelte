@@ -5,7 +5,7 @@
 	/**
 	 * Screen 4 — What each function did, one line per function.
 	 *
-	 * "Gave up X ──▶ bought Y" is the whole story. This used to say it three
+	 * "Deprioritized X ──▶ prioritized Y" is the whole story. This used to say it three
 	 * ways at once (a net badge, a 7-column bar grid, and two chip lists), and
 	 * none of the three could be read from the back of a room: the game only
 	 * ever moves ±one chip, so the bars carried no magnitude to compare and the
@@ -79,9 +79,9 @@
 	{:else}
 		<header class="head" aria-hidden="true">
 			<span class="h-fn">Function</span>
-			<span class="h-gave">Gave up</span>
+			<span class="h-gave">Deprioritized</span>
 			<span class="h-arrow"></span>
-			<span class="h-bought">Bought</span>
+			<span class="h-bought">Prioritized</span>
 		</header>
 
 		<section class="rows stagger" aria-label="What each function traded">
@@ -98,11 +98,11 @@
 								{s.name}{#if s.tokens !== CHIP}<b>${s.tokens}M</b>{/if}
 							</span>
 						{:else}
-							<span class="held">held everything</span>
+							<span class="held">none</span>
 						{/each}
 					</div>
 
-					<span class="arrow" aria-label="traded for">──▶</span>
+					<span class="arrow" aria-label="in favour of">──▶</span>
 
 					<div class="side bought" role="list">
 						{#each l.bought as s (s.priority)}
@@ -110,7 +110,7 @@
 								{s.name}{#if s.tokens !== CHIP}<b>${s.tokens}M</b>{/if}
 							</span>
 						{:else}
-							<span class="held">nothing</span>
+							<span class="held">none</span>
 						{/each}
 					</div>
 				</article>

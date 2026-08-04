@@ -222,7 +222,7 @@
 				<span class="ft">Cut</span>
 				<div class="chips">
 					{#each story.cut.slice(0, 3) as p (p.priority)}
-						<span class="chip" style="--c:{colors[p.priority]}">{p.name} <small>{p.deltaPts}pp</small></span>
+						<span class="chip" style="--c:{colors[p.priority]}">{p.name} <small>{p.deltaPts}%</small></span>
 					{:else}<span class="chip muted">—</span>{/each}
 				</div>
 			</div>
