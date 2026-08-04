@@ -6,6 +6,7 @@
 		type PhotoRow
 	} from '$lib/game';
 	import { session } from '$lib/state';
+	import { downloadFromUrl } from '$lib/client/download';
 	import ExpandImage from '$lib/components/ExpandImage.svelte';
 
 	let photoTab = $state<'live' | 'archive'>('live');
@@ -32,16 +33,7 @@
 	/** fetch → blob so cross-origin fal URLs download instead of navigating. */
 	async function downloadImage(url: string, name: string) {
 		try {
-			const res = await fetch(url, { mode: 'cors' });
-			const blob = await res.blob();
-			const objUrl = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = objUrl;
-			a.download = name;
-			document.body.appendChild(a);
-			a.click();
-			document.body.removeChild(a);
-			URL.revokeObjectURL(objUrl);
+			await downloadFromUrl(url, name);
 		} catch {
 			window.open(url, '_blank', 'noopener');
 		}

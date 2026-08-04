@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { WorkspaceZone } from '$lib/game';
+	import { downloadFromUrl } from '$lib/client/download';
 
 	/**
 	 * Expand lightbox for AI images + multi-zone floorplate (preferred zones + complete layout).
@@ -48,16 +49,7 @@
 
 	async function download() {
 		try {
-			const res = await fetch(src, { mode: 'cors' });
-			const blob = await res.blob();
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `${title.replace(/\s+/g, '_')}_${Date.now()}.png`;
-			document.body.appendChild(a);
-			a.click();
-			a.remove();
-			URL.revokeObjectURL(url);
+			await downloadFromUrl(src, `${title.replace(/\s+/g, '_')}_${Date.now()}.png`);
 		} catch {
 			window.open(src, '_blank', 'noopener');
 		}

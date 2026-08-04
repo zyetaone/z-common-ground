@@ -418,7 +418,6 @@ export function roomPriorities(room?: { priorities?: string[] } | null): string[
  */
 export const R2_FULL_BUDGET = 100;
 export const R3_REMOVE_TARGET = 30;
-export const R4_ADD_BACK = 20;
 export const R5_RESTRUCTURE_CAP = 90;
 
 /** R3 seal: remove this fraction of the standing total (30% = $30M of $100M). */

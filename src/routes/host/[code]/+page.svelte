@@ -12,6 +12,7 @@
 	import Button from '$lib/components/Button.svelte';
 	import HostPhotos from '$lib/components/host/HostPhotos.svelte';
 	import HostPinGate from '$lib/components/host/HostPinGate.svelte';
+	import { downloadBlob } from '$lib/client/download';
 	import HostGameConfig from '$lib/components/host/HostGameConfig.svelte';
 
 	const st = $derived(session.room);
@@ -54,14 +55,10 @@
 
 	function exportSessionJSON() {
 		if (!st) return;
-		const blob = new Blob([JSON.stringify(st, null, 2)], { type: 'application/json' });
-		const a = document.createElement('a');
-		a.href = URL.createObjectURL(blob);
-		a.download = `common-ground-session-${new Date().toISOString().slice(0, 10)}.json`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(a.href);
+		downloadBlob(
+			new Blob([JSON.stringify(st, null, 2)], { type: 'application/json' }),
+			`common-ground-session-${new Date().toISOString().slice(0, 10)}.json`
+		);
 	}
 
 	async function sealAll() {
@@ -332,7 +329,7 @@
 								{#if t.lockedThisRound}
 									<button
 										type="button"
-										onclick={() => session.unlockTable(t.id)}
+										onclick={() => session.unlockTable(t.id).catch(() => {})}
 										disabled={session.busy}
 										title="Unseal — reopen this table’s board for edits"
 										class="rounded-lg border border-teal px-3 py-1.5 text-xs text-teal-ink hover:bg-teal/10 disabled:opacity-40"
@@ -341,7 +338,7 @@
 								{:else}
 									<button
 										type="button"
-										onclick={() => session.lockTable(t.id)}
+										onclick={() => session.lockTable(t.id).catch(() => {})}
 										disabled={session.busy || !captureRound}
 										title={captureRound
 											? 'Seal — capture current board for this round (host force-submit)'
