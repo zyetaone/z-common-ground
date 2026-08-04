@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { scale } from 'svelte/transition';
 	import {
-		CHIP_DENOMS,
+		CHIP_HEX,
 		CHIP_VALUE,
 		PRIORITIES,
 		R3_REMOVE_TARGET,
@@ -49,7 +49,7 @@
 	/** R3 cut target — 30% of the standing total (falls back to the default-wallet $30M). */
 	const removeTarget = $derived(baseline ? r3RemoveTarget(baseTotal) : R3_REMOVE_TARGET);
 	const remaining = $derived(Math.max(0, capTokens - total));
-	const chipColor = $derived(CHIP_DENOMS[0].hex);
+	const chipColor = CHIP_HEX;
 	const chipSize = 24;
 	const rowLabels = $derived(
 		PRIORITIES.map((def, i) => labels[i]?.trim() || def)

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /**
@@ -20,8 +20,8 @@ export const POST: RequestHandler = async (event) => {
 		}
 
 		const room = await withLiveRoom(() => {
-			if (action === 'select') store.selectRoomConcept('', url);
-			else store.removeRoomConcept('', url);
+			if (action === 'select') store.selectRoomConcept(url);
+			else store.removeRoomConcept(url);
 			return store.snapshot();
 		});
 

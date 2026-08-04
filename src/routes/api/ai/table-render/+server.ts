@@ -12,7 +12,7 @@ import { tableFunctionPrompt } from '$lib/server/ai/prompts';
 import { generateImage } from '$lib/server/ai/fal';
 import { readLiveRoom, withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /**
@@ -49,7 +49,7 @@ export const POST: RequestHandler = async (event) => {
 		const { url, error: imageError } = await generateImage(key, prompt, { quality: 'high' });
 
 		if (url) {
-			await withLiveRoom(() => store.setTableImage('', tableId, url));
+			await withLiveRoom(() => store.setTableImage(tableId, url));
 		}
 
 		return {

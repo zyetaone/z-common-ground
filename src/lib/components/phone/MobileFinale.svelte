@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ConvictionBars from './ConvictionBars.svelte';
-	import { CHIP_DENOMS, CHIP_VALUE, PRIORITIES, formatUsd } from '$lib/game';
+	import { CHIP_HEX, CHIP_VALUE, PRIORITIES, formatUsd } from '$lib/game';
 	import type { Persona, Vec7 } from '$lib/game/types';
 	import Chip from '$lib/components/Chip.svelte';
 
@@ -19,7 +19,7 @@
 		onRender: () => void;
 	} = $props();
 
-	const chipColor = $derived(CHIP_DENOMS[0].hex);
+	const chipColor = CHIP_HEX;
 	const chipCount = $derived(Math.floor(totalTokens / CHIP_VALUE));
 	const top = $derived.by(() => {
 		let best = 0;

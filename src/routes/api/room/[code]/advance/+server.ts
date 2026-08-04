@@ -1,6 +1,6 @@
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /** Advance round and return full room so clients refresh immediately. */

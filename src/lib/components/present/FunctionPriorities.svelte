@@ -8,8 +8,10 @@ import {
 		roomPriorities,
 		tableSeatIndex
 	} from '$lib/game';
+	import type { FunctionProfileTrait } from '$lib/game/scoring';
 	import FunctionProfileSheet from './FunctionProfileSheet.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { RadarChart } from '$lib/components/analytics';
 
 	/**
 	 * Screen 5 — Per function. Cards sorted by alignment, with archetype + tags + top divergence. Profile sheet for depth.
@@ -32,13 +34,12 @@ import {
 		tags: string[];
 		archetype: string;
 		topDivergence: { name: string; delta: number; color: string };
+		traits: FunctionProfileTrait[];
 	};
 	const rows = $derived.by((): CardRow[] => {
 		const personas = roomPersonas(room);
 		const cards: CardRow[] = [];
 		for (const t of room.tables) {
-			// Skip tables with no stake — an empty row would sort last and get
-			// crowned "Independent Lens" with fabricated divergence.
 			if ((t.matrix ?? []).reduce((s, n) => s + n, 0) <= 0) continue;
 			const id = t.id;
 			const seat = tableSeatIndex(id);
@@ -48,6 +49,7 @@ import {
 			const cg = profile?.commonGround ?? 0;
 			const tags = profile?.tags ?? [];
 			const archetype = profile?.archetype ?? '—';
+			const traits = profile?.traits ?? [];
 			cards.push({
 				tableId: id,
 				name: persona.name,
@@ -55,10 +57,10 @@ import {
 				cg,
 				tags,
 				archetype,
-				topDivergence: topDelta(id)
+				topDivergence: topDelta(id),
+				traits
 			});
 		}
-		// Sort: highest alignment first (most aligned with room = "Common Ground builder")
 		return cards.sort((a, b) => b.cg - a.cg);
 	});
 
@@ -167,24 +169,30 @@ import {
 				<div class="align-bar" aria-hidden="true">
 					<div class="align-fill" style="width:{Math.max(4, r.cg)}%"></div>
 				</div>
-				<p class="archetype">{r.archetype}</p>
-				{#if r.tags.length}
-					<!-- No aria-label here: on a <p> it REPLACES the visible tag text for
-					     screen readers, so "Explorer Future-facing Commercial" was being
-					     announced as "Personality traits". The tags speak for themselves. -->
-					<p class="tags">
-						{#each r.tags.slice(0, 3) as t (t)}
-							<span class="tag">{t}</span>
-						{/each}
-					</p>
-				{/if}
-				<p class="delta" style="--dc:{r.topDivergence.color}">
-					<span class="dlab">vs room</span>
-					<span class="dval"
-						>{r.topDivergence.name}
-						<b>{r.topDivergence.delta > 0 ? '+' : ''}{r.topDivergence.delta}pp</b></span
-					>
-				</p>
+				<div class="card-body-row">
+					<div class="card-info">
+						<p class="archetype">{r.archetype}</p>
+						{#if r.tags.length}
+							<p class="tags">
+								{#each r.tags.slice(0, 3) as t (t)}
+									<span class="tag">{t}</span>
+								{/each}
+							</p>
+						{/if}
+						<p class="delta" style="--dc:{r.topDivergence.color}">
+							<span class="dlab">vs room</span>
+							<span class="dval"
+								>{r.topDivergence.name}
+								<b>{r.topDivergence.delta > 0 ? '+' : ''}{r.topDivergence.delta}pp</b></span
+							>
+						</p>
+					</div>
+					{#if r.traits.length > 0}
+						<div class="card-radar" aria-hidden="true">
+							<RadarChart traits={r.traits} color={r.color} size={90} showLabels={false} />
+						</div>
+					{/if}
+				</div>
 				<span class="more">Profile →</span>
 			</button>
 		{/each}
@@ -330,7 +338,7 @@ import {
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 		gap: 10px;
 		padding-bottom: 8px;
 	}
@@ -349,6 +357,26 @@ import {
 	}
 	.card:hover {
 		border-color: var(--fn);
+	}
+	.card-body-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	.card-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+	.card-radar {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-top: -6px;
 	}
 	.card header {
 		display: flex;

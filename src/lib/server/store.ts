@@ -197,13 +197,12 @@ class Store {
 		return this.ensure();
 	}
 
-	get(_code?: string): RoomState | undefined {
+	get(): RoomState | undefined {
 		return this.ensure();
 	}
 
 
 	setConfig(
-		_code: string,
 		patch: {
 			analysisForced?: boolean;
 			roomBountyTokens?: number;
@@ -219,7 +218,7 @@ class Store {
 	}
 
 	/** Advance clock — rules pure; store recompute + room return. */
-	advance(_code?: string) {
+	advance() {
 		const room = this.ensure();
 		const meta = applyAdvance(room);
 		recompute(room);
@@ -227,7 +226,7 @@ class Store {
 	}
 
 	/** Presenter step back — rules pure. */
-	retreat(_code?: string) {
+	retreat() {
 		const room = this.ensure();
 		const meta = applyRetreat(room);
 		recompute(room);
@@ -235,7 +234,6 @@ class Store {
 	}
 
 	boardDelta(
-		_code: string,
 		tableId: number,
 		seat: number,
 		priority: number,
@@ -247,7 +245,6 @@ class Store {
 	}
 
 	boardSet(
-		_code: string,
 		tableId: number,
 		seat: number,
 		priority: number,
@@ -258,15 +255,14 @@ class Store {
 		return room;
 	}
 
-	clearCell(_code: string, tableId: number, seat: number, priority: number): RoomState {
-		return this.boardSet(_code, tableId, seat, priority, 0);
+	clearCell(tableId: number, seat: number, priority: number): RoomState {
+		return this.boardSet(tableId, seat, priority, 0);
 	}
 
 	/**
 	 * Write table board (one function row). Seal only on capture rounds R2 · R3 · R5.
 	 */
 	submitTable(
-		_code: string,
 		tableId: number,
 		board?: number[][],
 		opts?: { seal?: boolean }
@@ -279,18 +275,17 @@ class Store {
 
 	/** Save cumulative board without capture seal (R1 / R4). */
 	saveTableBoard(
-		_code: string,
 		tableId: number,
 		board?: number[][]
 	): { room: RoomState; ok: boolean; error?: string } {
-		return this.submitTable(_code, tableId, board, { seal: false });
+		return this.submitTable(tableId, board, { seal: false });
 	}
 
-	lockTable(_code: string, tableId: number): RoomState {
-		return this.submitTable(_code, tableId).room;
+	lockTable(tableId: number): RoomState {
+		return this.submitTable(tableId).room;
 	}
 
-	unlockTable(_code: string, tableId: number): RoomState {
+	unlockTable(tableId: number): RoomState {
 		const room = this.ensure();
 		const table = room.tables.find((t) => t.id === tableId);
 		if (table) {
@@ -301,7 +296,7 @@ class Store {
 		return room;
 	}
 
-	unlockSeat(_code: string, tableId: number, seat: number): RoomState {
+	unlockSeat(tableId: number, seat: number): RoomState {
 		const room = this.ensure();
 		const table = room.tables.find((t) => t.id === tableId);
 		if (!table || seat < 0 || seat >= N_SEATS) return room;
@@ -313,7 +308,7 @@ class Store {
 	}
 
 	/** Player taps "Join" in lobby — mark table presence. */
-	tableJoin(_code: string, tableId: number): RoomState {
+	tableJoin(tableId: number): RoomState {
 		const room = this.ensure();
 		const table = room.tables.find((t) => t.id === tableId);
 		if (table) {
@@ -324,7 +319,7 @@ class Store {
 	}
 
 	/** Player taps "Freeze" — physical tokens are placed, ready to match digital. */
-	tablePhysicallyDone(_code: string, tableId: number): RoomState {
+	tablePhysicallyDone(tableId: number): RoomState {
 		const room = this.ensure();
 		const table = room.tables.find((t) => t.id === tableId);
 		if (table) {
@@ -334,7 +329,7 @@ class Store {
 		return room;
 	}
 
-	setFinaleImage(_code: string, url: string): RoomState {
+	setFinaleImage(url: string): RoomState {
 		const room = this.ensure();
 		pushRoomConcept(room, url);
 		bump(room);
@@ -342,7 +337,7 @@ class Store {
 	}
 
 	/** Select primary room concept from palette (no new generate). */
-	selectRoomConcept(_code: string, url: string): RoomState {
+	selectRoomConcept(url: string): RoomState {
 		const room = this.ensure();
 		const list = room.roomConceptUrls ?? [];
 		if (!list.includes(url) && room.finaleImageUrl !== url) return room;
@@ -354,7 +349,7 @@ class Store {
 	}
 
 	/** Remove one Common Ground concept from the palette. */
-	removeRoomConcept(_code: string, url: string): RoomState {
+	removeRoomConcept(url: string): RoomState {
 		const room = this.ensure();
 		const list = (room.roomConceptUrls ?? []).filter((u) => u !== url);
 		// Backfill the primary only when the removed url was the finale image.
@@ -367,7 +362,7 @@ class Store {
 	}
 
 	/** Host updates a single persona (by seat index 0..6). Merges onto defaults. */
-	setPersona(_code: string, seat: number, patch: Partial<Persona>): RoomState {
+	setPersona(seat: number, patch: Partial<Persona>): RoomState {
 		const room = this.ensure();
 		if (!room.personas) room.personas = [];
 		if (seat < 0 || seat >= N_SEATS) return room;
@@ -380,7 +375,7 @@ class Store {
 	}
 
 	/** Host updates a single scenario (by round index 0..4). Merges onto defaults. */
-	setScenario(_code: string, round: number, patch: Partial<Scenario>): RoomState {
+	setScenario(round: number, patch: Partial<Scenario>): RoomState {
 		const room = this.ensure();
 		if (!room.scenarios) room.scenarios = [];
 		if (round < 0 || round >= ROUND_COUNT) return room;
@@ -402,7 +397,7 @@ class Store {
 	 * Host renames the 7 board options (priority labels). Persists to D1;
 	 * analysis + phones poll the new names.
 	 */
-	setPriorities(_code: string, labels: string[]): RoomState {
+	setPriorities(labels: string[]): RoomState {
 		const room = this.ensure();
 		if (!Array.isArray(labels) || labels.length !== N_PRIORITIES) return room;
 		room.priorities = labels.map((l, i) => {
@@ -414,7 +409,7 @@ class Store {
 	}
 
 	/** Clear host persona / scenario / priority overrides → config defaults. */
-	resetGameConfig(_code: string): RoomState {
+	resetGameConfig(): RoomState {
 		const room = this.ensure();
 		room.personas = undefined;
 		room.scenarios = undefined;
@@ -424,7 +419,7 @@ class Store {
 	}
 
 	/** Host changes table count (1..N_SEATS). Resizes tables array. */
-	setTableCount(_code: string, count: number): RoomState {
+	setTableCount(count: number): RoomState {
 		const room = this.ensure();
 		const n = Math.max(1, Math.min(N_SEATS, Math.round(count)));
 		while (room.tables.length < n) room.tables.push(emptyTable(room.tables.length + 1));
@@ -433,7 +428,7 @@ class Store {
 		return room;
 	}
 
-	setTableImage(_code: string, tableId: number, url: string): RoomState {
+	setTableImage(tableId: number, url: string): RoomState {
 		const room = this.ensure();
 		const table = room.tables.find((t) => t.id === tableId);
 		if (table) {
@@ -447,7 +442,7 @@ class Store {
 	 * Host “Clear photos”: archive live AI images, then strip them from the live room
 	 * so phones/presenter start clean. Archive stays available on host.
 	 */
-	archiveGeneratedImages(_code: string): RoomState {
+	archiveGeneratedImages(): RoomState {
 		const room = this.ensure();
 		pushArchive(room, collectLiveAsArchive(room));
 		stripLiveImages(room);
@@ -455,9 +450,8 @@ class Store {
 		return room;
 	}
 
-setEnhancedBrief(
-	_code: string,
-	brief: string,
+	setEnhancedBrief(
+		brief: string,
 	source: 'numbers' | 'rapidi' | 'manual' = 'numbers'
 ): RoomState {
 	const room = this.ensure();
@@ -475,7 +469,7 @@ setEnhancedBrief(
 }
 
 	/** Architectural workspace sheets (collage / plan / section / elevation). */
-	setWorkspaceDesigns(_code: string, sheets: WorkspaceDesignSheet[]): RoomState {
+	setWorkspaceDesigns(sheets: WorkspaceDesignSheet[]): RoomState {
 		const room = this.ensure();
 		room.workspaceDesigns = sheets.length ? sheets : undefined;
 		bump(room);
@@ -483,7 +477,7 @@ setEnhancedBrief(
 	}
 
 	/** Insert or replace one design sheet by kind — keeps the other sheets. */
-	upsertWorkspaceDesign(_code: string, sheet: WorkspaceDesignSheet): RoomState {
+	upsertWorkspaceDesign(sheet: WorkspaceDesignSheet): RoomState {
 		const room = this.ensure();
 		const list = (room.workspaceDesigns ?? []).filter((s) => s.kind !== sheet.kind);
 		list.push(sheet);
@@ -495,6 +489,3 @@ setEnhancedBrief(
 
 export const store = new Store();
 
-export function currentScenario(round: number) {
-	return SCENARIOS[round] ?? SCENARIOS[ROUND_COUNT - 1];
-}

@@ -1,6 +1,6 @@
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import { sanitizePriorityLabels } from '$lib/server/host-patch';
 import type { RequestHandler } from './$types';
 
@@ -19,9 +19,9 @@ export const POST: RequestHandler = async (event) => {
 			? sanitizePriorityLabels(body.priorities)
 			: undefined;
 		const room = await withLiveRoom(() => {
-			if (body.resetOverrides) return store.resetGameConfig('');
-			if (sanitizedPriorities) return store.setPriorities('', sanitizedPriorities);
-			return store.setConfig('', {
+			if (body.resetOverrides) return store.resetGameConfig();
+			if (sanitizedPriorities) return store.setPriorities(sanitizedPriorities);
+			return store.setConfig({
 				analysisForced: body.analysisForced,
 				roomBountyTokens: body.roomBountyTokens
 			});

@@ -5,6 +5,13 @@
 import type { RoomState, WorkspaceDesignKind } from '$lib/game/types';
 
 export const SESSION = 'LIVE';
+
+type AdvanceResult = {
+	phase: string;
+	round: number;
+	boardsOpened?: boolean;
+	room?: RoomState;
+};
 /** Faster refresh so phones unlock shortly after presenter advances. */
 const INTERVAL = 500;
 
@@ -119,6 +126,35 @@ function poll(): Promise<void> {
 	return pollChain;
 }
 
+/**
+ * Every room mutation is the same four beats: clear the error, POST, adopt the
+ * room the handler returned (or poll when it returned none), surface failures.
+ *
+ * `quiet` skips the busy flag — board taps and presence pings fire rapidly and
+ * must not disable the UI mid-round; `fail` is the message used when the thrown
+ * value isn't an Error. Always rethrows: callers that don't care wrap in
+ * `.catch(() => {})`.
+ */
+async function mutate<T extends { room?: RoomState }>(
+	path: string,
+	body?: unknown,
+	opts?: { fail?: string; quiet?: boolean }
+): Promise<T> {
+	error = '';
+	if (!opts?.quiet) busy = true;
+	try {
+		const res = await post<T>(`/api/room/${SESSION}${path}`, body);
+		if (res.room) applyRoom(res.room);
+		else await poll();
+		return res;
+	} catch (e) {
+		error = e instanceof Error ? e.message : (opts?.fail ?? 'Request failed');
+		throw e;
+	} finally {
+		if (!opts?.quiet) busy = false;
+	}
+}
+
 export const session = {
 	get room() {
 		return room;
@@ -206,54 +242,21 @@ export const session = {
 	},
 
 	async advance() {
-		busy = true;
-		error = '';
-		try {
-			const res = await post<{
-				phase: string;
-				round: number;
-				boardsOpened?: boolean;
-				room?: RoomState;
-			}>(`/api/room/${SESSION}/advance`);
-			// Immediate UI update from response — don't wait for next poll
-			if (res.room) applyRoom(res.room);
-			else await poll();
-			// Extra poll shortly after so multi-isolate cache settles for others
-			setTimeout(() => {
-				poll();
-			}, 200);
-			return res;
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Advance failed';
-			throw e;
-		} finally {
-			busy = false;
-		}
+		const res = await mutate<AdvanceResult>('/advance', undefined, { fail: 'Advance failed' });
+		// Extra poll shortly after so multi-isolate cache settles for others
+		setTimeout(() => {
+			poll();
+		}, 200);
+		return res;
 	},
 
 	/** Presenter: step back one phase/round; re-open boards for corrections. */
 	async retreat() {
-		busy = true;
-		error = '';
-		try {
-			const res = await post<{
-				phase: string;
-				round: number;
-				boardsOpened?: boolean;
-				room?: RoomState;
-			}>(`/api/room/${SESSION}/retreat`);
-			if (res.room) applyRoom(res.room);
-			else await poll();
-			setTimeout(() => {
-				poll();
-			}, 200);
-			return res;
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Retreat failed';
-			throw e;
-		} finally {
-			busy = false;
-		}
+		const res = await mutate<AdvanceResult>('/retreat', undefined, { fail: 'Retreat failed' });
+		setTimeout(() => {
+			poll();
+		}, 200);
+		return res;
 	},
 
 
@@ -263,14 +266,7 @@ export const session = {
 		priorities?: string[];
 		resetOverrides?: boolean;
 	}) {
-		busy = true;
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/config`, body);
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} finally {
-			busy = false;
-		}
+		await mutate('/config', body, { fail: 'Config failed' });
 	},
 
 	/** Persist host-edited priority labels (7 board options). */
@@ -284,70 +280,32 @@ export const session = {
 	},
 
 	async setPersona(seat: number, patch: Record<string, unknown>) {
-		busy = true;
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/persona`, { seat, patch });
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} finally {
-			busy = false;
-		}
+		await mutate('/persona', { seat, patch }, { fail: 'Persona failed' });
 	},
 
 	async setScenario(round: number, patch: Record<string, unknown>) {
-		busy = true;
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/scenario`, { round, patch });
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} finally {
-			busy = false;
-		}
+		await mutate('/scenario', { round, patch }, { fail: 'Scenario failed' });
 	},
 
 	async setTableCount(count: number) {
-		busy = true;
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/table-count`, { count });
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} finally {
-			busy = false;
-		}
+		await mutate('/table-count', { count }, { fail: 'Table count failed' });
 	},
 
 	/** Chip delta in $M (±CHIP_VALUE = ±10). Local draft path preferred on phone. */
 	async boardDelta(tableId: number, seat: number, priority: number, delta: number) {
-		error = '';
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/board`, {
-				tableId,
-				seat,
-				priority,
-				delta
-			});
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Update failed';
-			throw e;
-		}
+		await mutate(
+			'/board',
+			{ tableId, seat, priority, delta },
+			{ quiet: true, fail: 'Update failed' }
+		);
 	},
 
 	async clearCell(tableId: number, seat: number, priority: number) {
-		error = '';
-		try {
-			const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/board/clear-cell`, {
-				tableId,
-				seat,
-				priority
-			});
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Clear failed';
-			throw e;
-		}
+		await mutate(
+			'/board/clear-cell',
+			{ tableId, seat, priority },
+			{ quiet: true, fail: 'Clear failed' }
+		);
 	},
 
 	/**
@@ -359,73 +317,31 @@ export const session = {
 		board: number[][],
 		opts?: { seal?: boolean; /** skip busy flag (batch emulate) */ quiet?: boolean }
 	) {
-		error = '';
-		const quiet = !!opts?.quiet;
-		if (!quiet) busy = true;
-		try {
-			const res = await post<{ room?: RoomState; sealed?: boolean }>(
-				`/api/room/${SESSION}/lock`,
-				{
-					tableId,
-					board,
-					seal: opts?.seal !== false
-				}
-			);
-			if (res.room) applyRoom(res.room);
-			else await poll();
-			return res;
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Submit failed';
-			throw e;
-		} finally {
-			if (!quiet) busy = false;
-		}
+		return mutate<{ room?: RoomState; sealed?: boolean }>(
+			'/lock',
+			{ tableId, board, seal: opts?.seal !== false },
+			{ quiet: opts?.quiet, fail: 'Submit failed' }
+		);
 	},
 
 	async unlockTable(tableId: number) {
-		const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/unlock-table`, {
-			tableId
-		});
-		if (res.room) applyRoom(res.room);
-		else await poll();
+		await mutate('/unlock-table', { tableId }, { quiet: true, fail: 'Unlock failed' });
 	},
 
 	/** Player taps "Join Session" in lobby — shows presence to presenter. */
 	async joinTable(tableId: number) {
-		error = '';
-		try {
-			const res = await post<{ ok: boolean; room?: RoomState }>(
-				`/api/room/${SESSION}/join`,
-				{ tableId }
-			);
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Join failed';
-		}
+		// Presence is best-effort — a failed join must not block the player.
+		await mutate('/join', { tableId }, { quiet: true, fail: 'Join failed' }).catch(() => {});
 	},
 
 	/** Player taps "Freeze" — physical tokens on the board are final. */
 	async tablePhysicallyDone(tableId: number) {
-		error = '';
-		try {
-			const res = await post<{ ok: boolean; room?: RoomState }>(
-				`/api/room/${SESSION}/physical-done`,
-				{ tableId }
-			);
-			if (res.room) applyRoom(res.room);
-			else await poll();
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Freeze failed';
-		}
+		await mutate('/physical-done', { tableId }, { quiet: true, fail: 'Freeze failed' }).catch(
+			() => {}
+		);
 	},
 	async lockTable(tableId: number) {
-		const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/lock`, {
-			tableId,
-			seal: true
-		});
-		if (res.room) applyRoom(res.room);
-		else await poll();
+		await mutate('/lock', { tableId, seal: true }, { quiet: true, fail: 'Lock failed' });
 	},
 
 	/**
@@ -444,10 +360,8 @@ export const session = {
 			let current = room;
 			if (!current) throw new Error('No room');
 			if (current.phase === 'lobby') {
-				// advance() also toggles busy — call via post path carefully
-				const res = await post<{ room?: RoomState }>(`/api/room/${SESSION}/advance`, {});
-				if (res.room) applyRoom(res.room);
-				else await poll();
+				// quiet: advance() would clear the busy flag this batch is holding
+				await mutate('/advance', {}, { quiet: true });
 				current = room;
 			}
 			if (!current || current.phase !== 'round') {

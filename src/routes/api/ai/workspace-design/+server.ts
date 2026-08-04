@@ -5,7 +5,7 @@ import type { WorkspaceDesignKind, WorkspaceDesignSheet } from '$lib/game/types'
 import { generateImageWithRefs } from '$lib/server/ai/fal';
 import { withLiveRoom, readLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /** Allowlist of shape kinds the route accepts. Mirrors `WorkspaceDesignKind`. */
@@ -85,7 +85,7 @@ export const POST: RequestHandler = async (event) => {
 				};
 				sheets.push(sheet);
 				await withLiveRoom(() => {
-					store.upsertWorkspaceDesign('', sheet);
+					store.upsertWorkspaceDesign(sheet);
 				});
 			} else if (err) {
 				imageError = 'failed';

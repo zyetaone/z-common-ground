@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async (event) => {
@@ -19,7 +19,7 @@ export const POST: RequestHandler = async (event) => {
 	if (!Number.isInteger(priority) || priority < 0 || priority > 6)
 		error(400, 'priority must be an integer in [0,6]');
 	return idempotentJson(event, async () => {
-		const room = await withLiveRoom(() => store.clearCell('', tableId, seat, priority));
+		const room = await withLiveRoom(() => store.clearCell(tableId, seat, priority));
 		return { ok: true, room };
 	});
 };

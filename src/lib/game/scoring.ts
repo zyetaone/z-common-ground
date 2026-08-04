@@ -11,10 +11,6 @@ export function emptyMatrix(): number[][] {
 	return Array.from({ length: 7 }, () => Array(N_PRIORITIES).fill(0));
 }
 
-export function cloneMatrix(m: number[][]): number[][] {
-	return m.map((row) => row.slice());
-}
-
 function cosine(a: Vec7, b: Vec7): number {
 	const dot = a.reduce((s, x, i) => s + x * b[i], 0);
 	const na = Math.sqrt(a.reduce((s, x) => s + x * x, 0));
@@ -215,21 +211,6 @@ export function upsertHistory(room: RoomState) {
 	room.history.sort((a, b) => a.round - b.round);
 }
 
-export interface FunctionOutcome {
-	seat: number;
-	name: string;
-	color: string;
-	winner: { priority: number; name: string; tokens: number };
-	loser: { priority: number; name: string; tokens: number };
-	/** Optional second-place for nuance. */
-	runnerUp?: { priority: number; name: string; tokens: number };
-	total: number;
-	/** 0–100: share of this function’s portfolio on its #1 priority (conviction / focus). */
-	conviction: number;
-	/** 0–100: how evenly spread (100 = flat across all funded priorities). Inverse of finicky. */
-	spread: number;
-}
-
 /** SSOT for presenter insights deck — one shape for stage graphics. */
 export function roomInsights(room: RoomState) {
 	const a = room.aggregate;
@@ -310,57 +291,6 @@ function arcLine(startCgi: number, endCgi: number, startLead: string, endLead: s
 			? `lead shifted ${startLead} → ${endLead}`
 			: `lead stayed ${endLead || '—'}`;
 	return `${cgiBit}; ${leadBit}.`;
-}
-
-/** Per-function mix story — where they put weight, not who spent more (wallet is common). */
-export function winnersLosersByFunction(
-	tables: TableState[],
-	room?: RoomState | null
-): FunctionOutcome[] {
-	const portrait = roomPortrait(tables);
-	const personas = roomPersonas(room);
-	const names = roomPriorities(room);
-	return personas.map((persona, s) => {
-		const row = portrait[s] ?? Array(N_PRIORITIES).fill(0);
-		const total = sum(row);
-		const ranked = row
-			.map((tokens, priority) => ({
-				priority,
-				tokens,
-				name: names[priority] ?? PRIORITIES[priority]
-			}))
-			.sort((a, b) => b.tokens - a.tokens || a.priority - b.priority);
-		const winner = ranked[0] ?? { priority: 0, tokens: 0, name: names[0] ?? PRIORITIES[0] };
-		const funded = ranked.filter((x) => x.tokens > 0);
-		const loser =
-			funded.length > 1
-				? funded[funded.length - 1]
-				: (ranked[ranked.length - 1] ?? winner);
-		const runnerUp = ranked[1] && ranked[1].tokens > 0 ? ranked[1] : undefined;
-		const conviction = total > 0 ? Math.round((winner.tokens / total) * 100) : 0;
-		// Shannon-ish evenness: more equal funded priorities → higher spread
-		const nFunded = Math.max(1, funded.length);
-		const entropy =
-			total > 0
-				? funded.reduce((acc, x) => {
-						const p = x.tokens / total;
-						return acc - (p > 0 ? p * Math.log(p) : 0);
-					}, 0)
-				: 0;
-		const maxEnt = Math.log(nFunded) || 1;
-		const spread = total > 0 ? Math.round((entropy / maxEnt) * 100) : 0;
-		return {
-			seat: s,
-			name: persona.name,
-			color: persona.color,
-			winner,
-			loser,
-			runnerUp,
-			total,
-			conviction,
-			spread
-		};
-	});
 }
 
 // ── Function personality / profile (from their wallet choices) ───────────────
@@ -852,128 +782,6 @@ export function roomRoundStory(room: RoomState): RoundStoryResult {
 	};
 	return result;
 }
-export interface TableBadge {
-	hashtag: string;
-	badge: string;
-	badgePriority: number | null;
-	badgeShare: number;
-}
-
-export function badgeForTable(
-	room: RoomState,
-	tableId: number,
-	persona?: Persona | null
-): TableBadge {
-	const personas = persona ? [persona] : roomPersonas(room);
-	const seat = tableSeatIndex(tableId);
-	const p = personas[seat] ?? personas[0];
-	const hashtag = p?.hashtag ?? '#YourFunction';
-
-	const names = roomPriorities(room);
-	const table = room.tables.find((t) => t.id === tableId);
-	const portrait = roomPortrait(room.tables);
-	const seatPortrait = portrait[seat] ?? zeros();
-	const row = table?.matrix?.length ? table.matrix : seatPortrait;
-	const total = sum(row as Vec7);
-	if (total <= 0) {
-		return { hashtag, badge: 'No stake', badgePriority: null, badgeShare: 0 };
-	}
-	const name = (i: number) => names[i] ?? PRIORITIES[i] ?? '?';
-
-	// Observed play: the badge should name what the table actually did across
-	// the rounds, not just its biggest cumulative pile.
-	const byLabel = new Map((room.history ?? []).map((h) => [h.roundLabel, h]));
-	const r2 = byLabel.get(2);
-	const r3 = byLabel.get(3);
-	const later = byLabel.get(5) ?? byLabel.get(4);
-
-	const seatRow = (snap?: RoundSnapshot): Vec7 | null => {
-		const r = snap?.portrait?.[seat];
-		return r && sum(r as Vec7) > 0 ? (r as Vec7) : null;
-	};
-	/** Average per-function share of a priority across the room, in points. */
-	const roomAvgShare = (snap: RoundSnapshot, priority: number): number => {
-		let n = 0;
-		let acc = 0;
-		for (const fnRow of snap.portrait ?? []) {
-			const t = sum(fnRow as Vec7);
-			if (t <= 0) continue;
-			acc += ((fnRow[priority] ?? 0) / t) * 100;
-			n++;
-		}
-		return n > 0 ? acc / n : 0;
-	};
-
-	if (r2 && r3) {
-		const row2 = seatRow(r2);
-		const row3 = seatRow(r3);
-		if (row2 && row3) {
-			// Held the line: the table's share held or grew R2 → R3 while the
-			// room's average share for that priority fell under the cut.
-			const t2 = sum(row2);
-			const t3 = sum(row3);
-			let held: { priority: number; share: number } | null = null;
-			for (let i = 0; i < N_PRIORITIES; i++) {
-				const s2 = ((row2[i] ?? 0) / t2) * 100;
-				const s3 = ((row3[i] ?? 0) / t3) * 100;
-				if (s3 <= 0 || s3 < s2) continue;
-				if (roomAvgShare(r3, i) >= roomAvgShare(r2, i)) continue;
-				if (!held || s3 > held.share) held = { priority: i, share: s3 };
-			}
-			if (held) {
-				return {
-					hashtag,
-					badge: 'Held ' + name(held.priority),
-					badgePriority: held.priority,
-					badgeShare: Math.round(held.share)
-				};
-			}
-			// Reprioritised champion: largest R3 → R5 share gain (≥ 3pts, the
-			// same threshold roomRoundStory uses for reprioritised).
-			if (later && later.roundLabel > 3) {
-				const rowL = seatRow(later);
-				if (rowL) {
-					const tL = sum(rowL);
-					let champ: { priority: number; gain: number; share: number } | null = null;
-					for (let i = 0; i < N_PRIORITIES; i++) {
-						const s3 = ((row3[i] ?? 0) / t3) * 100;
-						const sL = ((rowL[i] ?? 0) / tL) * 100;
-						const gain = sL - s3;
-						if (gain < 3) continue;
-						if (!champ || gain > champ.gain) champ = { priority: i, gain, share: sL };
-					}
-					if (champ) {
-						return {
-							hashtag,
-							badge: 'Championed ' + name(champ.priority),
-							badgePriority: champ.priority,
-							badgeShare: Math.round(champ.share)
-						};
-					}
-				}
-			}
-		}
-	}
-
-	// Fallback (no R3 history yet): top of the cumulative matrix.
-	let topPriority = 0;
-	let topTokens = 0;
-	for (let i = 0; i < row.length; i++) {
-		const v = row[i] ?? 0;
-		if (v > topTokens) {
-			topTokens = v;
-			topPriority = i;
-		}
-	}
-	const share = Math.round((topTokens / total) * 100);
-	return {
-		hashtag,
-		badge: 'Held ' + name(topPriority),
-		badgePriority: topPriority,
-		badgeShare: share
-	};
-}
-
 
 export function shareVec(matrix: number[]): number[] {
 	const t = sum(matrix as Vec7);

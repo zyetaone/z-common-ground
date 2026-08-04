@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /**
@@ -28,7 +28,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 
 	return idempotentJson(event, async () => {
-		const room = await withLiveRoom(() => store.setEnhancedBrief('', brief, source));
+		const room = await withLiveRoom(() => store.setEnhancedBrief(brief, source));
 		return {
 			ok: true,
 			brief: room.enhancedBrief,

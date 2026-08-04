@@ -1,24 +1,11 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import PortraitMatrix from '$lib/components/analytics/PortraitMatrix.svelte';
+	import { CgiGauge, PortraitMatrix } from '$lib/components/analytics';
 	import { functionProfiles, roomInsights, roomPriorities } from '$lib/game';
 
 	/**
 	 * Screen 1 — Seat Matrix.
 	 * The 7×7 portrait matrix: rows = personas, columns = priorities.
-	 * Each cell shows $M wagered. Cell colour = priority colour (so the
-	 * column colour also reads as "which priorities got the most love").
-	 * The two takeaway chips below are the room's lead and divide — the
-	 * only derived numbers a presenter needs to read aloud.
-	 * Below the footer, a 7-row read-aloud profile: persona dot + name +
-	 * declared risk (the persona's authored blind side, e.g. "Under-investment
-	 * in people and innovation") + room-alignment score. When a function
-	 * hasn't placed stake the row dims and the score is "—".
-	 *
-	 * The declared risk is the *persona-authored* copy — what the function was
-	 * meant to look out for. That's the column the slide's presenter used to
-	 * drive the read-aloud; the derived archetype (what they did) is one
-	 * glance deeper and lives in FunctionProfileSheet.
 	 */
 	let { room }: { room: RoomState } = $props();
 
@@ -43,25 +30,22 @@
 		</div>
 
 		<footer class="bar" aria-label="Room summary">
-			<div class="metric">
-				<span class="cg-kicker m-label">Common Ground</span>
-				<span class="m-num">{ring}</span>
-				<span class="m-u">/100</span>
-				<span class="cg-kicker m-verdict">{i.verdict}</span>
+			<div class="metric gauge-metric">
+				<CgiGauge score={ring} verdict={i.verdict} size={76} />
 			</div>
-			<div class="metric">
+			<div class="metric key-lens">
 				<span class="cg-kicker m-label">Lead</span>
-				<span class="m-val">{i.lead}</span>
+				<span class="m-val lead-val">{i.lead}</span>
 			</div>
 			{#if i.fault !== i.blind}
-				<div class="metric">
+				<div class="metric key-lens">
 					<span class="cg-kicker m-label">Divide</span>
-					<span class="m-val">{i.fault}</span>
+					<span class="m-val divide-val">{i.fault}</span>
 				</div>
 			{/if}
-			<div class="metric">
+			<div class="metric key-lens">
 				<span class="cg-kicker m-label">Overlooked</span>
-				<span class="m-val">{i.blind}</span>
+				<span class="m-val blind-val">{i.blind}</span>
 			</div>
 			<div class="dots" aria-label="{sealed} of {tables} sealed">
 				{#each i.tables as t (t.id)}
@@ -69,6 +53,7 @@
 						class="dot"
 						class:on={t.locked}
 						style="--fn:{t.color}"
+						title="{t.name}: {t.locked ? 'Sealed' : 'Open'}"
 					></span>
 				{/each}
 			</div>
@@ -89,7 +74,12 @@
 							<span class="risk-declared" class:muted={!played}>{p.risk ?? '—'}</span>
 						</div>
 						{#if played}
-							<span class="risk-cg" aria-label="Room alignment {p.commonGround} of 100">{p.commonGround}</span>
+							<div class="risk-align-meter" aria-label="Room alignment {p.commonGround} of 100">
+								<div class="risk-bar-track">
+									<div class="risk-bar-fill" style="width:{p.commonGround}%; background:{p.color}"></div>
+								</div>
+								<span class="risk-cg">{p.commonGround}</span>
+							</div>
 						{:else}
 							<span class="risk-cg muted" aria-label="No stake placed">—</span>
 						{/if}
@@ -157,25 +147,6 @@
 	/* Only the axes that differ from .cg-kicker — see app.css. */
 	.m-label {
 		--k-track: 0.08em;
-	}
-	.m-num {
-		font-family: var(--font-display);
-		font-size: clamp(2.5rem, 4vw, 3.5rem);
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		color: var(--color-ink);
-		line-height: 1;
-		font-variant-numeric: tabular-nums;
-	}
-	.m-u {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		color: var(--color-muted);
-	}
-	.m-verdict {
-		--k-track: 0.06em;
-		--k-color: var(--color-teal-ink);
-		font-size: 14px;
 	}
 	.m-val {
 		font-family: var(--font-display);
@@ -268,22 +239,52 @@
 		text-overflow: ellipsis;
 		line-height: 1.25;
 	}
-	.risk-cg {
+	.gauge-metric {
+		padding: 0 4px;
+		display: flex;
+		align-items: center;
+	}
+	.key-lens {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 2px;
+	}
+	.lead-val {
+		color: var(--color-gold);
+	}
+	.divide-val {
+		color: var(--color-red);
+	}
+	.blind-val {
+		color: var(--color-muted);
+	}
+	.risk-align-meter {
 		grid-column: 3;
 		grid-row: 1 / span 2;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		justify-content: flex-end;
+	}
+	.risk-bar-track {
+		width: 48px;
+		height: 6px;
+		border-radius: 99px;
+		background: color-mix(in srgb, var(--color-ink) 10%, transparent);
+		overflow: hidden;
+	}
+	.risk-bar-fill {
+		height: 100%;
+		border-radius: 99px;
+		transition: width 400ms ease;
+	}
+	.risk-cg {
 		font-family: var(--font-display);
 		font-size: 14px;
 		font-weight: 700;
 		color: var(--color-ink);
 		font-variant-numeric: tabular-nums;
 		text-align: right;
-		align-self: center;
-	}
-	.risk-row :global(.muted) {
-		opacity: 0.5;
-	}
-	.risk-row :global(.risk-cg.muted) {
-		font-weight: 400;
-		color: var(--color-muted);
+		min-width: 24px;
 	}
 </style>

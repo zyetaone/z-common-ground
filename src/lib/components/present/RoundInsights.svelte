@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { RoomState } from '$lib/game/types';
-	import { PRIORITY_COLORS, roomPriorities, roomRoundStory } from '$lib/game';
+	import { PRIORITY_COLORS, roomInsights, roomPriorities, roomRoundStory } from '$lib/game';
 
 /**
  * Screen 3 — How the room evolved.
@@ -86,20 +86,69 @@
 	function fmtCoins(n: number): string {
 		return `$${Math.round(n / 10) * 10}M`;
 	}
+
+	const insights = $derived(roomInsights(room));
+	const journeyPoints = $derived.by(() => {
+		const list = insights.journey ?? [];
+		if (!list.length) return [];
+		return list.map((j: { r: number; cgi: number; lead: string }) => {
+			const x = 40 + (j.r - 1) * 80;
+			const y = 60 - (Math.min(100, Math.max(0, j.cgi)) / 100) * 44;
+			return { ...j, x, y };
+		});
+	});
+
+	const trajectoryPath = $derived.by(() => {
+		if (journeyPoints.length < 2) return '';
+		return journeyPoints.map((pt: { x: number; y: number }, idx: number) => `${idx === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`).join(' ');
+	});
 </script>
 
 <div class="ri">
 	{#if !ready}
 		<p class="empty">Advance through R1 — the rebuild shows here.</p>
 	{:else}
+		<!-- ── Multi-Round CGI & Strategy Trajectory Card ── -->
+		<div class="trajectory-card" aria-label="Common Ground Index Trajectory across rounds">
+			<div class="traj-head">
+				<span class="cg-kicker" style="--k-size: 10px; --k-color: var(--color-gold)">Evolution Trajectory</span>
+				<span class="traj-sub">CGI score curve (R1 → R5)</span>
+			</div>
+			<svg viewBox="0 0 380 76" class="traj-svg">
+				<!-- Grid baseline -->
+				<line x1="20" y1="60" x2="360" y2="60" stroke="color-mix(in srgb, var(--color-ink) 12%, transparent)" stroke-width="1" stroke-dasharray="3,3" />
+				<line x1="20" y1="16" x2="360" y2="16" stroke="color-mix(in srgb, var(--color-ink) 12%, transparent)" stroke-width="1" stroke-dasharray="3,3" />
+
+				{#if trajectoryPath}
+					<!-- Gradient fill area under path -->
+					<path
+						d="{trajectoryPath} L {journeyPoints[journeyPoints.length - 1].x} 60 L {journeyPoints[0].x} 60 Z"
+						fill="color-mix(in srgb, var(--color-gold) 15%, transparent)"
+					/>
+					<!-- Polyline trajectory -->
+					<path
+						d={trajectoryPath}
+						fill="none"
+						stroke="var(--color-gold)"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				{/if}
+
+				<!-- Round data nodes -->
+				{#each journeyPoints as node (node.r)}
+					<circle cx={node.x} cy={node.y} r="5" fill="var(--color-gold)" stroke="var(--color-panel)" stroke-width="2" />
+					<text x={node.x} y={node.y - 9} text-anchor="middle" class="traj-node-val">{node.cgi}</text>
+					<text x={node.x} y="72" text-anchor="middle" class="traj-node-r">R{node.r}</text>
+				{/each}
+			</svg>
+		</div>
+
 		<header class="head">
 			<span class="legend">Lead highlighted with <span class="emph">↻</span> when it changed from the previous phase</span>
 		</header>
 
-		<!-- The bars encode priority by colour alone, and any segment under 12%
-		     carries no inline label. Without a key the room sees a stripe of
-		     colours it cannot name — `title` needs a hover nobody in the audience
-		     can perform. Ordered to match the stacking order of the bars. -->
 		<ul class="key" aria-label="Priority colour key">
 			{#each names as n, i (i)}
 				<li class="key-item">
@@ -190,6 +239,43 @@
 		min-height: 0;
 		overflow: auto;
 		padding: 4px 4px 12px;
+	}
+	.trajectory-card {
+		padding: 8px 14px;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		flex-shrink: 0;
+	}
+	.traj-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+	.traj-sub {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--color-muted);
+	}
+	.traj-svg {
+		width: 100%;
+		height: 70px;
+		overflow: visible;
+	}
+	.traj-node-val {
+		font-family: var(--font-display);
+		font-size: 10px;
+		font-weight: 800;
+		fill: var(--color-ink);
+	}
+	.traj-node-r {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 700;
+		fill: var(--color-muted);
 	}
 	.empty {
 		margin: auto;

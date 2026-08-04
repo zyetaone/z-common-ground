@@ -16,7 +16,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 bun install
 bun run dev            # http://localhost:5173
 bun run check          # svelte-kit sync + svelte-check — THE ONLY quality gate, keep green
-bun run test           # vitest (only src/lib/game/rules/rules.test.ts exists today)
+bun run test           # vitest run (all *.test.ts under src/)
+bun run test <path>    # one file, e.g. bun run test src/lib/server/live-lock.test.ts
+bunx vitest -t "name"  # one test by name
 bun run build          # SvelteKit → .svelte-kit/cloudflare
 wrangler deploy        # Cloudflare Worker
 wrangler secret put FAL_API_KEY   # optional: enables the finale room render
@@ -26,7 +28,7 @@ No CI. After changes, run `bun run check` and smoke-test the flow: `/` → `/pla
 
 ## Architecture in one breath
 
-`+layout` calls `useSession()` → global runes in `src/lib/state/session.svelte.ts`, which **polls `/api/room/*` ~1s** (HTTP, not WebSockets) and issues mutations. The server keeps a **single in-memory `LIVE` room** (`src/lib/server/store.ts`) — ephemeral, so rooms vanish on redeploy or across isolates (documented gap; D1/Durable Object is the production upgrade path).
+`+layout` calls `useSession()` → global runes in `src/lib/state/session.svelte.ts`, which **polls `/api/room/*` ~1s** (HTTP, not WebSockets) and issues mutations. Server state is the **one `LIVE` room** — a per-isolate `Store` singleton (`server/store.ts`) backed by a single D1 row (`server/room-store.ts`). Every read/mutation goes through `withLiveRoom` (`server/live.ts`): per-isolate readers-writer lock + cross-isolate compare-and-swap on `updated_at`, 3 attempts then `409` (the client resyncs). **Never mutate `store` directly from a route** — go through `live.ts`, or a losing isolate silently clobbers the room. Mutating routes wrap their handler in `idempotentJson`/`withIdempotency` (`server/idempotency.ts`).
 
 File-kind discipline is load-bearing — match it when adding code:
 

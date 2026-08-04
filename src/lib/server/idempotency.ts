@@ -1,3 +1,5 @@
+import { error, type RequestEvent } from '@sveltejs/kit';
+
 /**
  * Idempotency-Key store (D1) — replay a cached JSON response within the TTL.
  *
@@ -32,12 +34,22 @@ const TTL_MS = 24 * 60 * 60 * 1000;
  */
 const MAX_CACHED_BODY = 2048;
 
+/** 8–128 chars of URL-safe text. Long enough to be collision-free, short
+ *  enough that a malicious client can't bloat the D1 row. */
+const KEY_RE = /^[a-zA-Z0-9_-]{8,128}$/;
+
+type JsonBody = Record<string, unknown> | unknown;
+
 let schemaReady = false;
 
 async function ensure(db: D1Database) {
 	if (schemaReady) return;
 	await db.prepare(TABLE).run();
 	schemaReady = true;
+}
+
+export function validIdempotencyKey(key: string | null | undefined): key is string {
+	return !!key && KEY_RE.test(key);
 }
 
 export async function getIdempotentResponse(
@@ -90,4 +102,59 @@ export async function saveIdempotentResponse(
 		// Failing to cache costs a replay, not correctness.
 		console.error('[idempotency] save failed', err instanceof Error ? err.message : err);
 	}
+}
+
+/**
+ * Wrap a mutating handler so a retry with the same Idempotency-Key replays the
+ * stored response instead of re-executing.
+ *
+ * Without a key or a D1 binding this is a plain pass-through: idempotency is an
+ * optimisation on the retry path, never a precondition for serving a request.
+ */
+export async function withIdempotency(
+	event: RequestEvent,
+	run: () => Promise<{ status?: number; body: JsonBody }>
+): Promise<Response> {
+	const key = event.request.headers.get('idempotency-key');
+	const db = event.platform?.env?.common_ground_db;
+
+	if (key && !validIdempotencyKey(key)) {
+		throw error(400, 'Invalid Idempotency-Key (8–128 chars, alphanumeric/_/-)');
+	}
+
+	if (key && db) {
+		const cached = await getIdempotentResponse(db, key);
+		if (cached) {
+			return json(cached.body, cached.status, {
+				'idempotency-key': key,
+				'idempotency-key-replay': 'true'
+			});
+		}
+	}
+
+	const result = await run();
+	const status = result.status ?? 200;
+	const bodyStr = JSON.stringify(result.body);
+
+	// Only cache success. A 4xx/5xx should be retryable on its merits.
+	if (key && db && status >= 200 && status < 300) {
+		await saveIdempotentResponse(db, key, status, bodyStr);
+	}
+
+	return json(bodyStr, status, key ? { 'idempotency-key': key } : {});
+}
+
+function json(body: string, status: number, extra: Record<string, string>): Response {
+	return new Response(body, {
+		status,
+		headers: { 'content-type': 'application/json', ...extra }
+	});
+}
+
+/** Convenience: always 200 JSON. */
+export async function idempotentJson(
+	event: RequestEvent,
+	run: () => Promise<JsonBody>
+): Promise<Response> {
+	return withIdempotency(event, async () => ({ body: await run() }));
 }

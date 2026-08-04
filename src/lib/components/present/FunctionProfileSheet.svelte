@@ -2,6 +2,7 @@
 	import type { FunctionProfile } from '$lib/game';
 	import { formatUsd, PRIORITY_COLORS } from '$lib/game';
 	import Modal from '$lib/components/Modal.svelte';
+	import { RadarChart } from '$lib/components/analytics';
 
 	let {
 		open = $bindable(false),
@@ -85,19 +86,24 @@
 			<section class="block">
 				<h3>Personality traits</h3>
 				<p class="sub">From their priority choices — not self-report.</p>
-				<div class="traits">
-					{#each profile.traits as tr (tr.id)}
-						<div class="trait" title={tr.hint}>
-							<div class="trait-top">
-								<span class="trait-lab">{tr.label}</span>
-								<span class="trait-sc">{tr.score}</span>
+				<div class="traits-visual-row">
+					<div class="radar-container">
+						<RadarChart traits={profile.traits} color={profile.color} size={200} />
+					</div>
+					<div class="traits">
+						{#each profile.traits as tr (tr.id)}
+							<div class="trait" title={tr.hint}>
+								<div class="trait-top">
+									<span class="trait-lab">{tr.label}</span>
+									<span class="trait-sc">{tr.score}</span>
+								</div>
+								<div class="track">
+									<div class="fill" style="width:{Math.max(4, tr.score)}%"></div>
+								</div>
+								<p class="trait-hint">{tr.hint}</p>
 							</div>
-							<div class="track">
-								<div class="fill" style="width:{Math.max(4, tr.score)}%"></div>
-							</div>
-							<p class="trait-hint">{tr.hint}</p>
-						</div>
-					{/each}
+						{/each}
+					</div>
 				</div>
 			</section>
 
@@ -349,7 +355,24 @@
 		font-size: 11px;
 		color: var(--color-muted);
 	}
+	.traits-visual-row {
+		display: flex;
+		gap: 16px;
+		align-items: center;
+	}
+	.radar-container {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	@media (max-width: 540px) {
+		.traits-visual-row {
+			flex-direction: column;
+		}
+	}
 	.traits {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		gap: 10px;

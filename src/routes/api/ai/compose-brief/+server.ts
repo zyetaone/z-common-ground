@@ -6,7 +6,7 @@ import {
 import { generateCompleteBriefFromCards } from '$lib/server/ai/rapidi';
 import { withLiveRoom, readLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /**
@@ -32,7 +32,7 @@ export const POST: RequestHandler = async (event) => {
 		const brief = rapidi ?? fallback;
 
 		await withLiveRoom(() => {
-			store.setEnhancedBrief('', brief, rapidi ? 'rapidi' : 'numbers');
+			store.setEnhancedBrief(brief, rapidi ? 'rapidi' : 'numbers');
 		});
 
 		return {

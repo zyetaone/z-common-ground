@@ -80,11 +80,6 @@ export const PERSONAS: Persona[] = [
 	}
 ];
 
-export const SEATS = PERSONAS.map((p) => p.name);
-export const SEAT_COLORS = PERSONAS.map((p) => p.color);
-export const SEAT_LENS = PERSONAS.map((p) => p.lens);
-export const SEAT_MISSIONS = PERSONAS.map((p) => p.mission);
-export const SEAT_BIAS: Vec7[] = PERSONAS.map((p) => p.bias);
 export const N_SEATS = PERSONAS.length;
 
 /**
@@ -317,15 +312,11 @@ export function tableBountyTokens(room: {
 	return Math.min(MAX_WALLET_TOKENS, Math.max(1, fromRoom || DEFAULT_TABLE_BOUNTY_TOKENS));
 }
 
-/** Physical chip denomination — single $10M token. */
-export const CHIP_DENOMS = [
-	{ color: 'red', value: 10, hex: '#e0554b' }
-] as const;
-export type ChipDenom = (typeof CHIP_DENOMS)[number];
-/** The one and only chip — $10M. */
+/** The one and only physical chip — $10M, brand red. */
 export const CHIP_VALUE = 10;
+export const CHIP_HEX = '#e0554b';
+/** Rounds that seal a capture snapshot — the evolution screen reads these. */
 export const EVOLUTION_ROUNDS = [2, 3, 5] as const;
-export const CAPTURE_ROUNDS = [2, 3, 5] as const;
 
 
 /**
@@ -340,7 +331,7 @@ export function isCaptureRound(
 		const s = roomScenarios(room)[roundLabel1Based - 1];
 		return s?.mode === 'capture';
 	}
-	return (CAPTURE_ROUNDS as readonly number[]).includes(roundLabel1Based);
+	return (EVOLUTION_ROUNDS as readonly number[]).includes(roundLabel1Based);
 }
 
 /**

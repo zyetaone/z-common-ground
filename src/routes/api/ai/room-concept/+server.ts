@@ -5,7 +5,7 @@ import { finalePrompt } from '$lib/server/ai/prompts';
 import { generateImage } from '$lib/server/ai/fal';
 import { withLiveRoom, readLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /**
@@ -35,7 +35,7 @@ export const POST: RequestHandler = async (event) => {
 
 		if (url) {
 			await withLiveRoom(() => {
-				store.setFinaleImage('', url);
+				store.setFinaleImage(url);
 			});
 		}
 

@@ -106,15 +106,10 @@
 		moves.length > 0 && moves.some((m) => m.cut.length > 0 || m.build.length > 0)
 	);
 
-	/**
-	 * Only show the net when it actually separates functions.
-	 *
-	 * R5 caps each wallet at 90% of R2's, so every table that spends to the cap
-	 * in both rounds lands on exactly the same net. In that (common) case the
-	 * column is seven identical numbers in the spot the eye reads first, which
-	 * buries the real story — which priorities each function cut and rebuilt.
-	 */
 	const netVaries = $derived(new Set(moves.map((m) => m.net)).size > 1);
+
+	const SHORT = ['Talent', 'Experience', 'Brand', 'Productivity', 'Innovation', 'Cost / ROI', 'Future'];
+	const shortName = (i: number, label: string) => SHORT[i] ?? label;
 
 	const fmt = (t: number, sign: '+' | '−') => `${sign}$${t}M`;
 </script>
@@ -126,6 +121,19 @@
 			<p class="empty-sub">Once a function trims and re-stakes, their strategy lands here.</p>
 		</div>
 	{:else}
+		<!-- ── Priority Column Header Legend ── -->
+		<header class="ps-legend" aria-label="Priority column key">
+			<span class="ps-lg-title">Function / Strategy</span>
+			<div class="ps-lg-cols" role="img" aria-label="7 priority columns">
+				{#each names as n, i (i)}
+					<div class="ps-lg-col">
+						<span class="ps-lg-dot" style="background:{PRIORITY_COLORS[i]}" aria-hidden="true"></span>
+						<span class="ps-lg-name" style="color:{PRIORITY_COLORS[i]}">{shortName(i, n)}</span>
+					</div>
+				{/each}
+			</div>
+		</header>
+
 		<section class="rows stagger" aria-label="Per-function cut and rebuild">
 			{#each moves as m, mi (m.seat)}
 				<article class="row" class:up={netVaries && m.net > 0} class:dn={netVaries && m.net < 0}>
@@ -148,13 +156,17 @@
 							<div class="arc-col" title="{a.name}: {a.delta === 0 ? 'no net change' : fmt(Math.abs(a.delta), a.delta > 0 ? '+' : '−')}">
 								<div class="arc-cell up">
 									{#if a.delta > 0}
-										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 3.3)}%"></span>
+										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 4.5)}%">
+											<span class="arc-val">+{a.delta}</span>
+										</span>
 									{/if}
 								</div>
 								<span class="arc-axis" style="background:{a.color}" aria-hidden="true"></span>
 								<div class="arc-cell dn">
 									{#if a.delta < 0}
-										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 3.3)}%"></span>
+										<span class="arc-bar" style="background:{a.color}; height:{Math.min(100, Math.abs(a.delta) * 4.5)}%">
+											<span class="arc-val">{a.delta}</span>
+										</span>
 									{/if}
 								</div>
 							</div>
@@ -201,6 +213,56 @@
 		min-height: 0;
 		padding: 4px 4px 12px;
 		overflow: auto;
+	}
+	.ps-legend {
+		display: grid;
+		grid-template-columns: minmax(140px, 180px) 1fr;
+		gap: 12px 16px;
+		align-items: center;
+		padding: 6px 14px;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--color-line);
+		background: var(--color-panel);
+		flex-shrink: 0;
+	}
+	.ps-lg-title {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+	.ps-lg-cols {
+		display: grid;
+		grid-template-columns: repeat(7, 1fr);
+		gap: 3px;
+	}
+	.ps-lg-col {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		min-width: 0;
+	}
+	.ps-lg-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.ps-lg-name {
+		font-family: var(--font-mono);
+		font-size: 9px;
+		font-weight: 800;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	@media (max-width: 720px) {
+		.ps-legend {
+			display: none;
+		}
 	}
 	.empty {
 		margin: auto;
@@ -291,10 +353,11 @@
 		align-items: center;
 	}
 	.arc-cell {
-		height: 16px;
+		height: 26px;
 		width: 100%;
 		display: flex;
 		justify-content: center;
+		position: relative;
 	}
 	.arc-cell.up {
 		align-items: flex-end;
@@ -303,9 +366,21 @@
 		align-items: flex-start;
 	}
 	.arc-bar {
-		width: 68%;
-		border-radius: 2px;
-		min-height: 3px;
+		width: 72%;
+		border-radius: 3px;
+		min-height: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+	}
+	.arc-val {
+		font-family: var(--font-mono);
+		font-size: 8.5px;
+		font-weight: 800;
+		color: #111a14;
+		line-height: 1;
+		pointer-events: none;
 	}
 	/* Always-present centre tick keeps the axis readable even where a priority
 	   never moved, so an untouched column reads as "held", not as missing data. */

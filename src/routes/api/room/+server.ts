@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { withLiveRoom, readLiveRoom } from '$lib/server/live';
 import { SESSION, store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /** Idempotent — always the single LIVE session. */

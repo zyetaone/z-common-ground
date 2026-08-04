@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { getIdempotentResponse, saveIdempotentResponse } from './idempotency';
-import { validIdempotencyKey } from './with-idempotency';
+import { validIdempotencyKey } from './idempotency';
 
 type Row = { status: number; body: string; expires_at: number };
 

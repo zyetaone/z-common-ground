@@ -1,12 +1,12 @@
 import { error } from '@sveltejs/kit';
-import { CHIP_DENOMS } from '$lib/game';
+import { CHIP_VALUE } from '$lib/game';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import type { RequestHandler } from './$types';
 
 /** Valid chip-value deltas — single $10M denom (±10). */
-const CHIP_DELTAS = CHIP_DENOMS.flatMap((c) => [c.value, -c.value]);
+const CHIP_DELTAS = [CHIP_VALUE, -CHIP_VALUE];
 
 export const POST: RequestHandler = async (event) => {
 	const body = (await event.request.json().catch(() => ({}))) as {
@@ -28,13 +28,13 @@ export const POST: RequestHandler = async (event) => {
 	return idempotentJson(event, async () => {
 		const room = await withLiveRoom(() => {
 			if (typeof body.value === 'number') {
-				return store.boardSet('', tableId, seat, priority, body.value);
+				return store.boardSet(tableId, seat, priority, body.value);
 			}
 			const delta = Number(body.delta);
 			if (!CHIP_DELTAS.includes(delta)) {
-				error(400, `delta must be ±${CHIP_DENOMS[0]?.value ?? 10} (chip value)`);
+				error(400, `delta must be ±${CHIP_VALUE} (chip value)`);
 			}
-			return store.boardDelta('', tableId, seat, priority, delta);
+			return store.boardDelta(tableId, seat, priority, delta);
 		});
 		return { ok: true, room };
 	});

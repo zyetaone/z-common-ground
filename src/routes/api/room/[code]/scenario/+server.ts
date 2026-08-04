@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import { sanitizeScenarioPatch } from '$lib/server/host-patch';
 import { ROUND_COUNT } from '$lib/game/config';
 import type { RequestHandler } from './$types';
@@ -22,7 +22,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 	return idempotentJson(event, async () => {
 		const patch = sanitizeScenarioPatch(body.patch ?? {});
-		const room = await withLiveRoom(() => store.setScenario('', body.round!, patch));
+		const room = await withLiveRoom(() => store.setScenario(body.round!, patch));
 		return { ok: true, room };
 	});
 };

@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { withLiveRoom } from '$lib/server/live';
 import { store } from '$lib/server/store';
-import { idempotentJson } from '$lib/server/with-idempotency';
+import { idempotentJson } from '$lib/server/idempotency';
 import { sanitizePersonaPatch } from '$lib/server/host-patch';
 import { N_SEATS } from '$lib/game/config';
 import type { RequestHandler } from './$types';
@@ -22,7 +22,7 @@ export const POST: RequestHandler = async (event) => {
 	}
 	return idempotentJson(event, async () => {
 		const patch = sanitizePersonaPatch(body.patch ?? {});
-		const room = await withLiveRoom(() => store.setPersona('', body.seat!, patch));
+		const room = await withLiveRoom(() => store.setPersona(body.seat!, patch));
 		return { ok: true, room };
 	});
 };

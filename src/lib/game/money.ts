@@ -5,15 +5,6 @@ function tokensToUsd(valueM: number): number {
 	return valueM * TOKEN_VALUE_USD;
 }
 
-/** Single-chip legend: "$10M". */
-export function tokenUnitLabel(): string {
-	return '$10M';
-}
-
-export function tableWalletLabel(tableCapValueM: number): string {
-	return `${formatUsd(tableCapValueM)}`;
-}
-
 /** Compact $ from token counts via TOKEN_VALUE_USD. */
 export function formatUsd(tokens: number): string {
 	if (tokens <= 0) return '—';
