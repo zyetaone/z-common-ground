@@ -262,7 +262,11 @@ export const session = {
 	},
 
 	async advance() {
-		const res = await mutate<AdvanceResult>('/advance', undefined, { fail: 'Advance failed' });
+		const res = await mutate<AdvanceResult>(
+			'/advance',
+			{ from: { phase: session.phase, round: session.round } },
+			{ fail: 'Advance failed' }
+		);
 		// Extra poll shortly after so multi-isolate cache settles for others
 		setTimeout(() => {
 			poll();
@@ -272,7 +276,11 @@ export const session = {
 
 	/** Presenter: step back one phase/round; re-open boards for corrections. */
 	async retreat() {
-		const res = await mutate<AdvanceResult>('/retreat', undefined, { fail: 'Retreat failed' });
+		const res = await mutate<AdvanceResult>(
+			'/retreat',
+			{ from: { phase: session.phase, round: session.round } },
+			{ fail: 'Retreat failed' }
+		);
 		setTimeout(() => {
 			poll();
 		}, 200);

@@ -1,16 +1,9 @@
-import { withLiveRoom } from '$lib/server/live';
-import { store } from '$lib/server/store';
 import { idempotentJson } from '$lib/server/idempotency';
+import { stepRoom, type StepFrom } from '$lib/server/step';
 import type { RequestHandler } from './$types';
 
+/** Step back one phase/round and re-open boards for corrections. Guarded against a replayed request — see stepIsCurrent. */
 export const POST: RequestHandler = async (event) => {
-	return idempotentJson(event, async () => {
-		const result = await withLiveRoom(() => store.retreat());
-		return {
-			phase: result.phase,
-			round: result.round,
-			boardsOpened: result.boardsOpened,
-			room: store.snapshot()
-		};
-	});
+	const body = (await event.request.json().catch(() => ({}))) as { from?: StepFrom };
+	return idempotentJson(event, () => stepRoom('retreat', body.from));
 };

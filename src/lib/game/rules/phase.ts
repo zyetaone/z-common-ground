@@ -15,6 +15,26 @@ export function reopenBoards(room: RoomState): void {
 	room.analysisForced = false;
 }
 
+/** The clock position a caller believed the room was on when it asked to move. */
+export type StepFrom = { phase?: string; round?: number } | undefined;
+
+/**
+ * Does the caller's view of the clock still match the room?
+ *
+ * This is the replay guard for advance/retreat. The client retries once on
+ * network failure with the same Idempotency-Key, but the room body is ~10KB
+ * and the idempotency cache refuses anything over 2KB — so a lost response
+ * would re-execute the step and move the room TWO rounds. A mismatch means
+ * something already moved it (usually the first attempt, which did land), so
+ * the retry must not move it again.
+ *
+ * An absent `from` opts out — older clients and manual calls still work.
+ */
+export function stepIsCurrent(cur: Pick<RoomState, 'phase' | 'round'>, from: StepFrom): boolean {
+	if (!from) return true;
+	return cur.phase === from.phase && cur.round === from.round;
+}
+
 export type AdvanceResult = {
 	phase: Phase;
 	round: number;
