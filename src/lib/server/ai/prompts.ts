@@ -139,6 +139,12 @@ export function finalePrompt(
 		'A single photograph of one real interior, taken from one camera position.',
 		'NOT a collage, NOT a grid, NOT a multi-panel board, NOT a diagram, NOT an annotated floorplan, NOT a moodboard. One continuous room, one viewpoint.',
 		'Common Ground room vision for Zyeta / ZyetaI.',
+		// Stated here, not only at the end. This prompt runs ~3.9KB with all seven
+		// priorities funded, and the per-priority block below is the part that
+		// grows — so anything the model truncates, it truncates off the tail. The
+		// no-text contract is the constraint these renders regress against most,
+		// and it was the last thing in the string.
+		...NO_TEXT_NO_CHROME,
 		...REALISM,
 		'Award-winning workplace photography: warm timber, soft textiles, matte metal, shallow depth where natural.',
 		'People using the space naturally — meeting, collaborating, focused work — never staring at camera.',
@@ -156,6 +162,8 @@ export function finalePrompt(
 		`Zone colour branding (subtle, architectural — not logos): ${zonePalette || 'warm neutrals with teal and gold accents'}.`,
 		'Higher-% priorities own largest floorplate share, focal materials, and lighting; lower-% stay secondary rooms off the main axis.',
 		'All zones are visible together in one uninterrupted wide shot, flowing into each other across the same floor — open collaboration, focus, wellness, tech and brand moments sized by weight.',
+		// Repeated deliberately: first and last is how this one survives both
+		// truncation and recency weighting.
 		...NO_TEXT_NO_CHROME
 	].join(' ');
 }
@@ -186,6 +194,7 @@ export function tableFunctionPrompt(
 		'A single photograph of one real interior, taken from one camera position.',
 		'NOT a collage, NOT a grid, NOT a multi-panel board, NOT an annotated floorplan. One continuous room.',
 		`Workplace interior as it would be if ${functionName} set all priorities with a full ${budget} budget — ZyetaI concept lens.`,
+		...NO_TEXT_NO_CHROME,
 		...REALISM,
 		`Not a generic office — ${functionName} priority shape only; not the room average.`,
 		`Their mix: ${compositionLine(mix)}.`,

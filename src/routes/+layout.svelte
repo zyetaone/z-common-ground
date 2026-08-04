@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { onNavigate } from '$app/navigation';
 	import '../app.css';
@@ -62,6 +63,19 @@
 	<meta property="og:title" content="Common Ground" />
 	<meta property="og:description" content="Imagine the future of the workplace." />
 	<meta property="og:type" content="website" />
+	<!--
+		og:image is what makes the LinkedIn share worth taking. Without it the
+		celebration post renders as a bare text card, and share-offsite cannot
+		attach the downloaded frame — the link preview is the only picture the
+		post gets. Absolute URLs derived from the request, never hardcoded: the
+		last hardcoded host in this codebase named workers.dev and outlived it.
+	-->
+	<meta property="og:url" content={page.url.origin + page.url.pathname} />
+	<meta property="og:image" content={`${page.url.origin}/og.jpg`} />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:alt" content="A Common Ground workplace concept" />
+	<meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 {@render children()}
