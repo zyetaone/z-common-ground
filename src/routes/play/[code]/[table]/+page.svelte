@@ -197,16 +197,6 @@
 		}
 	}
 
-	async function onSave() {
-		if (!editable || submitting || overCap) return;
-		submitting = true;
-		try {
-			await session.submitTable(tableId, boardFromRow(draft), { seal: false });
-			seeded = true;
-		} finally {
-			submitting = false;
-		}
-	}
 
 	async function onFreeze() {
 		if (session.busy) return;
@@ -231,8 +221,16 @@
 							? `Physical board · restructure ${formatUsd(r5CapForWallet(baseWallet))}`
 							: `Physical board · R${roundLabel}`
 	);
+	/**
+	 * The freeze step is the physical round: chips, table, discussion. It used to
+	 * ask "what does your physical board reflect?", which is the transcription
+	 * question and belongs on the input step — and it promised "then match
+	 * digital" on every round, including the two that never capture.
+	 */
 	const freezeSub = $derived(
-		'What does your physical board reflect? Freeze when that round is complete — then match digital.'
+		canCapture
+			? 'Place your chips on the table board. Freeze when the round is settled — then you’ll mirror it here.'
+			: 'Place your chips on the table board. Freeze when the round is settled.'
 	);
 </script>
 
@@ -345,12 +343,10 @@
 			{tableCap}
 			{baseWallet}
 			{submitError}
-			{canCapture}
 			labels={priorityLabels}
 			onDelta={delta}
 			onClear={clear}
 			{onSubmit}
-			{onSave}
 		/>
 	{:else}
 		<MobileWaitStage showDot text="Waiting for the next round…" />

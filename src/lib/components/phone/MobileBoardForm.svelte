@@ -27,12 +27,10 @@
 		tableCap,
 		baseWallet,
 		submitError = '',
-		canCapture = true,
 		labels,
 		onDelta,
 		onClear,
-		onSubmit,
-		onSave
+		onSubmit
 	}: {
 		counts: Vec7;
 		color: string;
@@ -55,16 +53,19 @@
 		tableCap: number;
 		baseWallet: number;
 		submitError?: string;
-		canCapture?: boolean;
 		labels?: string[];
 		onDelta: (priority: number, delta: number) => void | Promise<void>;
 		onClear?: (priority: number) => void | Promise<void>;
 		onSubmit: (e: Event) => void | Promise<void>;
-		onSave: () => void | Promise<void>;
 	} = $props();
 </script>
 
 <form class="board-form" onsubmit={onSubmit}>
+	<header class="lede">
+		<h2 class="lede-q">What does your board reflect?</h2>
+		<p class="lede-sub">Mirror the chips your table just placed.</p>
+	</header>
+
 	<FunctionBoard
 		{counts}
 		{color}
@@ -80,54 +81,58 @@
 
 	{#if editable}
 		<div class="foot">
-			{#if canCapture}
-				{#if roundLabel === 2}
-					<p class="hint-cap req" class:met={r2Ready}>
-						{r2Ready
-							? `Full ${formatUsdFull(r2Target)} wallet ready`
-							: `Needs the full ${formatUsdFull(r2Target)} wallet`}
-					</p>
-				{:else if roundLabel === 3 && removeOnly}
-					<p class="hint-cap req" class:met={r3Ready}>
-						{r3Ready
-							? `${formatUsdFull(removeTarget)} removed — target met`
-							: `Needs ${formatUsdFull(Math.max(0, removeTarget - removedTokens))} more removed`}
-					</p>
-				{/if}
-				<button
-					type="submit"
-					class="submit"
-					disabled={busy || overCap || !r2Ready || !r3Ready || (!removeOnly && totalTokens <= 0)}
-				>
-					{busy
-						? 'Locking in…'
-						: removeOnly
-							? `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`
-							: roundLabel === 5
-								? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsdFull(tableCap)}`
-								: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
-				</button>
-				{#if submitError}
-					<p class="cg-error">{submitError}</p>
-				{/if}
-			{:else}
-				<button
-					type="button"
-					class="submit save"
-					disabled={busy || totalTokens <= 0 || overCap}
-					onclick={() => onSave()}
-				>
-					{busy ? 'Saving…' : `Save & continue · ${formatUsdFull(totalTokens)}`}
-				</button>
-				{#if totalTokens <= 0}
-					<p class="hint-cap">Place {formatUsd(CHIP_VALUE)} tokens on the board first.</p>
-				{/if}
+			{#if roundLabel === 2}
+				<p class="hint-cap req" class:met={r2Ready}>
+					{r2Ready
+						? `Full ${formatUsdFull(r2Target)} wallet ready`
+						: `Needs the full ${formatUsdFull(r2Target)} wallet`}
+				</p>
+			{:else if roundLabel === 3 && removeOnly}
+				<p class="hint-cap req" class:met={r3Ready}>
+					{r3Ready
+						? `${formatUsdFull(removeTarget)} removed — target met`
+						: `Needs ${formatUsdFull(Math.max(0, removeTarget - removedTokens))} more removed`}
+				</p>
+			{/if}
+			<button
+				type="submit"
+				class="submit"
+				disabled={busy || overCap || !r2Ready || !r3Ready || (!removeOnly && totalTokens <= 0)}
+			>
+				{busy
+					? 'Locking in…'
+					: removeOnly
+						? `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`
+						: roundLabel === 5
+							? `Final seal · ${formatUsdFull(totalTokens)} / ${formatUsdFull(tableCap)}`
+							: `Lock in R${roundLabel} · ${formatUsdFull(totalTokens)}`}
+			</button>
+			{#if submitError}
+				<p class="cg-error">{submitError}</p>
 			{/if}
 		</div>
 	{/if}
 </form>
 
 <style>
+	/* The step's own question. The freeze screen owns the physical round; this
+	   screen owns transcribing it, and until now it opened straight onto a grid
+	   with no statement of what the player was being asked to do. */
+	.lede {
+		padding: 0 2px 2px;
+	}
+	.lede-q {
+		font-family: var(--font-display);
+		font-size: 17px;
+		font-weight: 700;
+		line-height: 1.2;
+		color: var(--color-ink);
+	}
+	.lede-sub {
+		margin-top: 2px;
+		font-size: 12px;
+		color: var(--color-muted);
+	}
 	.board-form {
 		display: flex;
 		flex-direction: column;
@@ -159,13 +164,6 @@
 	}
 	.submit:disabled {
 		opacity: 0.4;
-		box-shadow: none;
-	}
-	.submit.save {
-		background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-		backdrop-filter: blur(6px);
-		border: 1px solid var(--color-gold);
-		color: var(--color-gold-ink);
 		box-shadow: none;
 	}
 	.hint-cap {
