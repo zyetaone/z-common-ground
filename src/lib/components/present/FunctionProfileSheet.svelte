@@ -95,10 +95,21 @@
 							<div class="trait" title={tr.hint}>
 								<div class="trait-top">
 									<span class="trait-lab">{tr.label}</span>
-									<span class="trait-sc">{tr.score}</span>
+									<!-- Shares carry their unit; an index does not. Three of these six
+									     are a % of the wallet (even split ≈ 14) and three are 0–100
+									     similarity scores, so an unlabelled column read 29 against 29
+									     as if they meant the same thing. -->
+									<span class="trait-sc">
+										{tr.score}{#if tr.kind === 'share'}<span class="trait-unit">% of wallet</span>{/if}
+									</span>
 								</div>
 								<div class="track">
 									<div class="fill" style="width:{Math.max(4, tr.score)}%"></div>
+									{#if tr.kind === 'share'}
+										<!-- Even-split reference: 1/7 of the wallet. Without it a 29 has
+										     nothing to be "strong" against. -->
+										<span class="even-mark" title="Even split across 7 priorities"></span>
+									{/if}
 								</div>
 								<p class="trait-hint">{tr.hint}</p>
 							</div>
@@ -387,6 +398,21 @@
 		font-weight: 700;
 		font-size: 12px;
 	}
+	.trait-unit {
+		margin-left: 3px;
+		font-size: 0.62em;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		opacity: 0.65;
+	}
+	.even-mark {
+		position: absolute;
+		left: 14.3%;
+		top: -2px;
+		bottom: -2px;
+		width: 1px;
+		background: color-mix(in srgb, var(--color-ink) 45%, transparent);
+	}
 	.trait-sc {
 		font-family: var(--font-mono);
 		font-size: 12px;
@@ -395,10 +421,10 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.track {
+		position: relative;
 		height: 6px;
 		border-radius: 99px;
 		background: color-mix(in srgb, var(--color-ink) 8%, transparent);
-		overflow: hidden;
 		margin: 4px 0 2px;
 	}
 	.fill {

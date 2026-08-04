@@ -311,6 +311,17 @@ export interface FunctionProfileTrait {
 	label: string;
 	/** 0–100 score from the table’s portfolio */
 	score: number;
+	/**
+	 * What the score IS — because these six are not one kind of number.
+	 *
+	 * 'share' traits are a percentage of the table's wallet, so an even split
+	 * across seven priorities is ~14 and anything near 30 is double weight.
+	 * 'index' traits are a 0–100 similarity or evenness measure, where 30 is
+	 * simply low. Rendered in one column they invited reading 29 against 29 as
+	 * if they meant the same thing — "Future-facing 29 · strong" directly above
+	 * "Sure 29 · some spread" is two correct rows that contradict each other.
+	 */
+	kind: 'share' | 'index';
 	/** One-line facilitator gloss */
 	hint: string;
 }
@@ -401,7 +412,8 @@ export function functionProfile(room: RoomState, tableId: number): FunctionProfi
 	const traits: FunctionProfileTrait[] = [
 		{
 			id: 'sure',
-			label: 'Sure',
+			label: 'Conviction',
+			kind: 'share',
 			score: conviction,
 			hint:
 				conviction >= 45
@@ -413,6 +425,7 @@ export function functionProfile(room: RoomState, tableId: number): FunctionProfi
 		{
 			id: 'breadth',
 			label: 'Breadth',
+			kind: 'index',
 			score: breadth,
 			hint:
 				breadth >= 70
@@ -423,7 +436,8 @@ export function functionProfile(room: RoomState, tableId: number): FunctionProfi
 		},
 		{
 			id: 'aligned',
-			label: 'Aligned',
+			label: 'Room alignment',
+			kind: 'index',
 			score: cg,
 			hint:
 				cg >= 66
@@ -434,18 +448,20 @@ export function functionProfile(room: RoomState, tableId: number): FunctionProfi
 		},
 		{
 			id: 'innovative',
-			label: 'Innovative',
+			label: 'Innovation',
+			kind: 'share',
 			score: innovation,
 			hint:
 				innovation >= 25
 					? 'Heavy on Innovation — future-making posture.'
 					: innovation >= 12
-						? 'Some innovation stake in the mix.'
+						? 'Some innovation stake — around an even share.'
 						: 'Light on Innovation this session.'
 		},
 		{
 			id: 'onType',
-			label: 'On-type',
+			label: 'Type fit',
+			kind: 'index',
 			score: typeFit,
 			hint:
 				typeFit >= 60
@@ -456,13 +472,14 @@ export function functionProfile(room: RoomState, tableId: number): FunctionProfi
 		},
 		{
 			id: 'future',
-			label: 'Future-facing',
+			label: 'Future focus',
+			kind: 'share',
 			score: future,
 			hint:
 				future >= 25
-					? 'Strong Future Readiness weight.'
+					? 'Strong Future Readiness weight — well above an even share.'
 					: future >= 12
-						? 'Some future stake.'
+						? 'Some future stake — around an even share.'
 						: 'Near-term over five-year readiness.'
 		}
 	];
