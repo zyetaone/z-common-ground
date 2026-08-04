@@ -14,6 +14,9 @@ type AdvanceResult = {
 };
 /** Faster refresh so phones unlock shortly after presenter advances. */
 const INTERVAL = 500;
+/** Longer than any healthy poll (measured ~320-420ms) and short enough that a
+ *  stalled request costs a few ticks, not the session. */
+const POLL_TIMEOUT = 4000;
 
 let room = $state.raw<RoomState | null>(null);
 let connected = $state(false);
@@ -118,8 +121,16 @@ async function post<T>(
 async function fetchStateOnce() {
 	if (typeof window === 'undefined') return;
 	try {
+		// A fetch with no timeout can hang indefinitely — a stalled connection,
+		// a phone leaving wifi, a Worker cold start behind a dead socket. Since
+		// the interval now skips while a poll is pending, ONE hung request used
+		// to wedge the loop forever: pollsPending never returned to 0, no tick
+		// ever fired again, and the page sat on "Connecting…" with a healthy
+		// server. The abort makes the chain self-healing — it fails, the counter
+		// clears, the next tick retries.
 		const r = await fetch(`/api/room/${SESSION}/state`, {
 			cache: 'no-store',
+			signal: AbortSignal.timeout(POLL_TIMEOUT),
 			headers: room?.updatedAt ? { 'if-none-match': `W/"${room.updatedAt}"` } : {}
 		});
 		if (r.status === 304) {
