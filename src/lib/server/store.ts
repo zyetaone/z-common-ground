@@ -135,6 +135,9 @@ function makeRoom(tableCount = DEFAULT_TABLE_COUNT): RoomState {
 class Store {
 	/** Single session — not a multi-room map. */
 	private room: RoomState | null = null;
+	/** Ceiling on one D1 read. Past this a sync reports failure and lets go. */
+	private static readonly SYNC_DEADLINE_MS = 5_000;
+
 	private syncing: Promise<{ existed: boolean; failed: boolean }> | null = null;
 
 	/**
@@ -153,7 +156,17 @@ class Store {
 			// D1 is authoritative — always adopt it (it holds every colo's writes).
 			this.room = loaded.room;
 			return { existed: true, failed: false };
-		})().finally(() => {
+		})();
+		// Race the deadline, not just the load: a fetch that never settles would
+		// otherwise leave `syncing` set forever, and every later sync would be
+		// handed that same dead promise. Bounding the caller isn't enough — the
+		// stall has to stop being shared.
+		this.syncing = Promise.race([
+			this.syncing,
+			new Promise<{ existed: boolean; failed: boolean }>((resolve) =>
+				setTimeout(() => resolve({ existed: true, failed: true }), Store.SYNC_DEADLINE_MS)
+			)
+		]).finally(() => {
 			this.syncing = null;
 		});
 		return this.syncing;

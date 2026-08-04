@@ -8,6 +8,11 @@
  *  - Cross isolate: persist is a compare-and-swap on updated_at. Losing the
  *    race re-syncs and re-runs the mutation on fresh state; after 3 attempts
  *    the request 409s and the client resyncs (session.post handles 409).
+ *  - Past READ_DEADLINE_MS a read gives up waiting and proceeds. That trades a
+ *    hung deck for a rare lost mutation: a reader that resumes between a
+ *    writer's fn() and its CAS can replace the mutated singleton with D1's
+ *    older copy, and the writer then persists that. Deliberate — a dropped chip
+ *    self-heals on the next write, a request with no first byte does not.
  *  - Reads exclude writers but not each other. A poll must not land between a
  *    writer's fn() and persistIfUnchanged (it would overwrite the in-memory
  *    singleton with the pre-mutation D1 copy), but two polls can't corrupt
@@ -166,15 +171,10 @@ async function readRoom(): Promise<RoomState> {
 	// never trigger a persist — writing stale memory over the authoritative
 	// row would silently roll back live state.
 	const d = d1Health();
-	// A stalled D1 fetch degrades to the in-memory snapshot rather than hanging
-	// the request. `failed: true` on the timeout path is what stops the seed
-	// below from firing and overwriting D1 with possibly-stale memory.
-	const { existed, failed } = await withDeadline(
-		store.sync(d),
-		READ_DEADLINE_MS,
-		() => ({ existed: true, failed: true }),
-		'store.sync'
-	);
+	// store.sync bounds itself (Store.SYNC_DEADLINE_MS) and reports failed:true
+	// on the timeout path, which is what stops the seed below from overwriting
+	// D1 with possibly-stale memory.
+	const { existed, failed } = await store.sync(d);
 	const room = store.ensure();
 	if (!existed && !failed) await store.persist(d);
 	return room;

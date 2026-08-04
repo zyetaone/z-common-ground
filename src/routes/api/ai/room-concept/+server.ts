@@ -39,13 +39,19 @@ export const POST: RequestHandler = async (event) => {
 			});
 		}
 
+		// No `room` in the body. Every mutating route returns the whole room (~11KB)
+		// and the idempotency cache refuses anything over 2KB, so nothing was ever
+		// cached — and this is the one route where a replay costs money: the client
+		// retries once on network failure with the same key, which meant a second
+		// fal generation. Without the room the body fits, so the retry replays.
+		// session.roomConcept() already falls through to poll() when room is absent.
+		// The prompt went too — 4KB on its own, and no caller ever read it.
+		// Keep this body small: over 2KB and the retry re-bills instead of replaying.
 		return {
 			url,
 			imageError,
 			model,
-			prompt,
-			paletteSize: store.snapshot().roomConceptUrls?.length ?? (url ? 1 : 0),
-			room: store.snapshot()
+			paletteSize: store.snapshot().roomConceptUrls?.length ?? (url ? 1 : 0)
 		};
 	});
 };
