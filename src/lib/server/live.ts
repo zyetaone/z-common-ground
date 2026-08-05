@@ -64,13 +64,6 @@ const WRITE_DEADLINE_MS = 8_000;
 const MUTATION_BUDGET_MS = 11_000;
 
 /**
- * Ceiling on waiting for the lock itself — for the writer ahead of us, and for
- * in-flight reads to finish. Both were unbounded, and neither has to complete
- * for a mutation to be safe: the compare-and-swap is the real guard.
- */
-const LOCK_DEADLINE_MS = 2_000;
-
-/**
  * Resolve to `fallback` if `p` has not settled within `ms`.
  *
  * The timer is always cleared, so a slow-but-successful promise can't leave a
@@ -105,76 +98,41 @@ function d1Health() {
 }
 
 /**
- * Per-isolate readers-writer lock.
+ * No per-isolate lock. This used to hold a readers-writer lock: writers ran one
+ * at a time behind a module-level `writeChain`, and waited for `readsDrained`
+ * before mutating.
  *
- * Writers run one at a time and never overlap a read. Readers run concurrently
- * with each other, so `store.sync` can coalesce them into one D1 fetch.
- * Writers take priority: once one is queued, new readers wait behind it, so a
- * steady 500 ms poll from every device can't starve an advance.
+ * It was the single source of every outage during the first live session. Two
+ * failure modes, both structural rather than tunable:
+ *
+ *  - `readsDrained` only resolves when in-flight reads hit zero. Seven phones
+ *    polling twice a second, plus the presenter and host console, mean it can
+ *    simply never resolve. Writers waited for a silence that never came, so
+ *    GETs stayed healthy while every POST hung past the client's abort.
+ *  - `writeChain` is a promise every writer appends to for the life of the
+ *    isolate. One link that never settles poisons every request behind it,
+ *    permanently. That is why a redeploy fixed it and it degraded again minutes
+ *    later: new isolates, fresh chain, same slow poisoning.
+ *
+ * None of it was load-bearing. Correctness comes from the compare-and-swap in
+ * `attempt`: a mutation reads the room, applies `fn`, and only lands if D1 still
+ * holds the version it started from. A losing writer re-syncs and re-runs; a
+ * read that overlaps a write sees either the old row or the new one, never a
+ * torn one, because the row is written whole. The lock only ever served to make
+ * the in-memory singleton's intermediate states invisible — and `store.sync`
+ * already re-reads D1 at the top of every mutation.
+ *
+ * ponytail: no lock. If a future change makes an isolate's in-memory state
+ * load-bearing between the sync and the CAS, reach for a Durable Object rather
+ * than reviving this.
  */
-let writeChain: Promise<unknown> = Promise.resolve();
-let activeReads = 0;
-let readsDrained: Promise<void> = Promise.resolve();
-let signalReadsDrained: () => void = () => {};
-let writersWaiting = 0;
-
-function readAcquired() {
-	if (activeReads === 0) {
-		readsDrained = new Promise<void>((resolve) => (signalReadsDrained = resolve));
-	}
-	activeReads += 1;
-}
-
-function readReleased() {
-	activeReads -= 1;
-	if (activeReads === 0) signalReadsDrained();
-}
 
 export function withLiveRoom<T>(fn: () => T): Promise<T> {
-	writersWaiting += 1;
-	const run = withDeadline(writeChain, LOCK_DEADLINE_MS, () => undefined, 'queued behind writer')
-		.then(async () => {
-			// Let any read that already started finish before we mutate — but not
-			// forever. Seven phones polling twice a second plus the presenter and
-			// the host console mean `activeReads` can simply never reach zero, and
-			// a writer that waits for silence never runs. That is what wedged every
-			// POST while GETs stayed healthy: not a slow database, a starved lock.
-			// Past the deadline we mutate anyway; the CAS in `attempt` is what
-			// actually protects the row, and a read that overlaps it re-syncs.
-			await withDeadline(readsDrained, LOCK_DEADLINE_MS, () => undefined, 'reads draining');
-			try {
-				return await attempt(fn);
-			} finally {
-				writersWaiting -= 1;
-			}
-		});
-	writeChain = run.catch(() => {});
-	return run;
+	return attempt(fn);
 }
 
-/**
- * Reads wait for an in-flight or queued write, then run concurrently with other
- * reads. `store.sync` dedupes the overlapping D1 fetches.
- */
 export async function readLiveRoom(): Promise<RoomState> {
-	if (writersWaiting > 0) {
-		// A write is queued or running — ride behind it so we observe its result
-		// and can't interleave with its CAS persist. Bounded: writeChain is a
-		// module-level promise every writer appends to, so one stalled writer
-		// would otherwise park every later read on this isolate forever.
-		await withDeadline(
-			writeChain.catch(() => {}) as Promise<void>,
-			READ_DEADLINE_MS,
-			() => undefined,
-			'read waiting on writeChain'
-		);
-	}
-	readAcquired();
-	try {
-		return await readRoom();
-	} finally {
-		readReleased();
-	}
+	return readRoom();
 }
 
 /**
