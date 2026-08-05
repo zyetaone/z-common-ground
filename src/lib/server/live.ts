@@ -49,6 +49,12 @@ const MAX_ATTEMPTS = 3;
 const READ_DEADLINE_MS = 5_000;
 
 /**
+ * Ceiling on one D1 write. Longer than the read: a write is a CAS that may do
+ * an UPDATE, a SELECT and an INSERT, and giving up early costs a retry.
+ */
+const WRITE_DEADLINE_MS = 8_000;
+
+/**
  * Resolve to `fallback` if `p` has not settled within `ms`.
  *
  * The timer is always cleared, so a slow-but-successful promise can't leave a
@@ -159,7 +165,19 @@ async function attempt<T>(fn: () => T): Promise<T> {
 		await store.sync(d);
 		const expected = store.snapshot().updatedAt;
 		const result = fn();
-		if (await store.persistIfUnchanged(d, expected)) return result;
+		// Bounded like the read. This was the last unbounded await in either path:
+		// a hung D1 write parked the writer forever, and because `writersWaiting`
+		// only drops when the writer finishes, every later read on the isolate
+		// paid the full read deadline before it could even start. Treating a
+		// stalled write as a lost CAS is correct — the row is unchanged, so the
+		// retry re-runs on fresh state and the client resyncs on the 409.
+		const won = await withDeadline(
+			store.persistIfUnchanged(d, expected),
+			WRITE_DEADLINE_MS,
+			() => false,
+			'persistIfUnchanged'
+		);
+		if (won) return result;
 		// Another isolate wrote first — re-sync and re-run on fresh state.
 	}
 	throw error(409, 'Room changed under us — refreshed. Please retry.');
@@ -176,6 +194,10 @@ async function readRoom(): Promise<RoomState> {
 	// D1 with possibly-stale memory.
 	const { existed, failed } = await store.sync(d);
 	const room = store.ensure();
-	if (!existed && !failed) await store.persist(d);
+	// Seeding is a write on the read path — bound it, or a stalled D1 write turns
+	// a poll into a request that never answers.
+	if (!existed && !failed) {
+		await withDeadline(store.persist(d), WRITE_DEADLINE_MS, () => undefined, 'seed persist');
+	}
 	return room;
 }

@@ -2,7 +2,12 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "z-common-ground",
 	"compatibility_date": "2026-07-01",
-	"compatibility_flags": ["nodejs_compat"],
+	// nodejs_als is required on Pages: SvelteKit's getRequestEvent() — which is how
+	// live.ts reaches the D1 binding on every read and write — is built on Node's
+	// AsyncLocalStorage. Cloudflare's own SvelteKit-on-Pages guide calls this out
+	// as a required runtime flag; without it the request-context lookup is not
+	// reliable, which is exactly where the API was stalling.
+	"compatibility_flags": ["nodejs_compat", "nodejs_als"],
 	// Cloudflare Pages, not a Worker. The only reason is DNS: a Worker Custom
 	// Domain must live in a zone this account owns, but a Pages custom domain
 	// accepts a CNAME from a zone in someone else's Cloudflare account. That is
