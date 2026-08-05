@@ -226,7 +226,7 @@ bun run prepare      # svelte-kit sync || echo ''
 bun run check        # svelte-kit sync && svelte-check --tsconfig ./tsconfig.json   (only quality gate)
 bun run check:watch
 bun test             # vitest run (src/**/*.{test,spec}.ts, node env, $lib alias)
-wrangler pages deploy            # Pages project — NOT `wrangler deploy`
+wrangler pages deploy            # Pages project — NOT `wrangler pages deploy`
 wrangler pages secret put FAL_API_KEY
 ```
 
@@ -292,7 +292,7 @@ src/lib/server/ai/prompts/
 - **TS for renderers** that take data. The user prompt is a *function* of `RoomState`; the image prompts are functions of `matrix` / `bets`+`name`. JSON can't express that without an eval layer, and you don't want one.
 - **TS for the registry** so `import { PROMPTS } from '$lib/server/ai/prompts'` is typed and discoverable.
 
-**No fs reads** — the JSON is bundled in by Vite. Cloudflare Workers + `wrangler deploy` doesn't see filesystem at runtime; you want the prompt in the bundle, not on a volume.
+**No fs reads** — the JSON is bundled in by Vite. Cloudflare Workers + `wrangler pages deploy` doesn't see filesystem at runtime; you want the prompt in the bundle, not on a volume.
 
 #### Concrete file contents
 
@@ -2137,7 +2137,7 @@ Before merging the refactored FunctionBoard, run through this:
 - [ ] On R3, tapping `+` is disabled; tapping `−` removes a chip; the row turns red and shows `-$10M` for 1 round then the cut is shown; the "protected" tag appears when the row is at the standing total.
 - [ ] On R3, the `$ remaining` is hidden (the hint shows "what stays is protected" instead).
 - [ ] The submit button still works — submit a full board, the row → `MobileSealed` → the new `ConvictionBars.svelte` shows the same chips with the same visual.
-- [ ] On the Live URL (`https://common-ground-phygital.rdtect.workers.dev/host/LIVE`), the new board is rendered.
+- [ ] On the Live URL (`https://common-ground.zyeta.asia/host/LIVE`), the new board is rendered.
 - [ ] No console errors; no `ReferenceError` from `$props` typos; no `TypeError` from the `pendingDelta` write.
 
 ### The gotcha about `bind:this` and the chipDrop action
@@ -2423,7 +2423,7 @@ return {
 
 `functionPairs(functionVectors)` is 7 lines — all `n*(n-1)/2 = 21` pairs (or fewer if some functions are inactive) with their cosine similarity. The chord diagram is 30 lines of SVG on top of this.
 
-### Change list for the live URL (`https://common-ground-phygital.rdtect.workers.dev/host/LIVE`)
+### Change list for the live URL (`https://common-ground.zyeta.asia/host/LIVE`)
 
 The user is right that the live URL needs to be updated. Concrete steps (none of these touch a `.ts` file by themselves — they're all `.svelte` and the `brief.ts` helper):
 
@@ -2443,7 +2443,7 @@ The user is right that the live URL needs to be updated. Concrete steps (none of
 14. **Edit `src/routes/present/[code]/+page.svelte`** — `SCREENS[]` titles get the 1-line read-aloud prefix: `{ title: "Where we agree", subtitle: readAloud, short: "Align" }` etc. (Or keep the current titles and put read-aloud in the hero.)
 15. **No `+server.ts` changes**, no scoring-math changes, no domain-type changes. The CGI and the lens are unchanged; the redesign is purely a presentation layer.
 
-After this, `bun run check` should still pass and `bun run dev` should show the new charts at `https://common-ground-phygital.rdtect.workers.dev/host/LIVE` (after `wrangler deploy`). The `present/LIVE` page gets a facelift too: each screen has a CGI hero, a chart, and a 1-line read-aloud.
+After this, `bun run check` should still pass and `bun run dev` should show the new charts at `https://common-ground.zyeta.asia/host/LIVE` (after `wrangler pages deploy`). The `present/LIVE` page gets a facelift too: each screen has a CGI hero, a chart, and a 1-line read-aloud.
 
 ### Quick wins (in priority order)
 
@@ -2742,7 +2742,7 @@ A8. **The `pulse` keyframe in `MobileSealed.svelte:82-86` is incomplete.** Only 
 A9. **`<svelte:boundary>` is the Svelte 5 idiom for partial UI failure.** Wrap the FutureWorkspace body in a boundary that calls `futureUi.err = e.message` on error. The component doesn't have to know how to handle errors. **Replaces the hand-written `try/catch/finally` in every `generateX` function.**
 A10. **`use:enhance` is unused.** The host page's `Save Budget`, `Reset Session`, and the future-brief editor should all use SvelteKit's `use:enhance` instead of hand-rolled `fetch` + `setTimeout(copied, 2000)`. **~80 lines saved across the codebase; works without JS; gets progressive enhancement for free.**
 A11. **Discriminated error union** (B + A5) replaces the `let error = $state('')` string. Components render `{#if session.error.kind === 'fatal'}` instead of guessing from a string. The `error.retry` callback is bound at the union level, not at the call site.
-A12. **The Worker has no observability surface.** No `wrangler tail`, no logs beyond `console.error`. Add structured `console.info` (visible in `wrangler tail`) on every `mutate` and every `persist` — include the idempotency key, the `If-Match` value, the contention result (win/lose/retry). **For a 1-room app this is enough.** For multi-room, add Workers Analytics (zero-config) with custom events.
+A12. **The Worker has no observability surface.** No `wrangler tail`, no logs beyond `console.error`. Add structured `console.info` (visible in the Pages dashboard logs; `wrangler tail` is unavailable here) on every `mutate` and every `persist` — include the idempotency key, the `If-Match` value, the contention result (win/lose/retry). **For a 1-room app this is enough.** For multi-room, add Workers Analytics (zero-config) with custom events.
 A13. **`Promise.all` vs `Promise.allSettled`**: AI generation must use `allSettled` (a failure in one table shouldn't block the others). Currently the codebase has zero `allSettled` calls. Use it for: table-renders, image rendering, batch operations.
 A14. **No `Idempotency-Key` validator.** The server must reject keys that are too long (DoS), too short (collision), or contain non-ASCII (URL-encoding footgun). **Validate to `^[a-zA-Z0-9-]{8,128}$` server-side.**
 A15. **The `use:enhance` shape** (C.1) replaces a lot of hand-rolled fetch. The pattern is `<form method="post" action="?/save" use:enhance={() => async ({ result, update }) => { if (result.type === 'success') await update(); }}>`. SvelteKit's form actions *are* the Svelte 5 idiom for mutations. **A refactor of `/api/room/[code]/*` to SvelteKit form actions is the right long-term shape** — the API becomes a thin `+page.server.ts` and the client is a `<form>` with `use:enhance`. The body never crosses an explicit `fetch` boundary.
@@ -3687,11 +3687,11 @@ The dependency order is **strict**: the design system (Phase 0–1) is the found
 
 **Deliverables**:
 
-- **Observability**: `console.info` (visible in `wrangler tail`) on every `mutate` and every `persist` — include the idempotency key, the `If-Match` value, the contention result.
+- **Observability**: `console.info` (visible in the Pages dashboard logs; `wrangler tail` is unavailable here) on every `mutate` and every `persist` — include the idempotency key, the `If-Match` value, the contention result.
 - **A11y audit**: every interactive element has a `<button>` or `<a>` (no `<div onclick>`); every form has a label; the focus ring is visible; the colour contrast meets WCAG AA (4.5:1 for text, 3:1 for large text).
 - **Reduced-motion audit**: every new animation gates on `prefers-reduced-motion`. Run the doc's "Reduced-motion" checklist in [UI/UX §4].
 - **Test coverage**: 70%+ on `src/lib/game/`. Add a `vitest` config for in-process tests of `applyBoardDelta`, `applySubmitTable`, `applyAdvance`, `applyRetreat`. The current `src/lib/game/rules/rules.test.ts` covers most of this; add edge cases.
-- **Deploy**: `bun run build && wrangler deploy`. Watch `wrangler tail` for 30 minutes for any 5xx. Verify the live URL at `https://common-ground-phygital.rdtect.workers.dev/host/LIVE` matches the design.
+- **Deploy**: `bun run build && wrangler pages deploy`. Watch for 5xx by polling `/api/room/LIVE/state` — `wrangler pages deployment tail` does NOT work on this project (advanced-mode `_worker.js`; Cloudflare answers "does not have a Pages Function", code 8000098). Use the dashboard's Pages analytics or black-box probes instead. Verify the live URL at `https://common-ground.zyeta.asia/host/LIVE` matches the design.
 - **Doc**: the doc *is* the deliverable. The user reads it. Update it: the *current* state is the *spec* state. Mark the "proposed" sections as "shipped" with version stamps.
 
 **Risk**: low. Polish is a series of small fixes; nothing is structural.
@@ -3769,7 +3769,7 @@ The conditional-UPDATE pattern in Phase 3 unlocks idempotency (Phase 3), the pro
 | `src/lib/game/types.ts` | `PRIORITIES`, `TableState`, `Aggregate`, `RoundSnapshot`, `RoomState`, `Persona`, `Scenario`, `Phase`, `RoundMove`, `RoundMode`, `TOKEN_VALUE_USD = 1_000_000`. |
 | `src/lib/game/money.ts` | `tokenUnitLabel`, `tableWalletLabel`, `formatUsd` (compact), `formatUsdFull` (Intl). |
 | `src/lib/components/phone/FunctionBoard.svelte` | Per-priority ± buttons step by `CHIP_VALUE` (10). R3 is remove-only. Enforces cap from `tableBountyTokens(room)`. Row-flash animation on change. `onpointerup` is used for touch handling with `touch-action: manipulation`. |
-| `src/lib/components/phone/MobileRender.svelte` | Selfie (file input `capture="user"`) + LinkedIn frame composite. Has a hard-coded LinkedIn share origin fallback: `https://common-ground-phygital.rdtect.workers.dev`. |
+| `src/lib/components/phone/MobileRender.svelte` | Selfie (file input `capture="user"`) + LinkedIn frame composite. Has a hard-coded LinkedIn share origin fallback: `https://common-ground.zyeta.asia`. |
 | `src/lib/components/present/FutureWorkspace.svelte` | Composes the ZyetaI concept/design surfaces; owns the editable brief modal (uses `session.updateBrief`, which persists via `/api/ai/brief-edit`). |
 | `src/lib/components/present/future.svelte.ts` | Co-located UI state for Future Workspace screen (progress, err, briefOpen). |
 | `src/lib/components/present/StageNav.svelte` | Dots + Back/Next buttons; `total` default = 5, but the caller passes `present.total`. |
@@ -3820,7 +3820,7 @@ The conditional-UPDATE pattern in Phase 3 unlocks idempotency (Phase 3), the pro
 
 ## Failure modes & ops runbook
 
-The live URL at `https://common-ground-phygital.rdtect.workers.dev/host/LIVE` is the only deployment. If something is broken at 11pm, this is the runbook. **Each failure mode is named, the symptom is concrete, the root cause is specific, and the recovery is one action.** The doc is the runbook; update it when a new mode appears.
+The live URL at `https://common-ground.zyeta.asia/host/LIVE` is the only deployment. If something is broken at 11pm, this is the runbook. **Each failure mode is named, the symptom is concrete, the root cause is specific, and the recovery is one action.** The doc is the runbook; update it when a new mode appears.
 
 ### Observability surface
 
@@ -3840,7 +3840,7 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 
 **Recovery**:
 1. The client should call `await this.tick()` to resync. If the UI doesn't auto-recover, the user can refresh the page (F5) — the polling client will fetch a fresh state.
-2. If the issue is a true deadlock (one isolate holds the lock), restart the Worker: `wrangler deploy --force`. New isolates start fresh.
+2. If the issue is a true deadlock (one isolate holds the lock), restart the Worker: `wrangler pages deploy --force`. New isolates start fresh.
 3. **Don't** re-attempt the mutation without a fresh `updatedAt`. That's a recipe for infinite 409s.
 
 ### F2. The phone shows "Reconnecting" / `session.connected = false`
@@ -3856,7 +3856,7 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 1. **Don't reset the room.** The state is on D1; a network blip doesn't lose it.
 2. The polling client will retry every 500 ms (current) or fall back to 5 s (post-Phase 9 SSE). The state will resync when the connection returns.
 3. If the D1 binding is misconfigured: check `wrangler.jsonc` → `d1_databases[*].database_id` matches `wrangler d1 list`. Re-deploy.
-4. If the worker is on a bad isolate: `wrangler deploy --force` to roll isolates.
+4. If the worker is on a bad isolate: `wrangler pages deploy --force` to roll isolates.
 
 ### F3. The final image doesn't render — the toast says "Image needs a FAL_API_KEY"
 
@@ -3995,7 +3995,7 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 **Diagnosis**: this is almost always a CSS or font fallback issue, not a data issue. The CSS variable is wrong, the value is too small, the rgba is broken.
 
 **Recovery**:
-1. Inspect the element: `curl https://common-ground-phygital.rdtect.workers.dev/... | grep -A 5 'class="card"'`. Check the class and the data attribute.
+1. Inspect the element: `curl https://common-ground.zyeta.asia/... | grep -A 5 'class="card"'`. Check the class and the data attribute.
 2. The CSS variables (`--color-gold`, `--color-teal`, etc.) are defined in `src/app.css` `@theme`. If a variable is undefined, the value is `inherit` (not the right answer).
 3. **Tabular figures**: if the chip pile is 8 chips but the number says 7, the `<CountUp>` action is miscounting. The bug is in `src/lib/actions/count-up.ts` (post-Phase 5).
 4. **Font fallback**: if the display font is Inter Tight but the fallback is "sans-serif" and Inter isn't loaded, the user sees Roboto. Check `src/app.html:9` for the Google Fonts URL.
@@ -4004,11 +4004,11 @@ Before any failure mode, **the log path** matters. The Worker has no third-party
 
 **Symptom**: the home page shows 7 cards. No one has scanned. The host page says "Connecting...". The polling client can't reach the worker.
 
-**Diagnosis**: the live URL is down. `curl -I https://common-ground-phygital.rdtect.workers.dev` returns a non-200. The Worker is paused, the deployment was reverted, or the DNS is broken.
+**Diagnosis**: the live URL is down. `curl -I https://common-ground.zyeta.asia` returns a non-200. The Worker is paused, the deployment was reverted, or the DNS is broken.
 
 **Recovery**:
-1. **Re-deploy**: `bun run build && wrangler deploy`. Cloudflare's `wrangler tail` shows the last deploy time; if the Worker is paused, the dashboard at https://dash.cloudflare.com shows it.
-2. **Check DNS**: `dig common-ground-phygital.rdtect.workers.dev` (or `nslookup`). The custom domain `*.rdtect.workers.dev` is on Cloudflare's wildcard. If the subdomain is wrong, the request goes nowhere.
+1. **Re-deploy**: `bun run build && wrangler pages deploy`. Cloudflare's `wrangler tail` shows the last deploy time; if the Worker is paused, the dashboard at https://dash.cloudflare.com shows it.
+2. **Check DNS**: `dig common-ground.zyeta.asia` (or `nslookup`). The custom domain `common-ground.zyeta.asia` is a CNAME to `z-common-ground.pages.dev`. If the subdomain is wrong, the request goes nowhere.
 3. **Check the env**: `wrangler secret list` — if the secrets are missing, the worker boots but the AI endpoints fail (and the home page is a single fetch away from "Connecting...").
 4. **Check the Cloudflare status page**: https://www.cloudflarestatus.com — if Workers or D1 is down, you wait.
 
@@ -4048,7 +4048,7 @@ d1 blob not parseable           │ write migrateV1toV2 adapter
 5xx, throws in tail             │ re-deploy; roll back via CF dash
 brief output is garbage         │ validate room.aggregate (no NaN)
 weird chip/priority value       │ inspect element; CSS var, not data
-room is "ready" but no clients  │ wrangler deploy; check DNS
+room is "ready" but no clients  │ wrangler pages deploy; check DNS
 bun run build fails             │ read the error; usually Svelte rune
 ```
 
@@ -4065,7 +4065,7 @@ bun run build fails             │ read the error; usually Svelte rune
 10. **Single chip is $10M.** `CHIP_DENOMS` has exactly one entry (`{ red, value: 10 }`); `CHIP_DELTAS = [10, -10]`. The board endpoint's server validation **only accepts ±10** and 400s on anything else — despite the client `session.boardDelta` signature saying `delta: 1 | -1` (stale). The previous blue/green chip story is gone from code; `types.ts` still has a stale comment + the `$10M/$5M/$2M` legend in the `BoardSheet` print. Edit comments rather than the store.
 11. **`session.boardDelta` is a silent no-op** (still `200`) on phase ≠ `round` (or `lobby`), locked table, wrong seat, out-of-range priority, `delta: 0`, `NaN` priority, over-budget add, or remove-round positive delta. Clients should treat the response as informational, not authoritative. `boardSet` is also a no-op on locked/wrong-seat/bad-priority but clamps to budget on the happy path.
 13. **`setConfig` ignores `analysisUnlocks`.** The endpoint body type and `setConfig` patch type only accept `analysisForced` and `roomBountyTokens` (1..9999, clamped). The README/CLAUDE mention of `analysisUnlocks` is stale. (The `setTables` method + `/api/room/[code]/tables` endpoint were removed — `setTableCount` is the only table-count entry point.)
-14. **LinkedIn share fallback origin** is hard-coded to `https://common-ground-phygital.rdtect.workers.dev` in `MobileRender.svelte`; the real `window.location.origin` is preferred when available. `MobileRender.svelte` uses a file-input camera (`<input type="file" accept="image/*" capture="user">`) — this is a voluntary selfie for the LinkedIn frame, **not** board-reading vision (the README "no vision" claim still holds for gameplay).
+14. **LinkedIn share fallback origin** is hard-coded to `https://common-ground.zyeta.asia` in `MobileRender.svelte`; the real `window.location.origin` is preferred when available. `MobileRender.svelte` uses a file-input camera (`<input type="file" accept="image/*" capture="user">`) — this is a voluntary selfie for the LinkedIn frame, **not** board-reading vision (the README "no vision" claim still holds for gameplay).
 15. **`session.updateBrief(text)` persists.** It POSTs to `/api/ai/brief-edit`, which sets `enhancedBrief` with `briefSource: 'manual'` — and `recompute()` never overwrites a `manual` or `rapidi` brief with the numbers skeleton. (Earlier revisions of this doc called it local-only; that is stale.)
 16. **`$lib/client/index.ts` has been deleted.** It used to re-export `$lib/state`. Import from `$lib/state` directly.
 17. **`$lib/index.ts` is a thin barrel** re-exporting `game/types.js`, `game/config.js`, `game/scoring.js` only. It is **not** a general `$lib` entry point — there is no `client.ts` or `server.ts` barrel.
@@ -4077,7 +4077,7 @@ bun run build fails             │ read the error; usually Svelte rune
 23. **The CGI is invisible to the AI.** Neither the current  RapidI prompt nor the fal prompt names the Common Ground Index, the lead/fault/blind lens, or the verdict label. The AI ends up paraphrasing what the UI already shows instead of amplifying it. The refined prompts in `src/lib/server/ai/prompts/brief.system.json` (Common Ground vocabulary section) and `brief.user.ts` (Lens block) fix this.
 24. **JSON for prompts, not markdown.** It is tempting to drop prompts in `static/prompts/*.md` so designers can edit them in any editor. **Don't.** Cloudflare Workers don't ship a filesystem; the bundle has to contain the prompt. Use `.json` in `src/lib/server/ai/prompts/` so the prompt rides with the rest of the Worker code, gets type-checked by the `PromptMeta` schema, and is diffable in PR review. Static markdown files would also lose the sectional structure (`{ role, audience, voice, vocabulary, structure, constraints }`) that makes a single-section edit safe.
 25. **No story in the analysis today.** The presenter deck has the *data* for "where we agree / where we fight / what we missed / who surprised us" but it does not have a *story* — the presenter sees a ring + chips + a heatmap and has to translate to English in their head. The host page has zero analysis at all. **Fix:** ship `readAloudForRoom(room)` in `src/lib/game/brief.ts` (the one-sentence read-aloud), add an `<CgiHero>` component, and surface the same string on both `/present/[code]/` and `/host/[code]/` — see "Analysis: the Common Ground story" above for the full change list.
-26. **Live URL drift.** The deployment at `https://common-ground-phygital.rdtect.workers.dev/host/LIVE` runs the code as of the last `wrangler deploy`. Local changes (including any of the analyses-redesign steps above) do not appear there until the Worker is rebuilt and redeployed. There is no CI; deploy is a manual `bun run build && wrangler deploy`. After the redesign, expect the live URL to lag the local dev server by however long the deploy takes (typically 1–2 minutes for the build, 10–30s for the wrangler push).
+26. **Live URL drift.** The deployment at `https://common-ground.zyeta.asia/host/LIVE` runs the code as of the last `wrangler pages deploy`. Local changes (including any of the analyses-redesign steps above) do not appear there until the site is rebuilt and redeployed. There is no CI; deploy is a manual `bun run build && wrangler pages deploy`. After the redesign, expect the live URL to lag the local dev server by however long the deploy takes (typically 1–2 minutes for the build, 10–30s for the wrangler push).
 27. **Hard-coded `cubic-bezier` and durations.** Most components inline `cubic-bezier(0.22, 1, 0.36, 1)` and `transition: ... 0.4s ease` in their `<style>` blocks. The UI/UX system design in this doc defines `--ease-out-quart`, `--ease-in-out-quart`, `--dur-instant` / `--dur-fast` / `--dur-base` / `--dur-slow` / `--dur-stage` / `--dur-stagger` as `@theme` tokens. **Replace every hard-coded transition with the tokens** when you touch a component — the rule is "tokens, not literals". Same for `font-family: 'Playfair Display', ...` and `font-family: 'Lora', ...` — drop them in favour of `var(--font-display)` and `var(--font-sans)`. The 5+ places with `Playfair` literals are in `Chip.svelte:30`, the presenter's `.brand` class, and any inline `font-family` inside `present/*.svelte`/`phone/*.svelte` components.
 28. **No count-up animation today.** Every `$` amount on screen (`formatUsd(...)`) snaps when `room.aggregate.totalCoins` changes. A 280ms count-up from old to new is the single biggest perception-of-life improvement. Use the proposed `use:countUp` action in `src/lib/actions/count-up.ts` (see UI/UX §6) on every formatted amount. The action must read `tnum` + the right `Intl.NumberFormat`; do not write a new formatter per call site.
 29. **No view transitions between routes.** The current `+layout.svelte` has `data-sveltekit-preload-data="hover"` but route changes are hard cuts. Add the `onNavigate` + `document.startViewTransition` hook in `+layout.svelte` (see UI/UX §7) — it's ~10 lines and the single biggest "sleek" win for the host → present → play flow. Browsers without the API (Safari, Firefox) silently no-op; the rest of the app must continue to work without it.
@@ -4199,7 +4199,7 @@ Every domain term used across this doc, defined in one place. **Alphabetical.** 
 - **`lib/index.ts` (deprecated)** — see [gotcha 17](#gotchas). Don't add new consumers. Use `$lib/state` or `$lib/game` instead.
 - **`Link`** — not used. The codebase uses native `<a href>` for navigation. SvelteKit's `<Link>` component is for prefetched navigation; the current `data-sveltekit-preload-data="hover"` does this without a component.
 - **`linkedIn-frame.ts`** — `src/lib/client/linkedin-frame.ts`. The 1200×630 canvas composite for the share image. Paints "Powered by ZyetaI" at bottom-right.
-- **live URL** — `https://common-ground-phygital.rdtect.workers.dev/host/LIVE`. The only deployment. Updated by `wrangler deploy`. **The doc is a spec; the live URL is the truth.** If they disagree, the live URL wins.
+- **live URL** — `https://common-ground.zyeta.asia/host/LIVE`. The only deployment. Updated by `wrangler pages deploy`. **The doc is a spec; the live URL is the truth.** If they disagree, the live URL wins.
 - **loading state** — see *busy*.
 - **LLAMA_MODEL** — `'@cf/meta/llama-3.3-70b-instruct-fp8-fast'` in `src/lib/server/ai/rapidi.ts:9`. The Workers AI chat model. `3.1-8b (deprecated)-instruct (deprecated)` was deprecated 2026-05-30.
 - **`loadRoom(db)`** — `src/lib/server/room-store.ts:28-44`. Reads the row from D1. Returns `null` if no row, or if the row fails validation.
