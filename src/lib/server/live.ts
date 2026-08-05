@@ -150,7 +150,14 @@ async function attempt<T>(fn: () => T): Promise<T> {
 
 	for (let i = 0; i < MAX_ATTEMPTS; i++) {
 		if (left() <= 0) break;
-		await store.sync(d);
+		// Bounded like the read, and for the same reason — an unbounded sync here
+		// parks the mutation past the client's abort.
+		await withDeadline(
+			store.sync(d),
+			Math.max(500, Math.min(READ_DEADLINE_MS, left())),
+			() => ({ existed: true, failed: true }),
+			'sync (mutate)'
+		);
 		const expected = store.snapshot().updatedAt;
 		const result = fn();
 		// Bounded like the read. This was the last unbounded await in either path:
@@ -177,10 +184,15 @@ async function readRoom(): Promise<RoomState> {
 	// never trigger a persist — writing stale memory over the authoritative
 	// row would silently roll back live state.
 	const d = d1Health();
-	// store.sync bounds itself (Store.SYNC_DEADLINE_MS) and reports failed:true
-	// on the timeout path, which is what stops the seed below from overwriting
-	// D1 with possibly-stale memory.
-	const { existed, failed } = await store.sync(d);
+	// The deadline lives here, not inside Store: the timer must belong to THIS
+	// request's context. failed:true on the timeout path is what stops the seed
+	// below from overwriting D1 with possibly-stale memory.
+	const { existed, failed } = await withDeadline(
+		store.sync(d),
+		READ_DEADLINE_MS,
+		() => ({ existed: true, failed: true }),
+		'sync'
+	);
 	const room = store.ensure();
 	// Seeding is a write on the read path — bound it, or a stalled D1 write turns
 	// a poll into a request that never answers.

@@ -136,40 +136,32 @@ class Store {
 	/** Single session — not a multi-room map. */
 	private room: RoomState | null = null;
 	/** Ceiling on one D1 read. Past this a sync reports failure and lets go. */
-	private static readonly SYNC_DEADLINE_MS = 5_000;
-
-	private syncing: Promise<{ existed: boolean; failed: boolean }> | null = null;
-
 	/**
 	 * Pull the shared room from D1 (single primary — every colo agrees).
 	 * Call before every read/mutate on the server.
 	 * Returns { existed, failed }: existed=false means no row (safe to seed);
 	 * failed=true means the read errored or the blob was invalid — callers
 	 * must NOT persist in that case (stale memory would roll back D1).
+	 *
+	 * NO in-flight coalescing. This used to cache the pending promise in
+	 * `this.syncing` so overlapping polls shared one D1 round-trip. That is
+	 * illegal on Workers: an I/O object belongs to the request context that
+	 * created it, and a second request awaiting it does not get an error — it
+	 * simply never settles. The client sees a connection with no first byte.
+	 * With seven phones polling twice a second, overlap is the normal case, so
+	 * roughly a third of reads hung. Duplicated D1 reads are ~2ms; a request
+	 * that never answers is a dead deck.
+	 *
+	 * ponytail: one D1 read per request, no sharing. The only safe way to
+	 * coalesce across requests on Workers is a Durable Object.
 	 */
 	async sync(db: D1Database | undefined): Promise<{ existed: boolean; failed: boolean }> {
-		if (this.syncing) return this.syncing;
-		this.syncing = (async () => {
-			const loaded = await loadRoom(db);
-			if (loaded.kind === 'failed') return { existed: false, failed: true };
-			if (loaded.kind === 'empty') return { existed: false, failed: false };
-			// D1 is authoritative — always adopt it (it holds every colo's writes).
-			this.room = loaded.room;
-			return { existed: true, failed: false };
-		})();
-		// Race the deadline, not just the load: a fetch that never settles would
-		// otherwise leave `syncing` set forever, and every later sync would be
-		// handed that same dead promise. Bounding the caller isn't enough — the
-		// stall has to stop being shared.
-		this.syncing = Promise.race([
-			this.syncing,
-			new Promise<{ existed: boolean; failed: boolean }>((resolve) =>
-				setTimeout(() => resolve({ existed: true, failed: true }), Store.SYNC_DEADLINE_MS)
-			)
-		]).finally(() => {
-			this.syncing = null;
-		});
-		return this.syncing;
+		const loaded = await loadRoom(db);
+		if (loaded.kind === 'failed') return { existed: false, failed: true };
+		if (loaded.kind === 'empty') return { existed: false, failed: false };
+		// D1 is authoritative — always adopt it (it holds every colo's writes).
+		this.room = loaded.room;
+		return { existed: true, failed: false };
 	}
 
 	/** Push current room to D1 so phones/presenter on any colo see advances. */
