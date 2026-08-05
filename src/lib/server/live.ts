@@ -2,24 +2,19 @@
  * Run a store read/mutation against the shared D1 room so every Worker isolate
  * — on any colo — sees the same LIVE state.
  *
- * Concurrency contract:
- *  - Same isolate: mutations are serialized by a per-isolate mutex (the Store
- *    is a shared singleton — interleaving sync/fn/persist would corrupt it).
- *  - Cross isolate: persist is a compare-and-swap on updated_at. Losing the
- *    race re-syncs and re-runs the mutation on fresh state; after 3 attempts
- *    the request 409s and the client resyncs (session.post handles 409).
- *  - Past READ_DEADLINE_MS a read gives up waiting and proceeds. That trades a
- *    hung deck for a rare lost mutation: a reader that resumes between a
- *    writer's fn() and its CAS can replace the mutated singleton with D1's
- *    older copy, and the writer then persists that. Deliberate — a dropped chip
- *    self-heals on the next write, a request with no first byte does not.
- *  - Reads exclude writers but not each other. A poll must not land between a
- *    writer's fn() and persistIfUnchanged (it would overwrite the in-memory
- *    singleton with the pre-mutation D1 copy), but two polls can't corrupt
- *    anything. Serializing reads against each other would also defeat
- *    store.sync's in-flight coalescing, turning N concurrent polls into N
- *    sequential D1 round-trips — measurably worse under a full room.
- *    Hence the readers-writer lock below.
+ * Concurrency contract — D1 only, no in-process locking (see the note above
+ * `withLiveRoom` for why the readers-writer lock was removed):
+ *  - Every mutation re-syncs from D1, applies fn, then compare-and-swaps on
+ *    updated_at. Losing the race re-syncs and re-runs on fresh state; after 3
+ *    attempts (or MUTATION_BUDGET_MS) the request 409s and the client resyncs.
+ *  - The row is written whole, so a read overlapping a write sees the old row
+ *    or the new one, never a torn one.
+ *  - Concurrent requests on one isolate can interleave against the shared Store
+ *    singleton. The CAS is what makes that safe: a mutation only lands if D1
+ *    still holds the version its sync read. Worst case is a lost chip that
+ *    self-heals on the next write — a request that never answers does not.
+ *  - Every await here is bounded. Unbounded waits, not contention, were what
+ *    took the room down live.
  */
 import { error } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';
