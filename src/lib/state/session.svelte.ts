@@ -258,8 +258,15 @@ export const session = {
 		//
 		// The room is created once per session and then exists for its lifetime,
 		// so on virtually every load this write was pure latency for no change.
+		//
+		// Gate on `connected`, not just `!room`: fetchStateOnce swallows every
+		// failure into `connected = false` so this .then() always runs, timeout
+		// or not. Without the connected check, a slow/failed poll (the exact
+		// conditions ensure() itself will also hit) fired an expensive write on
+		// top of an already-struggling connection — the GET and the POST failing
+		// together in the wild, not two separate problems.
 		void poll().then(() => {
-			if (!room) session.ensure().catch(() => {});
+			if (!room && connected) session.ensure().catch(() => {});
 		});
 		timer = setInterval(() => {
 			if (pollsPending === 0) poll();
